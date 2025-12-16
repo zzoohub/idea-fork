@@ -1,14 +1,36 @@
-export interface IdeaCategory {
-  name: string;
-  color: "primary" | "teal" | "orange" | "indigo";
+/**
+ * Global types - Domain entities and core application types only
+ */
+
+/**
+ * Category badge representing an idea category
+ */
+export interface CategoryBadge {
+  label: string;
+  variant: "primary" | "teal" | "orange" | "indigo" | "secondary";
 }
 
+/**
+ * Idea entity representing a product idea (API model)
+ */
 export interface Idea {
-  id: number;
+  id: string;
   title: string;
-  image: string;
-  categories: IdeaCategory[];
+  imageUrl: string;
+  imageAlt: string;
+  categories: CategoryBadge[];
   problem: string;
   solution: string;
   targetUsers: string;
+  createdAt: string;
+  popularity?: number;
+}
+
+/**
+ * User entity (API model)
+ */
+export interface User {
+  id: string;
+  name: string;
+  avatarUrl: string;
 }

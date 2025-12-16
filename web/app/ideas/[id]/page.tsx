@@ -1,31 +1,90 @@
-import { notFound } from "next/navigation";
+import Link from "next/link";
+import { ArrowLeft } from "lucide-react";
 
-interface IdeaDetailPageProps {
+import { Button } from "@/components/ui/button";
+import { Badge, type BadgeVariant } from "@/components/ui/badge";
+import { mockIdeas } from "@/features/feed/data/mock-ideas";
+
+interface IdeaPageProps {
   params: Promise<{
     id: string;
   }>;
 }
 
-export default async function IdeaDetailPage({ params }: IdeaDetailPageProps) {
+/**
+ * Individual idea detail page
+ * Displays full PRD (Product Requirements Document) for an idea
+ */
+export default async function IdeaPage({ params }: IdeaPageProps) {
   const { id } = await params;
+  const idea = mockIdeas.find((i) => i.id === id);
 
-  // TODO: Fetch idea data from API
-  // For now, show a placeholder
-  if (!id) {
-    notFound();
+  if (!idea) {
+    return (
+      <div className="flex min-h-[50vh] flex-col items-center justify-center gap-4">
+        <h1 className="text-2xl font-bold text-white">Idea not found</h1>
+        <Button asChild variant="secondary">
+          <Link href="/">
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back to Feed
+          </Link>
+        </Button>
+      </div>
+    );
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <main className="container mx-auto px-4 py-8 lg:px-8">
-        <h1 className="text-3xl font-bold">Idea Detail</h1>
-        <p className="mt-4 text-muted-foreground">
-          Viewing idea with ID: {id}
-        </p>
-        <p className="mt-2 text-muted-foreground">
-          This page will display the full PRD for the selected idea.
-        </p>
-      </main>
+    <div className="mx-auto max-w-3xl py-8">
+      {/* Back navigation */}
+      <Button asChild variant="ghost" className="mb-6">
+        <Link href="/">
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          Back to Feed
+        </Link>
+      </Button>
+
+      {/* Hero image */}
+      <div className="relative mb-8 h-64 w-full overflow-hidden rounded-xl">
+        <img
+          src={idea.imageUrl}
+          alt={idea.imageAlt}
+          className="h-full w-full object-cover"
+        />
+      </div>
+
+      {/* Title and categories */}
+      <div className="mb-8">
+        <h1 className="mb-4 text-3xl font-black text-white">{idea.title}</h1>
+        <div className="flex flex-wrap gap-2">
+          {idea.categories.map((category, index) => (
+            <Badge key={index} variant={category.variant as BadgeVariant}>
+              {category.label}
+            </Badge>
+          ))}
+        </div>
+      </div>
+
+      {/* PRD Sections */}
+      <div className="space-y-8">
+        <section className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-6">
+          <h2 className="mb-3 text-lg font-bold text-white">
+            Problem Statement
+          </h2>
+          <p className="text-neutral-300">{idea.problem}</p>
+        </section>
+
+        <section className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-6">
+          <h2 className="mb-3 text-lg font-bold text-white">
+            Proposed Solution
+          </h2>
+          <p className="text-neutral-300">{idea.solution}</p>
+        </section>
+
+        <section className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-6">
+          <h2 className="mb-3 text-lg font-bold text-white">Target Users</h2>
+          <p className="text-neutral-300">{idea.targetUsers}</p>
+        </section>
+      </div>
     </div>
   );
 }

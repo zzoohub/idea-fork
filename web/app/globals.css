@@ -1,177 +1,200 @@
 @import "tailwindcss";
-@import "tw-animate-css";
 
-/* Force dark mode - no light mode variant needed */
-@custom-variant dark (&:is(.dark *));
+/*
+ * Design Tokens for Idea Fork
+ * Dark mode first design system
+ */
 
 @theme inline {
-  /* Colors */
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --color-card: var(--card);
-  --color-card-foreground: var(--card-foreground);
-  --color-popover: var(--popover);
-  --color-popover-foreground: var(--popover-foreground);
-  --color-primary: var(--primary);
-  --color-primary-foreground: var(--primary-foreground);
-  --color-secondary: var(--secondary);
-  --color-secondary-foreground: var(--secondary-foreground);
-  --color-muted: var(--muted);
-  --color-muted-foreground: var(--muted-foreground);
-  --color-accent: var(--accent);
-  --color-accent-foreground: var(--accent-foreground);
-  --color-destructive: var(--destructive);
-  --color-border: var(--border);
-  --color-input: var(--input);
-  --color-ring: var(--ring);
+  /* Color Palette - Dark Mode Primary */
+  --color-primary: #2b4bee;
+  --color-primary-hover: #1e3ed8;
+  --color-primary-light: oklch(from #2b4bee l c h / 20%);
 
-  /* Custom brand colors */
-  --color-brand-primary: #2b4bee;
-  --color-brand-primary-hover: #2341d4;
-  --color-surface-elevated: #1a1d2c;
-  --color-surface-input: #282b39;
-  --color-text-muted: #9da1b9;
+  /* Background Colors */
+  --color-background: #101322;
+  --color-background-light: #f6f6f8;
+  --color-surface: #1a1d2c;
+  --color-input: #282b39;
 
-  /* Badge colors */
+  /* Text Colors */
+  --color-text-primary: #ffffff;
+  --color-text-secondary: #9da1b9;
+  --color-text-muted: #737373;
+  --color-text-body: #d4d4d4;
+
+  /* Badge Colors */
   --color-badge-teal: #14b8a6;
+  --color-badge-teal-bg: oklch(from #14b8a6 l c h / 20%);
   --color-badge-orange: #f97316;
+  --color-badge-orange-bg: oklch(from #f97316 l c h / 20%);
   --color-badge-indigo: #6366f1;
+  --color-badge-indigo-bg: oklch(from #6366f1 l c h / 20%);
+
+  /* Border */
+  --color-border: oklch(from #ffffff l c h / 10%);
+  --color-border-hover: oklch(from #2b4bee l c h / 50%);
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+
+  /* Border Radius */
+  --radius-default: 0.25rem;
+  --radius-md: 0.375rem;
+  --radius-lg: 0.5rem;
+  --radius-xl: 0.75rem;
+  --radius-full: 9999px;
+
+  /* Spacing */
+  --spacing-xs: 0.25rem;
+  --spacing-sm: 0.5rem;
+  --spacing-md: 1rem;
+  --spacing-lg: 1.5rem;
+  --spacing-xl: 2rem;
 
   /* Typography */
-  --font-sans: var(--font-manrope), system-ui, sans-serif;
-  --font-mono: var(--font-geist-mono);
+  --font-family-display: var(--font-manrope), "Manrope", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-manrope), "Manrope", ui-sans-serif, system-ui, sans-serif;
 
-  /* Border radius */
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
-
-  /* Sidebar (unused but kept for shadcn compatibility) */
-  --color-sidebar-ring: var(--sidebar-ring);
-  --color-sidebar-border: var(--sidebar-border);
-  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-  --color-sidebar-accent: var(--sidebar-accent);
-  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-  --color-sidebar-primary: var(--sidebar-primary);
-  --color-sidebar-foreground: var(--sidebar-foreground);
-  --color-sidebar: var(--sidebar);
-
-  /* Charts (unused but kept for shadcn compatibility) */
-  --color-chart-5: var(--chart-5);
-  --color-chart-4: var(--chart-4);
-  --color-chart-3: var(--chart-3);
-  --color-chart-2: var(--chart-2);
-  --color-chart-1: var(--chart-1);
+  /* Animation */
+  --transition-fast: 150ms;
+  --transition-normal: 200ms;
+  --transition-slow: 300ms;
+  --ease-default: cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* Dark theme as default - Idea Fork color scheme */
+/* CSS Variables for shadcn/ui compatibility */
 :root {
+  --background: 222 47% 10%;
+  --foreground: 0 0% 100%;
+  --card: 224 24% 14%;
+  --card-foreground: 0 0% 100%;
+  --popover: 224 24% 14%;
+  --popover-foreground: 0 0% 100%;
+  --primary: 231 83% 55%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 223 14% 19%;
+  --secondary-foreground: 0 0% 100%;
+  --muted: 223 14% 19%;
+  --muted-foreground: 228 13% 67%;
+  --accent: 223 14% 19%;
+  --accent-foreground: 0 0% 100%;
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 0 0% 100% / 10%;
+  --input: 223 14% 19%;
+  --ring: 231 83% 55%;
   --radius: 0.5rem;
-
-  /* Background colors */
-  --background: #101322;
-  --foreground: #ffffff;
-
-  /* Card */
-  --card: #1a1d2c;
-  --card-foreground: #ffffff;
-
-  /* Popover/Dropdown */
-  --popover: #1a1d2c;
-  --popover-foreground: #ffffff;
-
-  /* Primary - Blue brand color */
-  --primary: #2b4bee;
-  --primary-foreground: #ffffff;
-
-  /* Secondary */
-  --secondary: #282b39;
-  --secondary-foreground: #ffffff;
-
-  /* Muted */
-  --muted: #282b39;
-  --muted-foreground: #9da1b9;
-
-  /* Accent */
-  --accent: #282b39;
-  --accent-foreground: #ffffff;
-
-  /* Destructive */
-  --destructive: #ef4444;
-
-  /* Borders */
-  --border: rgba(255, 255, 255, 0.1);
-  --input: #282b39;
-  --ring: #2b4bee;
-
-  /* Charts */
-  --chart-1: #2b4bee;
-  --chart-2: #14b8a6;
-  --chart-3: #f97316;
-  --chart-4: #6366f1;
-  --chart-5: #ec4899;
-
-  /* Sidebar */
-  --sidebar: #1a1d2c;
-  --sidebar-foreground: #ffffff;
-  --sidebar-primary: #2b4bee;
-  --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #282b39;
-  --sidebar-accent-foreground: #ffffff;
-  --sidebar-border: rgba(255, 255, 255, 0.1);
-  --sidebar-ring: #2b4bee;
 }
 
-/* Keep .dark class for compatibility but same values */
-.dark {
-  --background: #101322;
-  --foreground: #ffffff;
-  --card: #1a1d2c;
-  --card-foreground: #ffffff;
-  --popover: #1a1d2c;
-  --popover-foreground: #ffffff;
-  --primary: #2b4bee;
-  --primary-foreground: #ffffff;
-  --secondary: #282b39;
-  --secondary-foreground: #ffffff;
-  --muted: #282b39;
-  --muted-foreground: #9da1b9;
-  --accent: #282b39;
-  --accent-foreground: #ffffff;
-  --destructive: #ef4444;
-  --border: rgba(255, 255, 255, 0.1);
-  --input: #282b39;
-  --ring: #2b4bee;
+/* Base Styles */
+* {
+  border-color: var(--color-border);
 }
 
-@layer base {
-  * {
-    @apply border-border outline-ring/50;
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font-family-display);
+  background-color: var(--color-background);
+  color: var(--color-text-primary);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Focus styles for accessibility */
+:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+/* Selection */
+::selection {
+  background-color: var(--color-primary-light);
+  color: var(--color-text-primary);
+}
+
+/* Scrollbar styling for webkit browsers */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-surface);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-input);
+  border-radius: var(--radius-full);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-text-secondary);
+}
+
+/* Utility Classes */
+.text-gradient {
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-badge-indigo) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Animation utilities */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
   }
-
-  body {
-    @apply bg-background text-foreground antialiased;
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 
-/* Custom scrollbar for dark theme */
-@layer base {
-  ::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
+@keyframes slide-in-from-right {
+  from {
+    transform: translateX(100%);
   }
-
-  ::-webkit-scrollbar-track {
-    background: var(--background);
+  to {
+    transform: translateX(0);
   }
+}
 
-  ::-webkit-scrollbar-thumb {
-    background: var(--muted);
-    border-radius: 4px;
+@keyframes slide-out-to-right {
+  from {
+    transform: translateX(0);
   }
+  to {
+    transform: translateX(100%);
+  }
+}
 
-  ::-webkit-scrollbar-thumb:hover {
-    background: var(--muted-foreground);
+.animate-fade-in {
+  animation: fade-in var(--transition-slow) var(--ease-default);
+}
+
+.animate-slide-in-from-right {
+  animation: slide-in-from-right var(--transition-slow) var(--ease-default);
+}
+
+.animate-slide-out-to-right {
+  animation: slide-out-to-right var(--transition-slow) var(--ease-default);
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }

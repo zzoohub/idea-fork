@@ -1,35 +1,50 @@
-import { Header, SearchFilters, IdeaCard, mockIdeas } from "@/features/feed";
+import { Header, SearchFilters, IdeaCard } from "@/features/feed";
+import { mockIdeas } from "@/features/feed/data/mock-ideas";
 
-export default function FeedPage() {
+/**
+ * Hero section component displaying the page title and subtitle
+ */
+function HeroSection() {
   return (
-    <div className="min-h-screen bg-background">
-      <Header />
-
-      <main className="container mx-auto px-4 py-8 lg:px-8">
-        {/* Hero Section */}
-        <section className="mb-10 text-center">
-          <h1 className="mb-3 text-3xl font-bold tracking-tight sm:text-4xl lg:text-5xl">
-            Daily AI-Generated Ideas
-          </h1>
-          <p className="mx-auto max-w-2xl text-lg text-muted-foreground">
-            Discover your next big product, powered by AI.
-          </p>
-        </section>
-
-        {/* Search & Filters */}
-        <section className="mb-8">
-          <SearchFilters />
-        </section>
-
-        {/* Ideas Grid */}
-        <section>
-          <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
-            {mockIdeas.map((idea) => (
-              <IdeaCard key={idea.id} idea={idea} />
-            ))}
-          </div>
-        </section>
-      </main>
+    <div className="mt-8 flex flex-wrap justify-between gap-3 p-4">
+      <div className="flex min-w-72 flex-col gap-3">
+        <h1 className="text-4xl font-black leading-tight tracking-[-0.033em] text-white">
+          Daily AI-Generated Ideas
+        </h1>
+        <p className="text-base font-normal leading-normal text-[var(--color-text-secondary)]">
+          Discover your next big product, powered by AI.
+        </p>
+      </div>
     </div>
+  );
+}
+
+/**
+ * Ideas grid component displaying all idea cards
+ */
+function IdeasGrid() {
+  return (
+    <div className="mt-6 grid grid-cols-1 gap-6 p-4 md:grid-cols-2 xl:grid-cols-3">
+      {mockIdeas.map((idea) => (
+        <IdeaCard key={idea.id} idea={idea} />
+      ))}
+    </div>
+  );
+}
+
+/**
+ * Home page - Daily Ideas Feed
+ * Displays a grid of AI-generated product ideas with search and filtering capabilities
+ */
+export default function HomePage() {
+  return (
+    <>
+      <Header />
+      <HeroSection />
+      <div className="mt-4">
+        <SearchFilters />
+      </div>
+      <IdeasGrid />
+    </>
   );
 }

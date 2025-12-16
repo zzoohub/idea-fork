@@ -1,21 +1,24 @@
 import type { Metadata } from "next";
-import { Manrope, Geist_Mono } from "next/font/google";
+import { Manrope } from "next/font/google";
+
 import "./globals.css";
 
 const manrope = Manrope({
-  variable: "--font-manrope",
   subsets: ["latin"],
   display: "swap",
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
+  variable: "--font-manrope",
 });
 
 export const metadata: Metadata = {
-  title: "Idea Fork - Daily AI-Generated Ideas",
+  title: "Daily Ideas Feed - Idea Fork",
   description: "Discover your next big product, powered by AI.",
+  keywords: ["ideas", "product", "AI", "startup", "innovation"],
+  authors: [{ name: "Idea Fork" }],
+  openGraph: {
+    title: "Daily Ideas Feed - Idea Fork",
+    description: "Discover your next big product, powered by AI.",
+    type: "website",
+  },
 };
 
 export default function RootLayout({
@@ -25,10 +28,16 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="dark">
-      <body
-        className={`${manrope.variable} ${geistMono.variable} font-sans antialiased`}
-      >
-        {children}
+      <body className={`${manrope.variable} font-sans antialiased`}>
+        <div className="relative flex min-h-screen w-full flex-col overflow-x-hidden">
+          <div className="flex h-full grow flex-col">
+            <div className="flex flex-1 justify-center py-5">
+              <div className="flex w-full max-w-6xl flex-col px-4">
+                {children}
+              </div>
+            </div>
+          </div>
+        </div>
       </body>
     </html>
   );

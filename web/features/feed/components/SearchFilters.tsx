@@ -10,58 +10,109 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-const categories = [
+/**
+ * Sort options for the ideas feed
+ */
+type SortOption = "newest" | "oldest" | "popular" | "alphabetical";
+
+interface CategoryOption {
+  value: string;
+  label: string;
+}
+
+interface SortOptionItem {
+  value: SortOption;
+  label: string;
+}
+
+/**
+ * Available category options for filtering
+ */
+const categories: CategoryOption[] = [
   { value: "all", label: "All Categories" },
   { value: "ai", label: "AI" },
   { value: "healthtech", label: "HealthTech" },
   { value: "fintech", label: "FinTech" },
   { value: "edtech", label: "EdTech" },
-  { value: "ecommerce", label: "E-commerce" },
-  { value: "saas", label: "SaaS" },
   { value: "logistics", label: "Logistics" },
-  { value: "devtools", label: "Developer Tools" },
+  { value: "ecommerce", label: "E-commerce" },
+  { value: "developer-tools", label: "Developer Tools" },
+  { value: "saas", label: "SaaS" },
 ];
 
-const sortOptions = [
+/**
+ * Available sort options
+ */
+const sortOptions: SortOptionItem[] = [
   { value: "newest", label: "Newest" },
   { value: "oldest", label: "Oldest" },
   { value: "popular", label: "Most Popular" },
-  { value: "trending", label: "Trending" },
+  { value: "alphabetical", label: "Alphabetical" },
 ];
 
-export function SearchFilters() {
+interface SearchFiltersProps {
+  searchQuery?: string;
+  onSearchChange?: (query: string) => void;
+  category?: string;
+  onCategoryChange?: (category: string) => void;
+  sortBy?: string;
+  onSortChange?: (sort: string) => void;
+}
+
+/**
+ * Search and filter bar component for the ideas feed.
+ * Includes search input, category dropdown, and sort dropdown.
+ */
+export function SearchFilters({
+  searchQuery = "",
+  onSearchChange,
+  category = "all",
+  onCategoryChange,
+  sortBy = "newest",
+  onSortChange,
+}: SearchFiltersProps) {
   return (
-    <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+    <div className="flex flex-col items-center gap-4 border-y border-[var(--color-border)] px-4 py-3 md:flex-row">
       {/* Search Input */}
-      <div className="relative flex-1 max-w-md">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-        <Input
-          type="search"
-          placeholder="Search ideas..."
-          className="pl-10 bg-input border-border"
-        />
+      <div className="w-full flex-1">
+        <label className="flex h-12 w-full min-w-40 flex-col">
+          <div className="flex h-full w-full flex-1 items-stretch rounded-lg">
+            <div className="flex items-center justify-center rounded-l-lg border-r-0 bg-[var(--color-input)] pl-4 text-[var(--color-text-secondary)]">
+              <Search className="h-5 w-5" />
+            </div>
+            <Input
+              className="h-full rounded-l-none border-l-0 pl-2"
+              placeholder="Search for ideas or keywords..."
+              value={searchQuery}
+              onChange={(e) => onSearchChange?.(e.target.value)}
+            />
+          </div>
+        </label>
       </div>
 
-      {/* Filters */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-        {/* Category Filter */}
-        <Select defaultValue="all">
-          <SelectTrigger className="w-full sm:w-[180px] bg-input border-border">
+      {/* Filter Dropdowns */}
+      <div className="flex w-full shrink-0 gap-3 md:w-auto">
+        {/* Category Select */}
+        <Select value={category} onValueChange={onCategoryChange}>
+          <SelectTrigger className="w-full md:w-auto">
             <SelectValue placeholder="Category" />
           </SelectTrigger>
           <SelectContent>
-            {categories.map((category) => (
-              <SelectItem key={category.value} value={category.value}>
-                {category.label}
+            {categories.map((cat) => (
+              <SelectItem key={cat.value} value={cat.value}>
+                {cat.label}
               </SelectItem>
             ))}
           </SelectContent>
         </Select>
 
-        {/* Sort Filter */}
-        <Select defaultValue="newest">
-          <SelectTrigger className="w-full sm:w-[140px] bg-input border-border">
-            <SelectValue placeholder="Sort By" />
+        {/* Sort Select */}
+        <Select value={sortBy} onValueChange={onSortChange}>
+          <SelectTrigger className="w-full whitespace-nowrap md:w-auto">
+            <span className="mr-1 text-[var(--color-text-secondary)]">
+              Sort By:
+            </span>
+            <SelectValue />
           </SelectTrigger>
           <SelectContent>
             {sortOptions.map((option) => (
