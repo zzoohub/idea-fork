@@ -22,15 +22,15 @@ mobile/web-build/
 mobile/.env
 mobile/expo-env.d.ts
 
-# client
-client/node_modules/
-client/.env
+# web
+web/node_modules/
+web/.env
 
-# server
-server/__pycache__/
-server/*.py[cod]
-server/*.so
-server/*.egg-info/
-server/.venv/
-server/venv/
-server/.uv/
+# api
+api/__pycache__/
+api/*.py[cod]
+api/*.so
+api/*.egg-info/
+api/.venv/
+api/venv/
+api/.uv/
