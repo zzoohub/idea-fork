@@ -5,7 +5,7 @@ This package provides the LangGraph-based pipeline for generating product ideas,
 used by both the scheduler job and the on-demand worker.
 """
 
-from idea_core.models.state import (
+from idea_generator.models.state import (
     GenerationProgress,
     GenerationStatus,
     IdeaConcept,
@@ -14,7 +14,7 @@ from idea_core.models.state import (
     create_initial_state,
     create_fork_state,
 )
-from idea_core.pipeline.graph import (
+from idea_generator.pipeline.graph import (
     create_idea_generation_graph,
     generate_single_idea,
 )

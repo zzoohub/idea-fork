@@ -2,7 +2,7 @@
 LLM prompts for the idea generation pipeline.
 """
 
-from idea_core.prompts.templates import (
+from idea_generator.prompts.templates import (
     CATEGORIZE_PROMPT,
     EXPAND_PRD_PROMPT,
     FORK_CONCEPT_PROMPT,

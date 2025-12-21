@@ -11,15 +11,15 @@ from typing import Any, Callable, Optional
 
 from langgraph.graph import END, START, StateGraph
 
-from idea_core.models.state import (
+from idea_generator.models.state import (
     GenerationProgress,
     GenerationStatus,
     IdeaGenerationState,
     create_fork_state,
     create_initial_state,
 )
-from idea_core.pipeline.nodes import categorize, expand_prd, generate_concept, save_idea
-from idea_core.pipeline.repository import IdeaCoreRepository, get_async_session
+from idea_generator.pipeline.nodes import categorize, expand_prd, generate_concept, save_idea
+from idea_generator.pipeline.repository import IdeaCoreRepository, get_async_session
 
 logger = logging.getLogger(__name__)
 

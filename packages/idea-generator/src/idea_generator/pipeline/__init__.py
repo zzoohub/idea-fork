@@ -2,11 +2,11 @@
 LangGraph pipeline for idea generation.
 """
 
-from idea_core.pipeline.graph import (
+from idea_generator.pipeline.graph import (
     create_idea_generation_graph,
     generate_single_idea,
 )
-from idea_core.pipeline.nodes import (
+from idea_generator.pipeline.nodes import (
     categorize,
     expand_prd,
     generate_concept,

@@ -21,9 +21,9 @@ from src.core.config import settings
 logger = logging.getLogger(__name__)
 
 
-def _configure_idea_core() -> None:
-    """Configure the idea-core package with worker settings."""
-    from idea_core.pipeline.config import PipelineSettings, configure_settings
+def _configure_idea_generator() -> None:
+    """Configure the idea-generator package with worker settings."""
+    from idea_generator.pipeline.config import PipelineSettings, configure_settings
 
     pipeline_settings = PipelineSettings(
         anthropic_api_key=settings.anthropic_api_key,
@@ -104,16 +104,16 @@ def generate_idea_task(
         job.meta["request_id"] = request_id
         job.save_meta()
 
-    # Configure idea-core with worker settings
-    _configure_idea_core()
+    # Configure idea-generator with worker settings
+    _configure_idea_generator()
 
     # Update initial progress
     _update_job_meta("GENERATING_CONCEPT", "Starting idea generation...", 10)
 
     try:
         # Import here to ensure configuration is applied first
-        from idea_core.pipeline.graph import generate_single_idea
-        from idea_core.pipeline.repository import IdeaCoreRepository, get_async_session
+        from idea_generator.pipeline.graph import generate_single_idea
+        from idea_generator.pipeline.repository import IdeaCoreRepository, get_async_session
 
         async def _run_generation():
             # Get available categories
@@ -200,15 +200,15 @@ def fork_idea_task(
         job.meta["fork_from_slug"] = fork_from_slug
         job.save_meta()
 
-    # Configure idea-core
-    _configure_idea_core()
+    # Configure idea-generator
+    _configure_idea_generator()
 
     # Update initial progress
     _update_job_meta("GENERATING_CONCEPT", f"Forking idea: {fork_from_slug}...", 10)
 
     try:
-        from idea_core.pipeline.graph import fork_idea
-        from idea_core.pipeline.repository import IdeaCoreRepository, get_async_session
+        from idea_generator.pipeline.graph import fork_idea
+        from idea_generator.pipeline.repository import IdeaCoreRepository, get_async_session
 
         async def _run_fork():
             # Get available categories
@@ -289,8 +289,8 @@ def generate_daily_ideas_task(count: int = 3) -> dict[str, Any]:
         job.meta["started_at"] = start_time.isoformat()
         job.save_meta()
 
-    # Configure idea-core with worker settings
-    _configure_idea_core()
+    # Configure idea-generator with worker settings
+    _configure_idea_generator()
 
     _update_job_meta(
         "GENERATING_CONCEPT",
@@ -306,8 +306,8 @@ def generate_daily_ideas_task(count: int = 3) -> dict[str, Any]:
     }
 
     try:
-        from idea_core.pipeline.graph import generate_single_idea
-        from idea_core.pipeline.repository import IdeaCoreRepository, get_async_session
+        from idea_generator.pipeline.graph import generate_single_idea
+        from idea_generator.pipeline.repository import IdeaCoreRepository, get_async_session
 
         async def _run_batch_generation():
             # Get available categories once

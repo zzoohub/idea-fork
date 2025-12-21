@@ -14,7 +14,7 @@ from slugify import slugify
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
-from idea_core.pipeline.config import get_settings
+from idea_generator.pipeline.config import get_settings
 
 logger = logging.getLogger(__name__)
 

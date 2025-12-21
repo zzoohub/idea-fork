@@ -2,7 +2,7 @@
 Pydantic models for the idea generation pipeline state.
 """
 
-from idea_core.models.state import (
+from idea_generator.models.state import (
     GenerationProgress,
     GenerationStatus,
     GeneratedIdea,

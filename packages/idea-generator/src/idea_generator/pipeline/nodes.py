@@ -16,15 +16,15 @@ from typing import Any, Callable, Optional
 from langchain_anthropic import ChatAnthropic
 from langchain_core.messages import HumanMessage, SystemMessage
 
-from idea_core.models.state import (
+from idea_generator.models.state import (
     GenerationProgress,
     GenerationStatus,
     IdeaConcept,
     IdeaGenerationState,
     PRDContent,
 )
-from idea_core.pipeline.config import get_settings
-from idea_core.prompts.templates import (
+from idea_generator.pipeline.config import get_settings
+from idea_generator.prompts.templates import (
     CATEGORIZE_PROMPT,
     EXPAND_PRD_PROMPT,
     FORK_CONCEPT_PROMPT,
@@ -427,7 +427,7 @@ async def save_idea(state: IdeaGenerationState) -> dict[str, Any]:
     )
 
     try:
-        from idea_core.pipeline.repository import IdeaCoreRepository, get_async_session
+        from idea_generator.pipeline.repository import IdeaCoreRepository, get_async_session
 
         async with get_async_session() as session:
             repo = IdeaCoreRepository(session)
