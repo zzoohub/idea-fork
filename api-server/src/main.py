@@ -3,7 +3,7 @@ FastAPI application entry point for Idea Fork API.
 
 This module initializes the FastAPI application with:
 - CORS middleware for frontend access
-- API routers for ideas, categories, and health endpoints
+- API routers for ideas, categories, generation, and health endpoints
 - OpenAPI documentation
 """
 
@@ -14,6 +14,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from src.categories.router import router as categories_router
 from src.core.config import settings
+from src.generation.router import router as generation_router
 from src.health.router import router as health_router
 from src.ideas.router import router as ideas_router
 
@@ -34,8 +35,17 @@ app = FastAPI(
     ## Features
 
     - **Ideas**: Browse, search, and filter AI-generated product ideas
+    - **Generation**: Request on-demand idea generation or fork existing ideas
     - **Categories**: Access predefined categories for idea classification
     - **Health**: Monitor API health status
+
+    ## On-Demand Generation
+
+    Use the generation endpoints to request new ideas or fork existing ones:
+    - POST /api/ideas/generate - Generate a new idea
+    - POST /api/ideas/{slug}/fork - Fork an existing idea with modifications
+    - GET /api/requests/{id} - Check generation status
+    - GET /api/requests/{id}/stream - Real-time progress via SSE
 
     ## Pagination
 
@@ -48,7 +58,7 @@ app = FastAPI(
     Ideas can be filtered by category and searched using full-text search.
     Multiple sort options are available: newest, oldest, popular, alphabetical.
     """,
-    version="0.1.0",
+    version="0.2.0",
     docs_url="/docs" if settings.debug else "/docs",
     redoc_url="/redoc" if settings.debug else "/redoc",
     openapi_url="/openapi.json",
@@ -68,6 +78,7 @@ app.add_middleware(
 # Include routers
 app.include_router(health_router, prefix=settings.api_prefix)
 app.include_router(ideas_router, prefix=settings.api_prefix)
+app.include_router(generation_router, prefix=settings.api_prefix)
 app.include_router(categories_router, prefix=settings.api_prefix)
 
 

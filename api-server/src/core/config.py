@@ -32,6 +32,18 @@ class Settings(BaseSettings):
         default=20, description="Max overflow connections beyond pool size"
     )
 
+    # Redis
+    redis_url: str = Field(
+        default="redis://localhost:6379/0",
+        description="Redis connection URL for RQ and caching",
+    )
+
+    # RQ Queue Settings
+    rq_queue_name: str = Field(
+        default="idea_generation",
+        description="Name of the RQ queue for idea generation tasks",
+    )
+
     # CORS
     cors_origins: list[str] = Field(
         default=["http://localhost:3000", "http://127.0.0.1:3000"],

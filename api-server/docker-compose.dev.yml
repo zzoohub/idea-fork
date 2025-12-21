@@ -11,7 +11,8 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./src/db/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+      # Alembic으로 마이그레이션 관리하므로 초기 스키마 마운트 제거
+      # 대신: docker-compose up -d && alembic upgrade head
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres -d idea_fork"]
       interval: 5s

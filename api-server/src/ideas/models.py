@@ -6,12 +6,14 @@ Ideas are AI-generated product concepts with metadata and PRD content.
 
 from datetime import datetime
 from typing import TYPE_CHECKING, Any, Optional
+from uuid import UUID
 
-from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.dialects.postgresql import JSONB, UUID as PG_UUID
 from sqlmodel import Column, Field, Relationship, SQLModel
 
 if TYPE_CHECKING:
     from src.categories.models import Category
+    from src.users.models import User
 
 from src.categories.models import IdeaCategory
 
@@ -46,6 +48,17 @@ class Idea(SQLModel, table=True):
     is_published: bool = Field(default=False)
     published_at: Optional[datetime] = Field(default=None)
 
+    # Fork and creator references
+    forked_from_id: Optional[int] = Field(
+        default=None,
+        foreign_key="ideas.id",
+        index=True,
+    )
+    created_by_id: Optional[UUID] = Field(
+        default=None,
+        sa_column=Column(PG_UUID(as_uuid=True), index=True),
+    )
+
     # Timestamps
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
@@ -53,4 +66,10 @@ class Idea(SQLModel, table=True):
     # Relationships
     categories: list["Category"] = Relationship(
         back_populates="ideas", link_model=IdeaCategory
+    )
+    forked_from: Optional["Idea"] = Relationship(
+        sa_relationship_kwargs={
+            "remote_side": "Idea.id",
+            "foreign_keys": "[Idea.forked_from_id]",
+        }
     )
