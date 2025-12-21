@@ -27,9 +27,6 @@ CREATE TABLE categories (
     -- URL-safe slug (e.g., "ecommerce", "developer-tools")
     slug TEXT NOT NULL,
 
-    -- Badge color variant for frontend: primary, teal, orange, indigo, secondary
-    color_variant TEXT NOT NULL DEFAULT 'secondary',
-
     -- Custom sort order for category lists in UI
     display_order INTEGER NOT NULL DEFAULT 0,
 
@@ -40,16 +37,12 @@ CREATE TABLE categories (
     -- Constraints
     CONSTRAINT categories_name_key UNIQUE (name),
     CONSTRAINT categories_slug_key UNIQUE (slug),
-    CONSTRAINT categories_color_variant_check CHECK (
-        color_variant IN ('primary', 'teal', 'orange', 'indigo', 'secondary')
-    )
 );
 
 -- Index for ordering categories in UI
 CREATE INDEX categories_display_order_idx ON categories(display_order, name);
 
 COMMENT ON TABLE categories IS 'Predefined categories for classifying product ideas';
-COMMENT ON COLUMN categories.color_variant IS 'Badge color variant matching frontend: primary, teal, orange, indigo, secondary';
 COMMENT ON COLUMN categories.display_order IS 'Custom sort order for category dropdowns and lists';
 
 -- -----------------------------------------------------------------------------
@@ -254,7 +247,7 @@ INSERT INTO ideas (
     'Fashion-conscious individuals aged 18-35 who shop online.',
     '["AI-powered style analysis", "Personalized outfit recommendations", "Direct links to purchase items"]'::jsonb,
     95,
-    true,
+    false,
     '2024-01-15 10:00:00+00'
 ),
 (
@@ -267,7 +260,7 @@ INSERT INTO ideas (
     'Individuals focused on fitness, weight loss, or managing dietary restrictions.',
     '["Personalized meal planning", "Dietary restriction support", "Nutritional tracking"]'::jsonb,
     88,
-    true,
+    false,
     '2024-01-14 09:00:00+00'
 ),
 (
@@ -280,7 +273,7 @@ INSERT INTO ideas (
     'Software developers and engineering teams looking to boost productivity.',
     '["Contextual code completions", "Automated refactoring", "Bug detection and fixes"]'::jsonb,
     92,
-    true,
+    false,
     '2024-01-13 08:00:00+00'
 ),
 (
@@ -293,7 +286,7 @@ INSERT INTO ideas (
     'Millennials and Gen Z looking to improve their financial literacy and habits.',
     '["Gamified savings goals", "Automated expense tracking", "Investment recommendations"]'::jsonb,
     85,
-    true,
+    false,
     '2024-01-12 07:00:00+00'
 ),
 (
@@ -306,7 +299,7 @@ INSERT INTO ideas (
     'Small to medium-sized logistics companies and e-commerce businesses with local delivery fleets.',
     '["Real-time route optimization", "Fuel cost reduction", "Carbon footprint tracking"]'::jsonb,
     78,
-    true,
+    false,
     '2024-01-11 06:00:00+00'
 ),
 (
@@ -319,7 +312,7 @@ INSERT INTO ideas (
     'Educational institutions and corporate training programs seeking innovative teaching methods.',
     '["Immersive VR lessons", "Virtual field trips", "Collaborative workspaces"]'::jsonb,
     82,
-    true,
+    false,
     '2024-01-10 05:00:00+00'
 );
 
