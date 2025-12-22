@@ -11,20 +11,13 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from src.generation.models import RequestStatus
+
 
 def to_camel(string: str) -> str:
     """Convert snake_case to camelCase."""
     components = string.split("_")
     return components[0] + "".join(x.title() for x in components[1:])
-
-
-class RequestStatus(str, Enum):
-    """Status of a generation request."""
-
-    QUEUED = "queued"
-    PROCESSING = "processing"
-    COMPLETED = "completed"
-    FAILED = "failed"
 
 
 class GenerationProgressStatus(str, Enum):
@@ -41,15 +34,38 @@ class GenerationProgressStatus(str, Enum):
 
 # Request schemas
 class GenerateIdeaRequest(BaseModel):
-    """Request to generate a new idea."""
+    """Request to generate a new idea.
+
+    Supports multiple generation modes:
+    1. Auto-generate: No inputs → random function + random industry
+    2. Taxonomy selection: User selects function/industry via dropdowns
+    3. Seed-based: User provides idea_seed text, AI structures and expands it
+    """
 
     model_config = ConfigDict(
         populate_by_name=True,
         alias_generator=to_camel,
     )
 
-    # Optional user context (will be set from auth in future)
-    # For now, accepts anonymous requests
+    # Taxonomy selection (optional - random if not provided)
+    function_slug: Optional[str] = Field(
+        None,
+        alias="functionSlug",
+        description="Function type slug (e.g., 'create', 'automate'). Random if not provided.",
+    )
+    industry_slug: Optional[str] = Field(
+        None,
+        alias="industrySlug",
+        description="Industry slug (e.g., 'healthcare', 'finance'). Random if not provided.",
+    )
+
+    # User idea seed (optional)
+    idea_seed: Optional[str] = Field(
+        None,
+        alias="ideaSeed",
+        max_length=2000,
+        description="Free-form text describing user's idea. AI will structure and expand it.",
+    )
 
 
 class ForkIdeaRequest(BaseModel):
@@ -95,7 +111,7 @@ class GenerationRequestResponse(BaseModel):
         alias_generator=to_camel,
     )
 
-    request_id: UUID = Field(alias="requestId")
+    request_id: UUID
     status: RequestStatus
     message: str = "Request queued successfully"
 
@@ -109,22 +125,22 @@ class GenerationStatusResponse(BaseModel):
         alias_generator=to_camel,
     )
 
-    request_id: UUID = Field(alias="requestId")
+    request_id: UUID
     status: RequestStatus
     progress: Optional[GenerationProgressStatus] = None
-    progress_message: Optional[str] = Field(None, alias="progressMessage")
-    progress_percent: Optional[int] = Field(None, alias="progressPercent")
+    progress_message: Optional[str] = None
+    progress_percent: Optional[int] = None
 
     # Result fields (populated on completion)
-    idea_id: Optional[int] = Field(None, alias="ideaId")
-    idea_slug: Optional[str] = Field(None, alias="ideaSlug")
+    idea_id: Optional[int] = None
+    idea_slug: Optional[str] = None
 
     # Error field (populated on failure)
     error: Optional[str] = None
 
     # Timestamps
-    created_at: datetime = Field(alias="createdAt")
-    completed_at: Optional[datetime] = Field(None, alias="completedAt")
+    created_at: datetime
+    completed_at: Optional[datetime] = None
 
 
 class SSEProgressEvent(BaseModel):
@@ -138,11 +154,11 @@ class SSEProgressEvent(BaseModel):
     event: str  # "progress", "completed", "failed"
     status: GenerationProgressStatus
     message: str
-    progress_percent: int = Field(alias="progressPercent")
+    progress_percent: int
 
     # Result fields (for completed event)
-    idea_id: Optional[int] = Field(None, alias="ideaId")
-    idea_slug: Optional[str] = Field(None, alias="ideaSlug")
+    idea_id: Optional[int] = None
+    idea_slug: Optional[str] = None
 
     # Error field (for failed event)
     error: Optional[str] = None

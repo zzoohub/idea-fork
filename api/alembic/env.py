@@ -3,26 +3,32 @@
 이 파일은 Alembic이 마이그레이션을 실행할 때 사용하는 환경 설정입니다.
 SQLModel 모델들을 import하고, autogenerate 기능을 위한 metadata를 설정합니다.
 """
+
 import asyncio
 import os
 from logging.config import fileConfig
 
-from alembic import context
 from sqlalchemy import pool
 from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import async_engine_from_config
 from sqlmodel import SQLModel
+
+from alembic import context  # type: ignore[attr-defined]
+from src.categories.models import Category, IdeaCategory  # noqa: F401
+from src.generation.models import GenerationRequest  # noqa: F401
 
 # =============================================================================
 # SQLModel 모델 Import
 # =============================================================================
 # 중요: 모든 모델을 여기서 import 해야 Alembic이 테이블을 인식합니다.
 # 새 모델을 추가할 때마다 여기에도 추가해야 합니다.
-
 from src.ideas.models import Idea  # noqa: F401
-from src.categories.models import Category, IdeaCategory  # noqa: F401
+from src.taxonomies.models import (  # noqa: F401
+    FunctionType,
+    IndustryType,
+    TargetUserType,
+)
 from src.users.models import User  # noqa: F401
-from src.generation.models import GenerationRequest  # noqa: F401
 
 # =============================================================================
 # Alembic 설정
@@ -33,8 +39,7 @@ config = context.config
 # 환경변수에서 DB URL 가져오기 (alembic.ini의 값을 덮어씀)
 # 이렇게 하면 비밀번호가 코드에 노출되지 않습니다.
 database_url = os.getenv(
-    "DATABASE_URL",
-    "postgresql+asyncpg://postgres:postgres@localhost:5432/idea_fork"
+    "DATABASE_URL", "postgresql+asyncpg://postgres:postgres@localhost:5432/idea_fork"
 )
 config.set_main_option("sqlalchemy.url", database_url)
 
@@ -54,6 +59,7 @@ target_metadata = SQLModel.metadata
 # =============================================================================
 # Migration 실행 함수들
 # =============================================================================
+
 
 def run_migrations_offline() -> None:
     """오프라인 모드로 마이그레이션 실행.

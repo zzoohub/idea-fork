@@ -11,14 +11,42 @@ import {
   CardFooter,
 } from "@/components/ui/card";
 
-import type { Idea } from "@/types";
+import type { Idea, FunctionType } from "@/types";
 
 interface IdeaCardProps {
   idea: Idea;
 }
 
 /**
- * Card component displaying a single idea with image, categories,
+ * Map function slug to display label
+ */
+const functionLabels: Record<FunctionType, string> = {
+  create: "Create",
+  automate: "Automate",
+  analyze: "Analyze",
+  connect: "Connect",
+  sell: "Sell",
+  learn: "Learn",
+  manage: "Manage",
+  protect: "Protect",
+};
+
+/**
+ * Map function slug to badge variant
+ */
+const functionVariants: Record<FunctionType, BadgeVariant> = {
+  create: "primary",
+  automate: "teal",
+  analyze: "orange",
+  connect: "indigo",
+  sell: "primary",
+  learn: "teal",
+  manage: "orange",
+  protect: "indigo",
+};
+
+/**
+ * Card component displaying a single idea with image, taxonomy badges,
  * problem/solution/target users, and a CTA button.
  */
 export function IdeaCard({ idea }: IdeaCardProps) {
@@ -36,15 +64,18 @@ export function IdeaCard({ idea }: IdeaCardProps) {
       </div>
 
       <CardContent>
-        {/* Header with title and categories */}
+        {/* Header with title and taxonomy badges */}
         <CardHeader>
           <CardTitle>{idea.title}</CardTitle>
           <div className="flex flex-wrap gap-2">
-            {idea.categories.map((category, index) => (
-              <Badge key={index} variant={category.variant as BadgeVariant}>
-                {category.label}
-              </Badge>
-            ))}
+            {/* Function badge (always shown) */}
+            <Badge variant={functionVariants[idea.functionSlug]}>
+              {functionLabels[idea.functionSlug]}
+            </Badge>
+            {/* Industry badge (if present) */}
+            {idea.industrySlug && (
+              <Badge variant="secondary">{idea.industrySlug}</Badge>
+            )}
           </div>
         </CardHeader>
 

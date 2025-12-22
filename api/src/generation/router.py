@@ -60,7 +60,12 @@ async def generate_idea(
 
     try:
         # TODO: Extract user_id from auth token when auth is implemented
-        gen_request = await service.create_generation_request(user_id=None)
+        gen_request = await service.create_generation_request(
+            user_id=None,
+            function_slug=request.function_slug,
+            industry_slug=request.industry_slug,
+            idea_seed=request.idea_seed,
+        )
 
         return GenerationRequestResponse(
             request_id=gen_request.id,
@@ -151,7 +156,9 @@ async def fork_idea(
     responses={
         404: {
             "description": "Request not found",
-            "content": {"application/json": {"example": {"detail": "Request not found"}}},
+            "content": {
+                "application/json": {"example": {"detail": "Request not found"}}
+            },
         }
     },
 )
@@ -233,7 +240,8 @@ async def stream_request_progress(
                     event = SSEProgressEvent(
                         event="completed",
                         status=GenerationProgressStatus.COMPLETED,
-                        message=status_response.progress_message or "Generation completed",
+                        message=status_response.progress_message
+                        or "Generation completed",
                         progress_percent=100,
                         idea_id=status_response.idea_id,
                         idea_slug=status_response.idea_slug,
@@ -256,7 +264,8 @@ async def stream_request_progress(
                     # Progress update
                     event = SSEProgressEvent(
                         event="progress",
-                        status=status_response.progress or GenerationProgressStatus.QUEUED,
+                        status=status_response.progress
+                        or GenerationProgressStatus.QUEUED,
                         message=status_response.progress_message or "Processing...",
                         progress_percent=status_response.progress_percent or 0,
                     )

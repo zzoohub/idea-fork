@@ -75,14 +75,17 @@ class IdeaCoreRepository:
         target_users: str,
         key_features: list[str],
         prd_content: dict,
-        category_slugs: list[str],
+        function_slug: str,
+        industry_slug: Optional[str] = None,
+        target_user_slug: Optional[str] = None,
+        category_slugs: list[str] = None,  # Legacy, optional
         user_id: Optional[str] = None,
         forked_from_id: Optional[str] = None,
         image_url: str = "",
         image_alt: str = "",
         is_published: bool = False,
     ) -> tuple[int, str]:
-        """Create a new idea with categories.
+        """Create a new idea with taxonomy classification.
 
         Args:
             title: Idea title
@@ -91,7 +94,10 @@ class IdeaCoreRepository:
             target_users: Target user description
             key_features: List of key features
             prd_content: Full PRD content as dict
-            category_slugs: List of category slugs to associate
+            function_slug: Function type slug (required)
+            industry_slug: Industry type slug (optional)
+            target_user_slug: Target user type slug (optional)
+            category_slugs: List of category slugs to associate (legacy)
             user_id: Optional user ID who created this idea
             forked_from_id: Optional ID of idea this was forked from
             image_url: Thumbnail image URL
@@ -108,12 +114,13 @@ class IdeaCoreRepository:
         # Set published_at if publishing
         published_at = datetime.now(timezone.utc) if is_published else None
 
-        # Insert idea using raw SQL
+        # Insert idea using raw SQL with taxonomy fields
         insert_query = text("""
             INSERT INTO ideas (
                 title, slug, image_url, image_alt,
                 problem, solution, target_users,
                 key_features, prd_content,
+                function_slug, industry_slug, target_user_slug,
                 popularity_score, view_count,
                 is_published, published_at,
                 created_by_id, forked_from_id,
@@ -122,6 +129,7 @@ class IdeaCoreRepository:
                 :title, :slug, :image_url, :image_alt,
                 :problem, :solution, :target_users,
                 :key_features::jsonb, :prd_content::jsonb,
+                :function_slug, :industry_slug, :target_user_slug,
                 0, 0,
                 :is_published, :published_at,
                 :created_by_id, :forked_from_id,
@@ -142,6 +150,9 @@ class IdeaCoreRepository:
                 "target_users": target_users,
                 "key_features": json.dumps(key_features),
                 "prd_content": json.dumps(prd_content),
+                "function_slug": function_slug,
+                "industry_slug": industry_slug,
+                "target_user_slug": target_user_slug,
                 "is_published": is_published,
                 "published_at": published_at,
                 "created_by_id": user_id,
@@ -152,9 +163,9 @@ class IdeaCoreRepository:
         row = result.fetchone()
         idea_id = row[0]
         idea_slug = row[1]
-        logger.info(f"Created idea with ID {idea_id}: {title}")
+        logger.info(f"Created idea with ID {idea_id}: {title} (function: {function_slug})")
 
-        # Associate categories
+        # Associate categories (legacy, optional)
         if category_slugs:
             await self._associate_categories(idea_id, category_slugs)
 
@@ -203,10 +214,52 @@ class IdeaCoreRepository:
             logger.debug(f"Associated idea {idea_id} with category {cat_slug}")
 
     async def get_all_category_slugs(self) -> list[str]:
-        """Get all available category slugs."""
+        """Get all available category slugs (legacy)."""
         query = text("SELECT slug FROM categories ORDER BY display_order")
         result = await self.session.execute(query)
         return [row[0] for row in result.fetchall()]
+
+    async def get_all_function_slugs(self) -> list[str]:
+        """Get all active function type slugs."""
+        query = text("""
+            SELECT slug FROM function_types
+            WHERE is_active = true AND deleted_at IS NULL
+            ORDER BY display_order
+        """)
+        result = await self.session.execute(query)
+        return [row[0] for row in result.fetchall()]
+
+    async def get_all_industry_slugs(self) -> list[str]:
+        """Get all active industry type slugs."""
+        query = text("""
+            SELECT slug FROM industry_types
+            WHERE is_active = true AND deleted_at IS NULL
+            ORDER BY name
+        """)
+        result = await self.session.execute(query)
+        return [row[0] for row in result.fetchall()]
+
+    async def get_all_target_user_slugs(self) -> list[str]:
+        """Get all active target user type slugs."""
+        query = text("""
+            SELECT slug FROM target_user_types
+            WHERE is_active = true AND deleted_at IS NULL
+            ORDER BY name
+        """)
+        result = await self.session.execute(query)
+        return [row[0] for row in result.fetchall()]
+
+    async def get_function_by_slug(self, slug: str) -> Optional[dict]:
+        """Get a function type by slug."""
+        query = text("""
+            SELECT slug, name, description FROM function_types
+            WHERE slug = :slug AND is_active = true AND deleted_at IS NULL
+        """)
+        result = await self.session.execute(query, {"slug": slug})
+        row = result.fetchone()
+        if not row:
+            return None
+        return {"slug": row[0], "name": row[1], "description": row[2]}
 
     async def idea_exists_with_title(self, title: str) -> bool:
         """Check if an idea with similar title already exists."""

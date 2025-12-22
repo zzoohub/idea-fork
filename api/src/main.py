@@ -12,11 +12,11 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from src.categories.router import router as categories_router
 from src.core.config import settings
 from src.generation.router import router as generation_router
 from src.health.router import router as health_router
 from src.ideas.router import router as ideas_router
+from src.taxonomies.router import router as taxonomies_router
 
 
 @asynccontextmanager
@@ -79,7 +79,7 @@ app.add_middleware(
 app.include_router(health_router, prefix=settings.api_prefix)
 app.include_router(ideas_router, prefix=settings.api_prefix)
 app.include_router(generation_router, prefix=settings.api_prefix)
-app.include_router(categories_router, prefix=settings.api_prefix)
+app.include_router(taxonomies_router, prefix=settings.api_prefix)
 
 
 @app.get("/", include_in_schema=False)

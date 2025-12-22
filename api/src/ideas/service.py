@@ -18,6 +18,7 @@ from src.ideas.schemas import (
     IdeaListResponse,
     IdeaResponse,
     SortBy,
+    TaxonomyResponse,
 )
 
 
@@ -86,6 +87,9 @@ class IdeaService:
                 i.published_at,
                 i.created_at,
                 i.updated_at,
+                i.function_slug,
+                i.industry_slug,
+                i.target_user_slug,
                 COALESCE(
                     jsonb_agg(
                         jsonb_build_object(
@@ -135,6 +139,9 @@ class IdeaService:
                 i.popularity_score,
                 i.published_at,
                 i.created_at,
+                i.function_slug,
+                i.industry_slug,
+                i.target_user_slug,
                 COALESCE(
                     jsonb_agg(
                         jsonb_build_object(
@@ -269,6 +276,13 @@ class IdeaService:
             for cat in categories_data
         ]
 
+        # Build taxonomy response
+        taxonomy = TaxonomyResponse(
+            functionSlug=row.get("function_slug", "create"),
+            industrySlug=row.get("industry_slug"),
+            targetUserSlug=row.get("target_user_slug"),
+        )
+
         created_at = row.get("published_at") or row["created_at"]
         created_at_str = (
             created_at.isoformat() + "Z"
@@ -283,6 +297,7 @@ class IdeaService:
             imageUrl=row["image_url"],
             imageAlt=row["image_alt"],
             categories=categories,
+            taxonomy=taxonomy,
             problem=row["problem"],
             solution=row["solution"],
             targetUsers=row["target_users"],
@@ -300,6 +315,13 @@ class IdeaService:
             CategoryBadgeResponse(label=cat["label"], variant=cat["variant"])
             for cat in categories_data
         ]
+
+        # Build taxonomy response
+        taxonomy = TaxonomyResponse(
+            functionSlug=row.get("function_slug", "create"),
+            industrySlug=row.get("industry_slug"),
+            targetUserSlug=row.get("target_user_slug"),
+        )
 
         key_features = row.get("key_features", [])
         if isinstance(key_features, str):
@@ -333,6 +355,7 @@ class IdeaService:
             imageUrl=row["image_url"],
             imageAlt=row["image_alt"],
             categories=categories,
+            taxonomy=taxonomy,
             problem=row["problem"],
             solution=row["solution"],
             targetUsers=row["target_users"],

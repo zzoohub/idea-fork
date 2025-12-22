@@ -5,23 +5,18 @@ Ideas are AI-generated product concepts with metadata and PRD content.
 """
 
 from datetime import datetime
-from typing import TYPE_CHECKING, Any, Optional
+from typing import Any, Optional
 from uuid import UUID
 
-from sqlalchemy.dialects.postgresql import JSONB, UUID as PG_UUID
+from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.dialects.postgresql import UUID as PG_UUID
 from sqlmodel import Column, Field, Relationship, SQLModel
-
-if TYPE_CHECKING:
-    from src.categories.models import Category
-    from src.users.models import User
-
-from src.categories.models import IdeaCategory
 
 
 class Idea(SQLModel, table=True):
     """Idea model representing AI-generated product ideas."""
 
-    __tablename__ = "ideas"
+    __tablename__ = "ideas"  # type: ignore[assignment]
 
     id: Optional[int] = Field(default=None, primary_key=True)
     title: str = Field(index=True)
@@ -39,6 +34,13 @@ class Idea(SQLModel, table=True):
     # JSON fields
     key_features: list[str] = Field(default=[], sa_column=Column(JSONB))
     prd_content: Optional[dict[str, Any]] = Field(default=None, sa_column=Column(JSONB))
+
+    # Taxonomy fields (new 3-dimension classification)
+    function_slug: str = Field(index=True)  # What the product does
+    industry_slug: Optional[str] = Field(default=None, index=True)  # Target industry
+    target_user_slug: Optional[str] = Field(
+        default=None, index=True
+    )  # Primary audience
 
     # Metrics
     popularity_score: int = Field(default=0, ge=0, le=100)
@@ -63,10 +65,7 @@ class Idea(SQLModel, table=True):
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
 
-    # Relationships
-    categories: list["Category"] = Relationship(
-        back_populates="ideas", link_model=IdeaCategory
-    )
+    # Self-referential relationship for forks
     forked_from: Optional["Idea"] = Relationship(
         sa_relationship_kwargs={
             "remote_side": "Idea.id",

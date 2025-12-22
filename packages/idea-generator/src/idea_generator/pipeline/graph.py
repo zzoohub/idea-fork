@@ -87,29 +87,61 @@ def create_idea_generation_graph() -> StateGraph:
 async def generate_single_idea(
     run_id: str,
     idea_index: int,
+    available_functions: list[str],
+    available_industries: list[str],
+    available_target_users: list[str],
     available_categories: list[str],
+    function_slug: Optional[str] = None,
+    industry_slug: Optional[str] = None,
+    idea_seed: Optional[str] = None,
     user_id: Optional[str] = None,
     progress_callback: Optional[Callable[[GenerationProgress], Any]] = None,
 ) -> tuple[Optional[int], Optional[str], Optional[str]]:
     """Generate a single idea using the pipeline.
 
+    Supports multiple generation modes:
+    1. Auto-generate: function_slug/industry_slug = None → random selection
+    2. Taxonomy selection: User provides function_slug/industry_slug
+    3. Seed-based: idea_seed provided → AI structures the user's idea
+
     Args:
         run_id: Unique run identifier
         idea_index: Index of this idea in the batch (0-based)
-        available_categories: List of category slugs from database
+        available_functions: List of function slugs from database
+        available_industries: List of industry slugs from database
+        available_target_users: List of target user slugs from database
+        available_categories: List of category slugs (legacy)
+        function_slug: Optional function type (random if not provided)
+        industry_slug: Optional industry (random if not provided)
+        idea_seed: Optional user idea text for seed-based generation
         user_id: Optional user ID for on-demand generation
         progress_callback: Optional callback for progress updates
 
     Returns:
         Tuple of (idea_id, idea_slug, error_message) - idea_id/slug are None on failure
     """
-    logger.info(f"[{run_id}] Starting idea generation {idea_index + 1}")
+    import random
 
-    # Create initial state
+    # Random selection if not provided
+    target_function = function_slug or random.choice(available_functions)
+    target_industry = industry_slug or random.choice(available_industries)
+
+    logger.info(
+        f"[{run_id}] Starting idea generation {idea_index + 1} "
+        f"(function={target_function}, industry={target_industry}, has_seed={bool(idea_seed)})"
+    )
+
+    # Create initial state with taxonomy info
     initial_state = create_initial_state(
         run_id=run_id,
         idea_index=idea_index,
+        target_function=target_function,
+        available_functions=available_functions,
+        available_industries=available_industries,
+        available_target_users=available_target_users,
         available_categories=available_categories,
+        target_industry=target_industry,
+        idea_seed=idea_seed,
         user_id=user_id,
     )
 

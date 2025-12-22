@@ -3,12 +3,56 @@
  */
 
 /**
- * Category badge representing an idea category
+ * Function type representing what the product does
  */
-export interface CategoryBadge {
-  label: string;
-  variant: "primary" | "teal" | "orange" | "indigo" | "secondary";
-}
+export type FunctionType =
+  | "create"
+  | "automate"
+  | "analyze"
+  | "connect"
+  | "sell"
+  | "learn"
+  | "manage"
+  | "protect";
+
+/**
+ * Industry type representing the target industry
+ */
+export type IndustryType =
+  | "healthcare"
+  | "finance"
+  | "education"
+  | "e-commerce"
+  | "entertainment"
+  | "technology"
+  | "retail"
+  | "real-estate"
+  | "travel"
+  | "food"
+  | "manufacturing"
+  | "legal"
+  | "marketing"
+  | "media";
+
+/**
+ * Target user type representing the primary audience
+ */
+export type TargetUserType =
+  | "developers"
+  | "creators"
+  | "marketers"
+  | "businesses"
+  | "consumers"
+  | "students"
+  | "professionals"
+  | "enterprises"
+  | "freelancers"
+  | "startups";
+
+/**
+ * Badge variant type for styling
+ */
+export type BadgeVariant = "primary" | "teal" | "orange" | "indigo" | "secondary";
 
 /**
  * Idea entity representing a product idea (API model)
@@ -18,7 +62,9 @@ export interface Idea {
   title: string;
   imageUrl: string;
   imageAlt: string;
-  categories: CategoryBadge[];
+  functionSlug: FunctionType;
+  industrySlug?: IndustryType;
+  targetUserSlug?: TargetUserType;
   problem: string;
   solution: string;
   targetUsers: string;

@@ -81,15 +81,26 @@ def _progress_callback(progress_data: dict) -> None:
 def generate_idea_task(
     user_id: Optional[str] = None,
     request_id: Optional[str] = None,
+    function_slug: Optional[str] = None,
+    industry_slug: Optional[str] = None,
+    idea_seed: Optional[str] = None,
 ) -> dict[str, Any]:
     """RQ task to generate a new idea.
 
     This task runs synchronously in the RQ worker but internally uses
     asyncio to run the async LangGraph pipeline.
 
+    Supports multiple generation modes:
+    1. Auto-generate: No taxonomy params → random function + random industry
+    2. Taxonomy selection: User selects function/industry
+    3. Seed-based: User provides idea_seed text, AI structures it
+
     Args:
         user_id: Optional user ID who requested the generation
         request_id: Optional request ID for tracking (stored in job.meta)
+        function_slug: Optional function type (random if not provided)
+        industry_slug: Optional industry (random if not provided)
+        idea_seed: Optional user idea text for seed-based generation
 
     Returns:
         Dict with idea_id, idea_slug on success, or error on failure
@@ -97,7 +108,11 @@ def generate_idea_task(
     job = get_current_job()
     run_id = str(uuid.uuid4())[:8]
 
-    logger.info(f"[{run_id}] Starting idea generation task (job_id={job.id if job else 'none'})")
+    logger.info(
+        f"[{run_id}] Starting idea generation task "
+        f"(job_id={job.id if job else 'none'}, "
+        f"function={function_slug}, industry={industry_slug}, has_seed={bool(idea_seed)})"
+    )
 
     # Store request_id in job meta for later correlation
     if job and request_id:
@@ -116,20 +131,36 @@ def generate_idea_task(
         from idea_generator.pipeline.repository import IdeaCoreRepository, get_async_session
 
         async def _run_generation():
-            # Get available categories
+            # Get available taxonomies from database
             async with get_async_session() as session:
                 repo = IdeaCoreRepository(session)
-                available_categories = await repo.get_all_category_slugs()
+                available_functions = await repo.get_all_function_slugs()
+                available_industries = await repo.get_all_industry_slugs()
+                available_target_users = await repo.get_all_target_user_slugs()
+                available_categories = await repo.get_all_category_slugs()  # Legacy
 
+            # Fallback defaults if empty
+            if not available_functions:
+                logger.warning(f"[{run_id}] No functions found, using defaults")
+                available_functions = ["create", "automate", "analyze", "connect"]
+            if not available_industries:
+                available_industries = ["technology", "healthcare", "finance", "education"]
+            if not available_target_users:
+                available_target_users = ["developers", "businesses", "consumers"]
             if not available_categories:
-                logger.warning(f"[{run_id}] No categories found, using defaults")
                 available_categories = ["saas", "ai", "productivity"]
 
-            # Generate the idea
+            # Generate the idea with taxonomy params
             idea_id, idea_slug, error = await generate_single_idea(
                 run_id=run_id,
                 idea_index=0,
+                available_functions=available_functions,
+                available_industries=available_industries,
+                available_target_users=available_target_users,
                 available_categories=available_categories,
+                function_slug=function_slug,  # None = random
+                industry_slug=industry_slug,  # None = random
+                idea_seed=idea_seed,
                 user_id=user_id,
                 progress_callback=_progress_callback,
             )

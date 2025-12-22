@@ -22,15 +22,50 @@ from idea_generator.models.state import (
     IdeaConcept,
     IdeaGenerationState,
     PRDContent,
+    TaxonomyClassification,
 )
 from idea_generator.pipeline.config import get_settings
 from idea_generator.prompts.templates import (
     CATEGORIZE_PROMPT,
+    CLASSIFY_TAXONOMY_PROMPT,
     EXPAND_PRD_PROMPT,
     FORK_CONCEPT_PROMPT,
+    GENERATE_CONCEPT_FROM_SEED_PROMPT,
     GENERATE_CONCEPT_PROMPT,
+    GENERATE_CONCEPT_PROMPT_LEGACY,
+    GENERATE_CONCEPT_WITH_INDUSTRY_PROMPT,
     IDEA_GENERATOR_SYSTEM,
 )
+
+# Function type descriptions for prompts (fallback if not in state)
+FUNCTION_DESCRIPTIONS = {
+    "create": "Tools for content or product generation",
+    "automate": "Tools for automating repetitive tasks",
+    "analyze": "Tools for data analysis and insights",
+    "connect": "Tools for communication and networking",
+    "sell": "Tools for sales and monetization",
+    "learn": "Tools for education and skill improvement",
+    "manage": "Tools for management and organization",
+    "protect": "Tools for security, backup, and privacy",
+}
+
+# Industry type descriptions for prompts
+INDUSTRY_DESCRIPTIONS = {
+    "healthcare": "Healthcare and medical services",
+    "finance": "Financial services and banking",
+    "education": "Education and e-learning",
+    "e-commerce": "E-commerce and online retail",
+    "entertainment": "Entertainment and media",
+    "technology": "Technology and software",
+    "retail": "Retail and consumer goods",
+    "real-estate": "Real estate and property",
+    "travel": "Travel and hospitality",
+    "food": "Food and beverage industry",
+    "manufacturing": "Manufacturing and production",
+    "legal": "Legal services",
+    "marketing": "Marketing and advertising",
+    "media": "Media and publishing",
+}
 
 logger = logging.getLogger(__name__)
 
@@ -84,16 +119,35 @@ async def generate_concept(state: IdeaGenerationState) -> dict[str, Any]:
     """Generate initial idea concept or fork from existing.
 
     This node creates the core idea: title, problem, solution,
-    target users, and key features. If forked_from_id is set,
-    it will fetch and modify the existing idea.
+    target users, and key features.
+
+    Supports multiple modes:
+    1. Fork: If forked_from_id is set, creates variation of existing idea
+    2. Seed-based: If idea_seed is provided, structures user's idea
+    3. Industry-targeted: If target_industry is set, generates for that industry
+    4. Function-only: Default mode, generates based on function type
+
+    Uses target_function and optionally target_industry from state.
     """
     run_id = state["run_id"]
-    logger.info(f"[{run_id}] Generating concept for idea {state['idea_index'] + 1}")
+    target_function = state.get("target_function", "create")
+    target_industry = state.get("target_industry")
+    idea_seed = state.get("idea_seed")
+
+    mode = "fork" if state.get("forked_from_id") else (
+        "seed" if idea_seed else (
+            "industry" if target_industry else "function"
+        )
+    )
+    logger.info(
+        f"[{run_id}] Generating concept for idea {state['idea_index'] + 1} "
+        f"(mode={mode}, function={target_function}, industry={target_industry})"
+    )
 
     # Update progress
     progress = _update_progress(
         GenerationStatus.GENERATING_CONCEPT,
-        "Generating initial concept...",
+        f"Generating {target_function} concept...",
         current_step=1,
     )
 
@@ -105,10 +159,51 @@ async def generate_concept(state: IdeaGenerationState) -> dict[str, Any]:
             # Fetch original idea and generate fork
             concept = await _generate_fork_concept(state, llm)
         else:
-            # Generate new concept
+            # Prepare function context
+            function_name = target_function.capitalize()
+            function_description = FUNCTION_DESCRIPTIONS.get(
+                target_function, f"Tools related to {target_function}"
+            )
+
+            # Prepare industry context if available
+            industry_name = target_industry.replace("-", " ").title() if target_industry else None
+            industry_description = INDUSTRY_DESCRIPTIONS.get(target_industry, "") if target_industry else None
+
+            # Choose prompt based on available context
+            if idea_seed:
+                # Mode: Seed-based - structure user's idea
+                prompt_content = GENERATE_CONCEPT_FROM_SEED_PROMPT.format(
+                    idea_seed=idea_seed,
+                    function_name=function_name,
+                    function_slug=target_function,
+                    function_description=function_description,
+                    function_name_lower=function_name.lower(),
+                    industry_name=industry_name or "General",
+                    industry_slug=target_industry or "general",
+                    industry_name_lower=(industry_name or "general").lower(),
+                )
+            elif target_industry:
+                # Mode: Industry-targeted - generate for specific industry
+                prompt_content = GENERATE_CONCEPT_WITH_INDUSTRY_PROMPT.format(
+                    function_name=function_name,
+                    function_slug=target_function,
+                    function_description=function_description,
+                    function_name_lower=function_name.lower(),
+                    industry_name=industry_name,
+                    industry_slug=target_industry,
+                    industry_name_lower=industry_name.lower(),
+                )
+            else:
+                # Mode: Function-only - default generation
+                prompt_content = GENERATE_CONCEPT_PROMPT.format(
+                    function_name=function_name,
+                    function_slug=target_function,
+                    function_description=function_description,
+                )
+
             messages = [
                 SystemMessage(content=IDEA_GENERATOR_SYSTEM),
-                HumanMessage(content=GENERATE_CONCEPT_PROMPT),
+                HumanMessage(content=prompt_content),
             ]
 
             response = await llm.ainvoke(messages)
@@ -319,10 +414,12 @@ async def expand_prd(state: IdeaGenerationState) -> dict[str, Any]:
 
 
 async def categorize(state: IdeaGenerationState) -> dict[str, Any]:
-    """Assign categories to the idea.
+    """Assign taxonomy (industry, target_user) to the idea.
 
-    This node selects appropriate categories from the available list
-    based on the idea content.
+    This node uses the new taxonomy system to classify the idea.
+    The function_slug is already determined by target_function.
+    The industry_slug may be pre-selected via target_industry.
+    This node determines target_user (and industry if not pre-selected).
     """
     if state.get("error"):
         return {}  # Skip if previous node failed
@@ -332,43 +429,67 @@ async def categorize(state: IdeaGenerationState) -> dict[str, Any]:
         return {"error": "No concept to categorize", "completed": False}
 
     run_id = state["run_id"]
-    available_categories = state.get("available_categories", [])
-    if not available_categories:
-        logger.warning(f"[{run_id}] No categories available, using defaults")
-        return {
-            "categories": ["saas"],
-            "progress": _update_progress(
-                GenerationStatus.CATEGORIZING,
-                "Using default category",
-                current_step=3,
-            ),
-        }
+    target_function = state.get("target_function", "create")
+    target_industry = state.get("target_industry")  # Pre-selected industry
+    available_industries = state.get("available_industries", [])
+    available_target_users = state.get("available_target_users", [])
 
-    logger.info(f"[{run_id}] Categorizing: {concept['title']}")
+    logger.info(f"[{run_id}] Classifying taxonomy for: {concept['title']} (pre-selected industry: {target_industry})")
 
     # Update progress
     progress = _update_progress(
         GenerationStatus.CATEGORIZING,
-        f"Categorizing {concept['title']}...",
+        f"Classifying {concept['title']}...",
         current_step=3,
     )
+
+    # Initialize taxonomy with function and pre-selected industry if available
+    taxonomy: TaxonomyClassification = {
+        "function_slug": target_function,
+        "industry_slug": target_industry if target_industry in available_industries else None,
+        "target_user_slug": None,
+    }
+
+    # If industry is pre-selected and no target users to classify, skip LLM call
+    if taxonomy["industry_slug"] and not available_target_users:
+        logger.info(f"[{run_id}] Using pre-selected industry, no target users to classify")
+        return {
+            "taxonomy": taxonomy,
+            "categories": [],
+            "progress": progress,
+        }
+
+    # If no industries or target users available, use default taxonomy
+    if not available_industries and not available_target_users:
+        logger.warning(f"[{run_id}] No taxonomy options available, using function only")
+        return {
+            "taxonomy": taxonomy,
+            "categories": [],  # Legacy, empty
+            "progress": progress,
+        }
 
     try:
         llm = _get_llm()
 
-        # Format categories for prompt
-        categories_list = "\n".join(f"- {cat}" for cat in available_categories)
+        # Format taxonomy options for prompt
+        industries_list = "\n".join(f"- {ind}" for ind in available_industries) if available_industries else "None available"
+        target_users_list = "\n".join(f"- {tu}" for tu in available_target_users) if available_target_users else "None available"
 
-        prompt = CATEGORIZE_PROMPT.format(
+        function_name = target_function.capitalize()
+
+        prompt = CLASSIFY_TAXONOMY_PROMPT.format(
             title=concept["title"],
             problem=concept["problem"],
             solution=concept["solution"],
             target_users=concept["target_users"],
-            categories=categories_list,
+            function_slug=target_function,
+            function_name=function_name,
+            industries=industries_list,
+            target_users_list=target_users_list,
         )
 
         messages = [
-            SystemMessage(content="You are a product categorization expert."),
+            SystemMessage(content="You are a product classification expert."),
             HumanMessage(content=prompt),
         ]
 
@@ -377,25 +498,39 @@ async def categorize(state: IdeaGenerationState) -> dict[str, Any]:
 
         # Parse response
         result = _extract_json(response_text)
-        categories = result.get("categories", [])
 
-        # Validate categories exist in available list
-        valid_categories = [cat for cat in categories if cat in available_categories]
+        # Validate industry (only update if not pre-selected)
+        if not taxonomy["industry_slug"]:
+            industry_slug = result.get("industry_slug")
+            if industry_slug and industry_slug in available_industries:
+                taxonomy["industry_slug"] = industry_slug
+            elif industry_slug:
+                logger.warning(f"[{run_id}] Invalid industry '{industry_slug}', ignoring")
 
-        if not valid_categories:
-            # Fallback to first available category
-            valid_categories = [available_categories[0]]
-            logger.warning(f"[{run_id}] No valid categories found, using: {valid_categories}")
+        # Validate target user
+        target_user_slug = result.get("target_user_slug")
+        if target_user_slug and target_user_slug in available_target_users:
+            taxonomy["target_user_slug"] = target_user_slug
+        elif target_user_slug:
+            logger.warning(f"[{run_id}] Invalid target_user '{target_user_slug}', ignoring")
 
-        logger.info(f"[{run_id}] Assigned categories: {valid_categories}")
+        logger.info(
+            f"[{run_id}] Assigned taxonomy: function={taxonomy['function_slug']}, "
+            f"industry={taxonomy['industry_slug']}, target_user={taxonomy['target_user_slug']}"
+        )
 
-        return {"categories": valid_categories, "progress": progress}
+        return {
+            "taxonomy": taxonomy,
+            "categories": [],  # Legacy, empty for new system
+            "progress": progress,
+        }
 
     except Exception as e:
-        logger.error(f"[{run_id}] Failed to categorize: {e}")
-        # Use fallback category instead of failing
+        logger.error(f"[{run_id}] Failed to classify taxonomy: {e}")
+        # Use function-only taxonomy as fallback
         return {
-            "categories": [available_categories[0]] if available_categories else ["saas"],
+            "taxonomy": taxonomy,
+            "categories": [],
             "progress": progress,
         }
 
@@ -403,7 +538,7 @@ async def categorize(state: IdeaGenerationState) -> dict[str, Any]:
 async def save_idea(state: IdeaGenerationState) -> dict[str, Any]:
     """Save the generated idea to the database.
 
-    This is the final node that persists the complete idea.
+    This is the final node that persists the complete idea with taxonomy.
     """
     if state.get("error"):
         logger.error(f"[{state['run_id']}] Skipping save due to previous error: {state['error']}")
@@ -411,7 +546,8 @@ async def save_idea(state: IdeaGenerationState) -> dict[str, Any]:
 
     concept = state.get("concept")
     prd_content = state.get("prd_content")
-    categories = state.get("categories", [])
+    taxonomy = state.get("taxonomy")
+    categories = state.get("categories", [])  # Legacy
 
     if not concept:
         return {"error": "No concept to save", "completed": False}
@@ -445,7 +581,12 @@ async def save_idea(state: IdeaGenerationState) -> dict[str, Any]:
                     ),
                 }
 
-            # Create the idea
+            # Extract taxonomy fields
+            function_slug = taxonomy["function_slug"] if taxonomy else state.get("target_function", "create")
+            industry_slug = taxonomy["industry_slug"] if taxonomy else None
+            target_user_slug = taxonomy["target_user_slug"] if taxonomy else None
+
+            # Create the idea with taxonomy
             idea_id, idea_slug = await repo.create_idea(
                 title=concept["title"],
                 problem=concept["problem"],
@@ -453,7 +594,10 @@ async def save_idea(state: IdeaGenerationState) -> dict[str, Any]:
                 target_users=concept["target_users"],
                 key_features=concept["key_features"],
                 prd_content=prd_content or {},
-                category_slugs=categories,
+                function_slug=function_slug,
+                industry_slug=industry_slug,
+                target_user_slug=target_user_slug,
+                category_slugs=categories,  # Legacy, can be empty
                 user_id=state.get("user_id"),
                 forked_from_id=state.get("forked_from_id"),
                 is_published=False,  # Ideas need review before publishing
@@ -463,7 +607,7 @@ async def save_idea(state: IdeaGenerationState) -> dict[str, Any]:
 
             logger.info(
                 f"[{run_id}] Saved idea {idea_id} ({idea_slug}): {concept['title']} "
-                f"with categories {categories}"
+                f"with taxonomy: function={function_slug}, industry={industry_slug}, target_user={target_user_slug}"
             )
 
             return {

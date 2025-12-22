@@ -13,9 +13,9 @@ import {
 /**
  * Sort options for the ideas feed
  */
-type SortOption = "newest" | "oldest" | "popular" | "alphabetical";
+type SortOption = "newest" | "oldest" | "popular";
 
-interface CategoryOption {
+interface FilterOption {
   value: string;
   label: string;
 }
@@ -26,18 +26,39 @@ interface SortOptionItem {
 }
 
 /**
- * Available category options for filtering
+ * Function options - what the product does
  */
-const categories: CategoryOption[] = [
-  { value: "all", label: "All Categories" },
-  { value: "ai", label: "AI" },
-  { value: "healthtech", label: "HealthTech" },
-  { value: "fintech", label: "FinTech" },
-  { value: "edtech", label: "EdTech" },
-  { value: "logistics", label: "Logistics" },
-  { value: "ecommerce", label: "E-commerce" },
-  { value: "developer-tools", label: "Developer Tools" },
-  { value: "saas", label: "SaaS" },
+const functions: FilterOption[] = [
+  { value: "all", label: "All Functions" },
+  { value: "create", label: "Create" },
+  { value: "automate", label: "Automate" },
+  { value: "analyze", label: "Analyze" },
+  { value: "connect", label: "Connect" },
+  { value: "sell", label: "Sell" },
+  { value: "learn", label: "Learn" },
+  { value: "manage", label: "Manage" },
+  { value: "protect", label: "Protect" },
+];
+
+/**
+ * Industry options - target industry/domain
+ */
+const industries: FilterOption[] = [
+  { value: "all", label: "All Industries" },
+  { value: "healthcare", label: "Healthcare" },
+  { value: "finance", label: "Finance" },
+  { value: "education", label: "Education" },
+  { value: "e-commerce", label: "E-commerce" },
+  { value: "entertainment", label: "Entertainment" },
+  { value: "technology", label: "Technology" },
+  { value: "retail", label: "Retail" },
+  { value: "real-estate", label: "Real Estate" },
+  { value: "travel", label: "Travel" },
+  { value: "food", label: "Food & Beverage" },
+  { value: "manufacturing", label: "Manufacturing" },
+  { value: "legal", label: "Legal" },
+  { value: "marketing", label: "Marketing" },
+  { value: "media", label: "Media" },
 ];
 
 /**
@@ -47,27 +68,30 @@ const sortOptions: SortOptionItem[] = [
   { value: "newest", label: "Newest" },
   { value: "oldest", label: "Oldest" },
   { value: "popular", label: "Most Popular" },
-  { value: "alphabetical", label: "Alphabetical" },
 ];
 
 interface SearchFiltersProps {
   searchQuery?: string;
   onSearchChange?: (query: string) => void;
-  category?: string;
-  onCategoryChange?: (category: string) => void;
+  functionSlug?: string;
+  onFunctionChange?: (func: string) => void;
+  industrySlug?: string;
+  onIndustryChange?: (industry: string) => void;
   sortBy?: string;
   onSortChange?: (sort: string) => void;
 }
 
 /**
  * Search and filter bar component for the ideas feed.
- * Includes search input, category dropdown, and sort dropdown.
+ * Includes search input, function filter, industry filter, and sort dropdown.
  */
 export function SearchFilters({
   searchQuery = "",
   onSearchChange,
-  category = "all",
-  onCategoryChange,
+  functionSlug = "all",
+  onFunctionChange,
+  industrySlug = "all",
+  onIndustryChange,
   sortBy = "newest",
   onSortChange,
 }: SearchFiltersProps) {
@@ -92,15 +116,29 @@ export function SearchFilters({
 
       {/* Filter Dropdowns */}
       <div className="flex w-full shrink-0 gap-3 md:w-auto">
-        {/* Category Select */}
-        <Select value={category} onValueChange={onCategoryChange}>
+        {/* Function Select */}
+        <Select value={functionSlug} onValueChange={onFunctionChange}>
           <SelectTrigger className="w-full md:w-auto">
-            <SelectValue placeholder="Category" />
+            <SelectValue placeholder="Function" />
           </SelectTrigger>
           <SelectContent>
-            {categories.map((cat) => (
-              <SelectItem key={cat.value} value={cat.value}>
-                {cat.label}
+            {functions.map((func) => (
+              <SelectItem key={func.value} value={func.value}>
+                {func.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        {/* Industry Select */}
+        <Select value={industrySlug} onValueChange={onIndustryChange}>
+          <SelectTrigger className="w-full md:w-auto">
+            <SelectValue placeholder="Industry" />
+          </SelectTrigger>
+          <SelectContent>
+            {industries.map((industry) => (
+              <SelectItem key={industry.value} value={industry.value}>
+                {industry.label}
               </SelectItem>
             ))}
           </SelectContent>
@@ -110,7 +148,7 @@ export function SearchFilters({
         <Select value={sortBy} onValueChange={onSortChange}>
           <SelectTrigger className="w-full whitespace-nowrap md:w-auto">
             <span className="mr-1 text-[var(--color-text-secondary)]">
-              Sort By:
+              Sort:
             </span>
             <SelectValue />
           </SelectTrigger>

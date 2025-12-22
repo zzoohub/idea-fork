@@ -16,10 +16,11 @@ from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.core.config import settings
-from src.generation.models import GenerationRequest, RequestStatus
+from src.generation.models import GenerationRequest
 from src.generation.schemas import (
     GenerationProgressStatus,
     GenerationStatusResponse,
+    RequestStatus,
 )
 
 logger = logging.getLogger(__name__)
@@ -45,23 +46,32 @@ class GenerationService:
     async def create_generation_request(
         self,
         user_id: Optional[UUID] = None,
+        function_slug: Optional[str] = None,
+        industry_slug: Optional[str] = None,
+        idea_seed: Optional[str] = None,
     ) -> GenerationRequest:
         """Create a new generation request and enqueue the RQ job.
 
         Args:
             user_id: Optional user ID for the request
+            function_slug: Optional function type (random if not provided)
+            industry_slug: Optional industry (random if not provided)
+            idea_seed: Optional user idea text for seed-based generation
 
         Returns:
             The created GenerationRequest
         """
         request_id = uuid4()
 
-        # Enqueue the RQ job
+        # Enqueue the RQ job with taxonomy parameters
         queue = self._get_queue()
         job = queue.enqueue(
             "src.tasks.idea_generation.generate_idea_task",
             user_id=str(user_id) if user_id else None,
             request_id=str(request_id),
+            function_slug=function_slug,
+            industry_slug=industry_slug,
+            idea_seed=idea_seed,
             job_timeout=600,
             result_ttl=86400,
             failure_ttl=604800,
@@ -164,7 +174,9 @@ class GenerationService:
         )
         await self.session.commit()
 
-        logger.info(f"Created fork request {request_id} for {fork_from_slug} with job {job.id}")
+        logger.info(
+            f"Created fork request {request_id} for {fork_from_slug} with job {job.id}"
+        )
 
         return GenerationRequest(
             id=request_id,
@@ -237,7 +249,9 @@ class GenerationService:
                     "COMPLETED": GenerationProgressStatus.COMPLETED,
                     "FAILED": GenerationProgressStatus.FAILED,
                 }
-                progress_status = status_map.get(rq_status, GenerationProgressStatus.QUEUED)
+                progress_status = status_map.get(
+                    rq_status, GenerationProgressStatus.QUEUED
+                )
 
                 # Check job result for completion
                 if job.is_finished:
@@ -261,7 +275,9 @@ class GenerationService:
                     progress_status = GenerationProgressStatus.FAILED
                     db_status = RequestStatus.FAILED
                     if not error_message:
-                        error_message = str(job.exc_info) if job.exc_info else "Job failed"
+                        error_message = (
+                            str(job.exc_info) if job.exc_info else "Job failed"
+                        )
                     await self._mark_failed(request_id, error_message)
 
                 # Check if job is started but not finished

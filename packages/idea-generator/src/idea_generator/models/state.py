@@ -53,6 +53,14 @@ class PRDContent(TypedDict):
     success_metrics: list[dict[str, str]]
 
 
+class TaxonomyClassification(TypedDict):
+    """Taxonomy classification for an idea."""
+
+    function_slug: str  # Required: what the product does
+    industry_slug: Optional[str]  # Optional: target industry
+    target_user_slug: Optional[str]  # Optional: primary audience
+
+
 class GeneratedIdea(TypedDict):
     """Complete generated idea with all fields."""
 
@@ -62,7 +70,8 @@ class GeneratedIdea(TypedDict):
     target_users: str
     key_features: list[str]
     prd_content: PRDContent
-    categories: list[str]
+    categories: list[str]  # Legacy, kept for compatibility
+    taxonomy: TaxonomyClassification  # New taxonomy system
 
 
 class IdeaGenerationState(TypedDict):
@@ -71,16 +80,23 @@ class IdeaGenerationState(TypedDict):
     This state flows through all nodes in the graph:
     1. generate_concept: Creates initial idea concept
     2. expand_prd: Expands concept into full PRD
-    3. categorize: Assigns categories
+    3. categorize: Assigns taxonomy (industry, target_user)
     4. save: Persists to database
 
     Attributes:
         run_id: Unique identifier for this generation run
         idea_index: Index of current idea (0-based) in multi-idea runs
-        available_categories: List of category slugs from database
+        target_function: Target function slug for idea generation
+        target_industry: Target industry slug (pre-selected or random)
+        idea_seed: Optional user-provided idea text for seed-based generation
+        available_functions: List of function slugs from database
+        available_industries: List of industry slugs from database
+        available_target_users: List of target user slugs from database
+        available_categories: List of category slugs (legacy, for compatibility)
         concept: Initial idea concept
         prd_content: Expanded PRD content
-        categories: Assigned category slugs
+        taxonomy: Taxonomy classification (function, industry, target_user)
+        categories: Assigned category slugs (legacy)
         idea_id: Database ID after saving (None until saved)
         idea_slug: URL slug after saving (None until saved)
         error: Error message if any step fails
@@ -95,20 +111,26 @@ class IdeaGenerationState(TypedDict):
 
         # Progress tracking
         progress: Current generation progress for status updates
-
-        # Callback for progress updates (not serialized)
-        progress_callback: Optional callback function for progress updates
     """
 
     # Run metadata
     run_id: str
     idea_index: int
-    available_categories: list[str]
+
+    # Taxonomy inputs
+    target_function: str  # Required: function to generate idea for
+    target_industry: Optional[str]  # Pre-selected industry (None = AI decides)
+    idea_seed: Optional[str]  # User-provided idea text for seed-based generation
+    available_functions: list[str]
+    available_industries: list[str]
+    available_target_users: list[str]
+    available_categories: list[str]  # Legacy, kept for compatibility
 
     # Pipeline outputs (populated progressively)
     concept: Optional[IdeaConcept]
     prd_content: Optional[PRDContent]
-    categories: Optional[list[str]]
+    taxonomy: Optional[TaxonomyClassification]
+    categories: Optional[list[str]]  # Legacy
 
     # Final state
     idea_id: Optional[int]
@@ -130,7 +152,13 @@ class IdeaGenerationState(TypedDict):
 def create_initial_state(
     run_id: str,
     idea_index: int,
-    available_categories: list[str],
+    target_function: str,
+    available_functions: list[str],
+    available_industries: list[str],
+    available_target_users: list[str],
+    available_categories: list[str] = None,  # Legacy, optional
+    target_industry: Optional[str] = None,
+    idea_seed: Optional[str] = None,
     user_id: Optional[str] = None,
 ) -> IdeaGenerationState:
     """Create initial state for a new idea generation.
@@ -138,7 +166,13 @@ def create_initial_state(
     Args:
         run_id: Unique run identifier
         idea_index: Index of this idea in the batch
-        available_categories: Available category slugs
+        target_function: Function slug to generate idea for
+        available_functions: Available function slugs
+        available_industries: Available industry slugs
+        available_target_users: Available target user slugs
+        available_categories: Available category slugs (legacy)
+        target_industry: Pre-selected industry slug (None = AI decides)
+        idea_seed: User-provided idea text for seed-based generation
         user_id: Optional user ID for on-demand generation
 
     Returns:
@@ -147,9 +181,16 @@ def create_initial_state(
     return IdeaGenerationState(
         run_id=run_id,
         idea_index=idea_index,
-        available_categories=available_categories,
+        target_function=target_function,
+        target_industry=target_industry,
+        idea_seed=idea_seed,
+        available_functions=available_functions,
+        available_industries=available_industries,
+        available_target_users=available_target_users,
+        available_categories=available_categories or [],
         concept=None,
         prd_content=None,
+        taxonomy=None,
         categories=None,
         idea_id=None,
         idea_slug=None,
@@ -170,7 +211,11 @@ def create_initial_state(
 def create_fork_state(
     run_id: str,
     forked_from_id: str,
-    available_categories: list[str],
+    target_function: str,
+    available_functions: list[str],
+    available_industries: list[str],
+    available_target_users: list[str],
+    available_categories: list[str] = None,  # Legacy, optional
     user_id: Optional[str] = None,
     modifications: Optional[dict[str, Any]] = None,
 ) -> IdeaGenerationState:
@@ -179,7 +224,11 @@ def create_fork_state(
     Args:
         run_id: Unique run identifier
         forked_from_id: ID of the idea being forked
-        available_categories: Available category slugs
+        target_function: Function slug for the forked idea
+        available_functions: Available function slugs
+        available_industries: Available industry slugs
+        available_target_users: Available target user slugs
+        available_categories: Available category slugs (legacy)
         user_id: Optional user ID for on-demand generation
         modifications: Optional modifications to apply to the forked idea
 
@@ -189,9 +238,14 @@ def create_fork_state(
     return IdeaGenerationState(
         run_id=run_id,
         idea_index=0,
-        available_categories=available_categories,
+        target_function=target_function,
+        available_functions=available_functions,
+        available_industries=available_industries,
+        available_target_users=available_target_users,
+        available_categories=available_categories or [],
         concept=None,
         prd_content=None,
+        taxonomy=None,
         categories=None,
         idea_id=None,
         idea_slug=None,

@@ -27,6 +27,20 @@ class SortBy(str, Enum):
     ALPHABETICAL = "alphabetical"
 
 
+class TaxonomyResponse(BaseModel):
+    """Taxonomy classification for an idea."""
+
+    model_config = ConfigDict(
+        from_attributes=True,
+        populate_by_name=True,
+        alias_generator=to_camel,
+    )
+
+    functionSlug: str
+    industrySlug: Optional[str] = None
+    targetUserSlug: Optional[str] = None
+
+
 class IdeaResponse(BaseModel):
     """Idea response matching frontend Idea type."""
 
@@ -41,7 +55,8 @@ class IdeaResponse(BaseModel):
     slug: str
     imageUrl: str
     imageAlt: str
-    categories: list[CategoryBadgeResponse]
+    categories: list[CategoryBadgeResponse]  # Legacy, kept for compatibility
+    taxonomy: TaxonomyResponse  # New taxonomy classification
     problem: str
     solution: str
     targetUsers: str
