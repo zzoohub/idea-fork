@@ -26,7 +26,7 @@ def _configure_idea_generator() -> None:
     from idea_generator.pipeline.config import PipelineSettings, configure_settings
 
     pipeline_settings = PipelineSettings(
-        anthropic_api_key=settings.anthropic_api_key,
+        google_api_key=settings.google_api_key,
         llm_model=settings.llm_model,
         llm_temperature=settings.llm_temperature,
         llm_max_tokens=settings.llm_max_tokens,
@@ -221,8 +221,7 @@ def fork_idea_task(
     run_id = str(uuid.uuid4())[:8]
 
     logger.info(
-        f"[{run_id}] Starting fork task for {fork_from_slug} "
-        f"(job_id={job.id if job else 'none'})"
+        f"[{run_id}] Starting fork task for {fork_from_slug} (job_id={job.id if job else 'none'})"
     )
 
     # Store request_id in job meta
@@ -354,12 +353,12 @@ def generate_daily_ideas_task(count: int = 3) -> dict[str, Any]:
             failed = []
 
             for i in range(count):
-                idea_run_id = f"{run_id}-{i+1}"
+                idea_run_id = f"{run_id}-{i + 1}"
                 progress_pct = int(10 + (80 * i / count))
 
                 _update_job_meta(
                     "GENERATING_CONCEPT",
-                    f"Generating idea {i+1}/{count}...",
+                    f"Generating idea {i + 1}/{count}...",
                     progress_pct,
                 )
 
@@ -373,29 +372,33 @@ def generate_daily_ideas_task(count: int = 3) -> dict[str, Any]:
                     )
 
                     if idea_id and idea_slug:
-                        generated.append({
-                            "idea_id": idea_id,
-                            "idea_slug": idea_slug,
-                        })
-                        logger.info(
-                            f"[{idea_run_id}] Generated idea {i+1}/{count}: {idea_slug}"
+                        generated.append(
+                            {
+                                "idea_id": idea_id,
+                                "idea_slug": idea_slug,
+                            }
                         )
+                        logger.info(f"[{idea_run_id}] Generated idea {i + 1}/{count}: {idea_slug}")
                     else:
-                        failed.append({
-                            "index": i + 1,
-                            "error": error or "Unknown error",
-                        })
+                        failed.append(
+                            {
+                                "index": i + 1,
+                                "error": error or "Unknown error",
+                            }
+                        )
                         logger.warning(
-                            f"[{idea_run_id}] Failed to generate idea {i+1}/{count}: {error}"
+                            f"[{idea_run_id}] Failed to generate idea {i + 1}/{count}: {error}"
                         )
 
                 except Exception as e:
-                    failed.append({
-                        "index": i + 1,
-                        "error": str(e),
-                    })
+                    failed.append(
+                        {
+                            "index": i + 1,
+                            "error": str(e),
+                        }
+                    )
                     logger.error(
-                        f"[{idea_run_id}] Exception generating idea {i+1}/{count}: {e}",
+                        f"[{idea_run_id}] Exception generating idea {i + 1}/{count}: {e}",
                         exc_info=True,
                     )
 

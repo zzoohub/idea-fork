@@ -2,12 +2,11 @@
 name = "idea-generator"
 version = "0.1.0"
 description = "Shared idea generation pipeline for Idea Fork platform"
-readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
     # LangGraph and LangChain
     "langgraph>=0.2.0",
-    "langchain-anthropic>=0.3.0",
+    "langchain-google-genai>=2.0.0",
     "langchain-core>=0.3.0",
     # Database
     "sqlmodel>=0.0.22",

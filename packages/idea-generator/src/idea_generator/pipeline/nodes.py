@@ -13,7 +13,7 @@ import logging
 import re
 from typing import Any, Callable, Optional
 
-from langchain_anthropic import ChatAnthropic
+from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.messages import HumanMessage, SystemMessage
 
 from idea_generator.models.state import (
@@ -70,14 +70,14 @@ INDUSTRY_DESCRIPTIONS = {
 logger = logging.getLogger(__name__)
 
 
-def _get_llm() -> ChatAnthropic:
+def _get_llm() -> ChatGoogleGenerativeAI:
     """Get configured LLM instance."""
     settings = get_settings()
-    return ChatAnthropic(
+    return ChatGoogleGenerativeAI(
         model=settings.llm_model,
         temperature=settings.llm_temperature,
-        max_tokens=settings.llm_max_tokens,
-        api_key=settings.anthropic_api_key,
+        max_output_tokens=settings.llm_max_tokens,
+        google_api_key=settings.google_api_key,
     )
 
 
@@ -252,7 +252,7 @@ async def generate_concept(state: IdeaGenerationState) -> dict[str, Any]:
 
 async def _generate_fork_concept(
     state: IdeaGenerationState,
-    llm: ChatAnthropic,
+    llm: ChatGoogleGenerativeAI,
 ) -> IdeaConcept:
     """Generate a forked concept based on an existing idea.
 

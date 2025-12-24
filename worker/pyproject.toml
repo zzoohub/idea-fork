@@ -2,7 +2,6 @@
 name = "idea-fork-worker"
 version = "0.1.0"
 description = "RQ Worker for on-demand idea generation with scheduled daily runs"
-readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
     # RQ and Redis
@@ -41,3 +40,6 @@ ignore = ["E501"]
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["tests"]
+
+[tool.uv.sources]
+idea-generator = { path = "../packages/idea-generator", editable = true }

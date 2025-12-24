@@ -18,16 +18,16 @@ class PipelineSettings(BaseSettings):
         extra="ignore",
     )
 
-    # Anthropic API
-    anthropic_api_key: str = Field(
+    # Google API
+    google_api_key: str = Field(
         default="",
-        description="Anthropic API key for Claude",
+        description="Google API key for Gemini",
     )
 
     # LLM Settings
     llm_model: str = Field(
-        default="claude-sonnet-4-20250514",
-        description="Anthropic model to use for generation",
+        default="gemini-2.0-flash",
+        description="Google Gemini model to use for generation",
     )
     llm_temperature: float = Field(
         default=0.8,
