@@ -1,130 +1,78 @@
 ---
 name: security
-description: Security best practices and implementation guidelines. Covers authentication, authorization, input validation, secure coding patterns, and security headers. Use when implementing auth, reviewing code for vulnerabilities, or hardening applications.
+description: Security best practices for web/mobile apps. Covers authentication (JWT, passwords, cookies), authorization (RBAC, IDOR), input validation (SQL injection, XSS), security headers, CORS, and secrets management. Use when implementing auth, reviewing vulnerabilities, or hardening applications.
 ---
 
 # Security
 
-Comprehensive security guidelines for web and mobile applications.
+Security guidelines for web and mobile applications.
 
-## When to Use
+## Quick Reference
 
-- Implementing authentication/authorization
-- Reviewing code for vulnerabilities
-- Setting up security headers
-- Handling sensitive data
-- Hardening production deployments
+| Topic | Key Points |
+|-------|------------|
+| Passwords | bcrypt, 12+ rounds, never MD5/SHA |
+| JWT | Short-lived access (15m), separate refresh secret |
+| Cookies | httpOnly, secure, sameSite: strict |
+| SQL | Always parameterized queries |
+| XSS | Sanitize HTML, use framework escaping |
 
 ## Authentication
 
 ### Password Hashing
 
 ```typescript
-// ✅ Good - bcrypt with sufficient rounds
+// ✅ bcrypt with 12+ rounds
 import bcrypt from "bcrypt";
-
-const SALT_ROUNDS = 12; // minimum 10, recommend 12+
-
-async function hashPassword(password: string): Promise<string> {
-  return bcrypt.hash(password, SALT_ROUNDS);
-}
-
-async function verifyPassword(password: string, hash: string): Promise<boolean> {
-  return bcrypt.compare(password, hash);
-}
+const hash = await bcrypt.hash(password, 12);
+const valid = await bcrypt.compare(password, hash);
 ```
 
-```typescript
-// ❌ Bad - never use these for passwords
-import crypto from "crypto";
-const hash = crypto.createHash("md5").update(password).digest("hex"); // NEVER
-const hash = crypto.createHash("sha1").update(password).digest("hex"); // NEVER
-const hash = crypto.createHash("sha256").update(password).digest("hex"); // Still bad for passwords
+```python
+# ✅ Python - passlib
+from passlib.context import CryptContext
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+hash = pwd_context.hash(password)
+valid = pwd_context.verify(password, hash)
 ```
 
-### JWT Implementation
+**Never use**: MD5, SHA1, SHA256 for passwords.
+
+### JWT Setup
 
 ```typescript
-// ✅ Good - proper JWT setup
-import jwt from "jsonwebtoken";
-
-const ACCESS_TOKEN_EXPIRY = "15m";
-const REFRESH_TOKEN_EXPIRY = "7d";
-
-function generateTokens(userId: string) {
-  const accessToken = jwt.sign(
-    { sub: userId, type: "access" },
-    process.env.JWT_SECRET!,
-    { expiresIn: ACCESS_TOKEN_EXPIRY }
-  );
-  
-  const refreshToken = jwt.sign(
-    { sub: userId, type: "refresh" },
-    process.env.JWT_REFRESH_SECRET!, // Different secret
-    { expiresIn: REFRESH_TOKEN_EXPIRY }
-  );
-  
-  return { accessToken, refreshToken };
-}
-
-function verifyAccessToken(token: string) {
-  try {
-    const payload = jwt.verify(token, process.env.JWT_SECRET!);
-    if (payload.type !== "access") throw new Error("Invalid token type");
-    return payload;
-  } catch {
-    return null;
-  }
-}
+// Access: 15m, Refresh: 7d, separate secrets
+const accessToken = jwt.sign(
+  { sub: userId, type: "access" },
+  process.env.JWT_SECRET!,
+  { expiresIn: "15m" }
+);
 ```
 
-```typescript
-// ❌ Bad JWT practices
-jwt.sign(payload, "hardcoded-secret"); // Hardcoded secret
-jwt.sign(payload, secret, { expiresIn: "365d" }); // Too long expiry
-jwt.verify(token, secret, { algorithms: ["none"] }); // Allows unsigned tokens
-```
+**Bad practices**: Hardcoded secrets, 365d expiry, `algorithms: ["none"]`.
 
-### Secure Cookie Settings
+### Secure Cookies
 
 ```typescript
-// ✅ Good - secure cookie configuration
 res.cookie("session", sessionId, {
-  httpOnly: true,      // Not accessible via JavaScript
-  secure: true,        // HTTPS only
-  sameSite: "strict",  // CSRF protection
-  maxAge: 24 * 60 * 60 * 1000, // 24 hours
-  path: "/",
-});
-
-// For refresh tokens
-res.cookie("refreshToken", token, {
-  httpOnly: true,
-  secure: true,
-  sameSite: "strict",
-  path: "/api/auth/refresh", // Limit to refresh endpoint only
-  maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+  httpOnly: true,     // No JS access
+  secure: true,       // HTTPS only
+  sameSite: "strict", // CSRF protection
+  maxAge: 86400000,   // 24h
 });
 ```
 
-### Rate Limiting (Auth Endpoints)
+### Rate Limiting
 
 ```typescript
-// Express with express-rate-limit
+// 5 attempts per 15min on auth endpoints
 import rateLimit from "express-rate-limit";
-
 const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 5, // 5 attempts per window
-  message: { error: "Too many attempts, try again later" },
-  standardHeaders: true,
-  legacyHeaders: false,
-  keyGenerator: (req) => req.ip + req.body?.email, // Per IP + email combo
+  windowMs: 15 * 60 * 1000,
+  max: 5,
+  keyGenerator: (req) => req.ip + req.body?.email,
 });
-
-app.post("/api/auth/login", authLimiter, loginHandler);
-app.post("/api/auth/register", authLimiter, registerHandler);
-app.post("/api/auth/forgot-password", authLimiter, forgotPasswordHandler);
+app.post("/api/auth/login", authLimiter, handler);
 ```
 
 ## Authorization
@@ -132,56 +80,27 @@ app.post("/api/auth/forgot-password", authLimiter, forgotPasswordHandler);
 ### IDOR Prevention
 
 ```typescript
-// ❌ Bad - IDOR vulnerability
-app.get("/api/users/:id", async (req, res) => {
-  const user = await db.user.findById(req.params.id);
-  res.json(user); // Anyone can access any user!
-});
-
-// ✅ Good - ownership check
+// ✅ Always verify ownership
 app.get("/api/users/:id", authenticate, async (req, res) => {
-  const userId = req.params.id;
-  
-  // Only allow access to own data (or admin)
-  if (userId !== req.user.id && !req.user.isAdmin) {
+  if (req.params.id !== req.user.id && !req.user.isAdmin) {
     return res.status(403).json({ error: "Forbidden" });
   }
-  
-  const user = await db.user.findById(userId);
-  res.json(user);
+  // proceed...
 });
 ```
 
-### Role-Based Access Control
+### Role-Based Access
 
 ```typescript
-// Middleware for role checking
-function requireRole(...allowedRoles: string[]) {
-  return (req: Request, res: Response, next: NextFunction) => {
-    if (!req.user) {
-      return res.status(401).json({ error: "Unauthorized" });
-    }
-    
-    if (!allowedRoles.includes(req.user.role)) {
+function requireRole(...roles: string[]) {
+  return (req, res, next) => {
+    if (!roles.includes(req.user?.role)) {
       return res.status(403).json({ error: "Forbidden" });
     }
-    
     next();
   };
 }
-
-// Usage
-app.delete("/api/users/:id", 
-  authenticate, 
-  requireRole("admin"), 
-  deleteUserHandler
-);
-
-app.get("/api/reports", 
-  authenticate, 
-  requireRole("admin", "manager"), 
-  getReportsHandler
-);
+app.delete("/api/users/:id", authenticate, requireRole("admin"), handler);
 ```
 
 ## Input Validation
@@ -189,536 +108,151 @@ app.get("/api/reports",
 ### SQL Injection Prevention
 
 ```typescript
-// ❌ Bad - SQL injection
+// ❌ Bad
 const query = `SELECT * FROM users WHERE email = '${email}'`;
-db.query(query);
 
-// ✅ Good - parameterized queries
+// ✅ Good - parameterized
 const query = "SELECT * FROM users WHERE email = $1";
 db.query(query, [email]);
 
-// ✅ Good - ORM with proper usage
-const user = await prisma.user.findUnique({
-  where: { email }, // Prisma handles parameterization
-});
+// ✅ Good - ORM
+const user = await prisma.user.findUnique({ where: { email } });
 ```
 
 ### XSS Prevention
 
 ```typescript
-// ❌ Bad - XSS vulnerability (React)
+// ❌ Bad
 <div dangerouslySetInnerHTML={{ __html: userContent }} />
 
-// ✅ Good - sanitize if HTML is necessary
+// ✅ Good - sanitize
 import DOMPurify from "dompurify";
+<div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(userContent) }} />
 
-<div dangerouslySetInnerHTML={{ 
-  __html: DOMPurify.sanitize(userContent) 
-}} />
-
-// ✅ Best - avoid HTML rendering of user content
-<div>{userContent}</div> // React auto-escapes
+// ✅ Best - let React escape
+<div>{userContent}</div>
 ```
 
-### Input Validation with Zod
+### Validation with Zod
 
 ```typescript
 import { z } from "zod";
-
 const userSchema = z.object({
   email: z.string().email().max(255),
   password: z.string().min(8).max(128),
-  name: z.string().min(1).max(100).regex(/^[a-zA-Z\s]+$/),
-  age: z.number().int().min(13).max(120).optional(),
+  name: z.string().min(1).max(100),
 });
 
-// In handler
-app.post("/api/users", async (req, res) => {
-  const result = userSchema.safeParse(req.body);
-  
-  if (!result.success) {
-    return res.status(400).json({ 
-      error: "Validation failed",
-      details: result.error.flatten(),
-    });
-  }
-  
-  const validatedData = result.data;
-  // Proceed with validated data
-});
+const result = userSchema.safeParse(req.body);
+if (!result.success) return res.status(400).json({ error: result.error });
 ```
 
-### File Upload Validation
+### File Upload
 
 ```typescript
 import { fileTypeFromBuffer } from "file-type";
+const ALLOWED = ["image/jpeg", "image/png", "image/webp"];
+const MAX_SIZE = 5 * 1024 * 1024;
 
-const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp"];
-const MAX_SIZE = 5 * 1024 * 1024; // 5MB
-
-async function validateUpload(file: Buffer, filename: string) {
-  // Check size
-  if (file.length > MAX_SIZE) {
-    throw new Error("File too large");
-  }
-  
-  // Check actual file type (not just extension)
+async function validateUpload(file: Buffer) {
+  if (file.length > MAX_SIZE) throw new Error("Too large");
   const type = await fileTypeFromBuffer(file);
-  if (!type || !ALLOWED_TYPES.includes(type.mime)) {
-    throw new Error("Invalid file type");
-  }
-  
-  // Sanitize filename
-  const sanitizedName = filename
-    .replace(/[^a-zA-Z0-9.-]/g, "_")
-    .substring(0, 100);
-  
-  return { buffer: file, filename: sanitizedName, mime: type.mime };
+  if (!type || !ALLOWED.includes(type.mime)) throw new Error("Invalid type");
 }
 ```
 
 ## Security Headers
 
-### Next.js
-
-```typescript
-// next.config.js
-const securityHeaders = [
-  {
-    key: "X-DNS-Prefetch-Control",
-    value: "on",
-  },
-  {
-    key: "Strict-Transport-Security",
-    value: "max-age=63072000; includeSubDomains; preload",
-  },
-  {
-    key: "X-Frame-Options",
-    value: "SAMEORIGIN",
-  },
-  {
-    key: "X-Content-Type-Options",
-    value: "nosniff",
-  },
-  {
-    key: "Referrer-Policy",
-    value: "strict-origin-when-cross-origin",
-  },
-  {
-    key: "Permissions-Policy",
-    value: "camera=(), microphone=(), geolocation=()",
-  },
-  {
-    key: "Content-Security-Policy",
-    value: `
-      default-src 'self';
-      script-src 'self' 'unsafe-eval' 'unsafe-inline';
-      style-src 'self' 'unsafe-inline';
-      img-src 'self' data: https:;
-      font-src 'self';
-      connect-src 'self' https://api.example.com;
-      frame-ancestors 'none';
-    `.replace(/\n/g, ""),
-  },
-];
-
-module.exports = {
-  async headers() {
-    return [
-      {
-        source: "/:path*",
-        headers: securityHeaders,
-      },
-    ];
-  },
-};
-```
-
-### Express (Helmet.js)
+### Express (Helmet)
 
 ```typescript
 import helmet from "helmet";
-
-app.use(helmet());
-
-// Or with custom config
-app.use(
-  helmet({
-    contentSecurityPolicy: {
-      directives: {
-        defaultSrc: ["'self'"],
-        scriptSrc: ["'self'", "'unsafe-inline'"],
-        styleSrc: ["'self'", "'unsafe-inline'"],
-        imgSrc: ["'self'", "data:", "https:"],
-        connectSrc: ["'self'", "https://api.example.com"],
-        frameAncestors: ["'none'"],
-      },
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'"],
+      frameAncestors: ["'none'"],
     },
-    hsts: {
-      maxAge: 63072000,
-      includeSubDomains: true,
-      preload: true,
-    },
-  })
-);
+  },
+  hsts: { maxAge: 63072000, includeSubDomains: true, preload: true },
+}));
 ```
 
-## CORS Configuration
+### Next.js
+
+See [HEADERS.md](HEADERS.md) for complete Next.js security headers configuration.
+
+## CORS
 
 ```typescript
-// ❌ Bad - open to all origins
-app.use(cors()); // Allows everything
-
-// ❌ Bad - wildcard in production
+// ❌ Bad
 app.use(cors({ origin: "*" }));
 
 // ✅ Good - explicit origins
-const allowedOrigins = [
-  "https://myapp.com",
-  "https://www.myapp.com",
-];
-
-if (process.env.NODE_ENV === "development") {
-  allowedOrigins.push("http://localhost:3000");
-}
+const allowed = ["https://myapp.com"];
+if (process.env.NODE_ENV === "development") allowed.push("http://localhost:3000");
 
 app.use(cors({
-  origin: (origin, callback) => {
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error("Not allowed by CORS"));
-    }
-  },
+  origin: (origin, cb) => cb(null, !origin || allowed.includes(origin)),
   credentials: true,
-  methods: ["GET", "POST", "PUT", "DELETE"],
-  allowedHeaders: ["Content-Type", "Authorization"],
 }));
 ```
 
 ## Secrets Management
 
-### Environment Variables
-
 ```typescript
-// ✅ Good - validate env vars at startup
+// Validate at startup
 import { z } from "zod";
-
-const envSchema = z.object({
-  NODE_ENV: z.enum(["development", "production", "test"]),
+const env = z.object({
   DATABASE_URL: z.string().url(),
   JWT_SECRET: z.string().min(32),
-  JWT_REFRESH_SECRET: z.string().min(32),
-});
-
-const env = envSchema.parse(process.env);
-
-export default env;
+}).parse(process.env);
 ```
-
-```env
-# .env.example (commit this)
-NODE_ENV=development
-DATABASE_URL=postgresql://user:pass@localhost:5432/db
-JWT_SECRET=your-secret-here-min-32-chars
-JWT_REFRESH_SECRET=another-secret-here-min-32-chars
-
-# .env.local (never commit - add to .gitignore)
-```
-
-### .gitignore Security
 
 ```gitignore
-# Secrets
+# .gitignore - never commit secrets
 .env
 .env.local
-.env.*.local
 *.pem
 *.key
-*secret*
-*credentials*
-
-# Config with secrets
-firebase-adminsdk*.json
-serviceAccountKey.json
-google-credentials.json
 ```
 
 ## Error Handling
 
 ```typescript
-// ❌ Bad - exposes internals
+// ✅ Safe - log internally, return generic message
 app.use((err, req, res, next) => {
+  console.error("Error:", err.message, err.stack);
   res.status(500).json({
-    error: err.message,
-    stack: err.stack, // Never in production!
-    query: req.query, // Sensitive data
-  });
-});
-
-// ✅ Good - safe error response
-app.use((err, req, res, next) => {
-  // Log full error internally
-  console.error("Error:", {
-    message: err.message,
-    stack: err.stack,
-    path: req.path,
-    userId: req.user?.id,
-  });
-  
-  // Send safe response
-  const isProduction = process.env.NODE_ENV === "production";
-  
-  res.status(err.status || 500).json({
-    error: isProduction ? "Internal server error" : err.message,
-    requestId: req.id, // For support lookup
+    error: process.env.NODE_ENV === "production" 
+      ? "Internal server error" 
+      : err.message,
   });
 });
 ```
 
-## React Native Specific
-
-### Secure Storage
+## React Native
 
 ```typescript
-// ❌ Bad - AsyncStorage is not encrypted
-import AsyncStorage from "@react-native-async-storage/async-storage";
-await AsyncStorage.setItem("token", accessToken); // Not secure!
+// ❌ Bad - AsyncStorage not encrypted
+await AsyncStorage.setItem("token", accessToken);
 
 // ✅ Good - use secure storage
-import * as SecureStore from "expo-secure-store"; // Expo
-// or
-import EncryptedStorage from "react-native-encrypted-storage"; // Bare RN
-
+import * as SecureStore from "expo-secure-store";
 await SecureStore.setItemAsync("token", accessToken);
 ```
 
-### Certificate Pinning
+**Never**: Bundle API keys in app code.
 
-```typescript
-// For sensitive APIs, implement certificate pinning
-// Using react-native-ssl-pinning or TrustKit
-```
+## Detailed References
 
-### No Secrets in Bundle
+- **[HEADERS.md](HEADERS.md)**: Complete security headers for Next.js
+- **[FASTAPI.md](FASTAPI.md)**: Python/FastAPI security patterns
+- **[CHECKLIST.md](CHECKLIST.md)**: Pre-deployment security checklist
 
-```typescript
-// ❌ Bad - secrets in app bundle
-const API_KEY = "sk-1234567890"; // Extracted via reverse engineering
+## External Resources
 
-// ✅ Good - fetch from secure backend
-const config = await fetch("/api/config", {
-  headers: { Authorization: `Bearer ${token}` },
-});
-```
-
-## FastAPI/Python Specific
-
-### Input Validation with Pydantic
-
-```python
-from pydantic import BaseModel, EmailStr, Field, validator
-
-class UserCreate(BaseModel):
-    email: EmailStr
-    password: str = Field(..., min_length=8, max_length=128)
-    name: str = Field(..., min_length=1, max_length=100)
-    
-    @validator("password")
-    def password_strength(cls, v):
-        if not any(c.isupper() for c in v):
-            raise ValueError("Password must contain uppercase")
-        if not any(c.isdigit() for c in v):
-            raise ValueError("Password must contain digit")
-        return v
-
-# Usage - automatic validation
-@app.post("/users")
-async def create_user(user: UserCreate):
-    # user is already validated
-    pass
-```
-
-### Password Hashing
-
-```python
-from passlib.context import CryptContext
-
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-
-def hash_password(password: str) -> str:
-    return pwd_context.hash(password)
-
-def verify_password(plain_password: str, hashed_password: str) -> bool:
-    return pwd_context.verify(plain_password, hashed_password)
-```
-
-### JWT Authentication
-
-```python
-from datetime import datetime, timedelta
-from jose import JWTError, jwt
-from fastapi import Depends, HTTPException, status
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-
-security = HTTPBearer()
-
-SECRET_KEY = os.getenv("JWT_SECRET")  # Never hardcode
-ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 15
-
-def create_access_token(data: dict) -> str:
-    to_encode = data.copy()
-    expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    to_encode.update({"exp": expire})
-    return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
-
-async def get_current_user(
-    credentials: HTTPAuthorizationCredentials = Depends(security)
-) -> User:
-    try:
-        payload = jwt.decode(credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM])
-        user_id = payload.get("sub")
-        if user_id is None:
-            raise HTTPException(status_code=401, detail="Invalid token")
-    except JWTError:
-        raise HTTPException(status_code=401, detail="Invalid token")
-    
-    user = await get_user(user_id)
-    if user is None:
-        raise HTTPException(status_code=401, detail="User not found")
-    return user
-
-# Usage
-@app.get("/me")
-async def read_current_user(current_user: User = Depends(get_current_user)):
-    return current_user
-```
-
-### SQL Injection Prevention
-
-```python
-# ❌ Bad - SQL injection
-@app.get("/users/{user_id}")
-async def get_user(user_id: str):
-    query = f"SELECT * FROM users WHERE id = '{user_id}'"  # VULNERABLE
-    result = await database.execute(query)
-
-# ✅ Good - SQLAlchemy ORM
-from sqlalchemy.orm import Session
-
-@app.get("/users/{user_id}")
-async def get_user(user_id: int, db: Session = Depends(get_db)):
-    user = db.query(User).filter(User.id == user_id).first()
-    return user
-
-# ✅ Good - parameterized query
-from sqlalchemy import text
-
-query = text("SELECT * FROM users WHERE id = :user_id")
-result = await database.execute(query, {"user_id": user_id})
-```
-
-### Rate Limiting
-
-```python
-from slowapi import Limiter
-from slowapi.util import get_remote_address
-
-limiter = Limiter(key_func=get_remote_address)
-app.state.limiter = limiter
-
-@app.post("/auth/login")
-@limiter.limit("5/minute")
-async def login(request: Request, credentials: LoginRequest):
-    pass
-```
-
-### CORS Configuration
-
-```python
-from fastapi.middleware.cors import CORSMiddleware
-
-# ❌ Bad
-app.add_middleware(CORSMiddleware, allow_origins=["*"])  # Too permissive
-
-# ✅ Good
-origins = [
-    "https://myapp.com",
-    "https://www.myapp.com",
-]
-
-if os.getenv("ENV") == "development":
-    origins.append("http://localhost:3000")
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=origins,
-    allow_credentials=True,
-    allow_methods=["GET", "POST", "PUT", "DELETE"],
-    allow_headers=["Authorization", "Content-Type"],
-)
-```
-
-### Environment Variables
-
-```python
-from pydantic_settings import BaseSettings
-
-class Settings(BaseSettings):
-    database_url: str
-    jwt_secret: str
-    jwt_refresh_secret: str
-    env: str = "development"
-    
-    class Config:
-        env_file = ".env"
-
-settings = Settings()  # Validates at startup
-```
-
-## Security Checklist
-
-### Pre-Deployment
-
-```
-□ No hardcoded secrets in code
-□ All secrets in environment variables
-□ .env files in .gitignore
-□ npm audit / yarn audit passing
-□ Security headers configured
-□ HTTPS enforced
-□ CORS properly configured
-□ Rate limiting on auth endpoints
-□ Input validation on all endpoints
-□ SQL injection prevention verified
-□ XSS prevention verified
-□ Authentication on all protected routes
-□ Authorization checks (IDOR prevention)
-□ Error messages don't leak internals
-□ Logging doesn't include sensitive data
-□ Debug mode disabled
-```
-
-### Periodic Review
-
-```
-□ Dependency updates (security patches)
-□ Access key rotation
-□ User permission audit
-□ Log review for anomalies
-□ SSL certificate expiry check
-```
-
-## References
-
-- OWASP Top 10: https://owasp.org/www-project-top-ten/
-- OWASP Cheat Sheets: https://cheatsheetseries.owasp.org/
-- Node.js Security Best Practices: https://nodejs.org/en/docs/guides/security/
-- Next.js Security Headers: https://nextjs.org/docs/app/api-reference/config/next-config-js/headers
-- Helmet.js: https://helmetjs.github.io/
-- JWT Best Practices: https://datatracker.ietf.org/doc/html/rfc8725
-- FastAPI Security: https://fastapi.tiangolo.com/tutorial/security/
-- FastAPI OAuth2: https://fastapi.tiangolo.com/tutorial/security/oauth2-jwt/
-- Python passlib: https://passlib.readthedocs.io/
-- SQLAlchemy Security: https://docs.sqlalchemy.org/en/20/faq/security.html
+- [OWASP Top 10](https://owasp.org/www-project-top-ten/)
+- [OWASP Cheat Sheets](https://cheatsheetseries.owasp.org/)
+- [Helmet.js](https://helmetjs.github.io/)

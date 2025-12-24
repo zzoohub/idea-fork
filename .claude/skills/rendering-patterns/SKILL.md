@@ -1,739 +1,269 @@
 ---
 name: rendering-patterns
-description: Web rendering strategies for modern applications including CSR, SSR, SSG, ISR, and streaming. Use when architecting web applications, choosing rendering methods for Next.js/Remix, or optimizing for SEO and performance.
+description: Web rendering strategies (CSR, SSR, SSG, ISR, Streaming, RSC) for Next.js/Remix. Use when choosing rendering architecture, optimizing SEO/performance, or configuring data fetching strategies.
 ---
 
 # Rendering Patterns
 
-Modern web rendering strategies for building fast, SEO-friendly, and scalable applications.
+## Quick Reference
 
-## When to Use This Skill
+| Pattern | Data | Best For | SEO |
+|---------|------|----------|-----|
+| CSR | Client fetch | Dashboards, SPAs | ❌ |
+| SSR | Per request | Personalized, real-time | ✅ |
+| SSG | Build time | Blogs, docs, marketing | ✅ |
+| ISR | Revalidate | E-commerce, news | ✅ |
+| Streaming | Progressive | Slow APIs, dashboards | ✅ |
 
-- Choosing rendering architecture for new projects
-- Configuring Next.js or Remix applications
-- Optimizing for SEO requirements
-- Improving performance metrics (FCP, LCP, TTI)
-- Migrating between rendering strategies
+## Decision Tree
 
-## Rendering Strategies Overview
-
-| Pattern | Build Time | Request Time | Best For |
-|---------|-----------|--------------|----------|
-| CSR | - | Full render | Dashboards, SPAs |
-| SSR | - | Full render | Dynamic, personalized content |
-| SSG | Full render | - | Blogs, marketing sites |
-| ISR | Initial render | Revalidate | E-commerce, news sites |
-| Streaming | - | Progressive | Large pages, slow data |
+```
+Real-time/personalized? → SSR or Streaming
+Content changes often? → ISR
+Static content? → SSG
+Behind auth + interactive? → CSR
+```
 
 ---
 
-## 1. Client-Side Rendering (CSR)
+## 1. CSR (Client-Side Rendering)
 
-All rendering happens in the browser. Server sends minimal HTML with JavaScript bundle.
+Browser renders everything. Poor SEO, good for authenticated apps.
 
 ```jsx
-// Traditional CSR with React
-// index.html
-<!DOCTYPE html>
-<html>
-  <head>
-    <title>CSR App</title>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script src="/bundle.js"></script>
-  </body>
-</html>
-
-// App.jsx
 const App = () => {
   const [data, setData] = useState(null);
-  const [loading, setLoading] = useState(true);
-  
   useEffect(() => {
-    fetch('/api/data')
-      .then(res => res.json())
-      .then(setData)
-      .finally(() => setLoading(false));
+    fetch('/api/data').then(r => r.json()).then(setData);
   }, []);
-  
-  if (loading) return <Spinner />;
-  
-  return <Dashboard data={data} />;
+  return data ? <Dashboard data={data} /> : <Spinner />;
 };
-
-createRoot(document.getElementById('root')).render(<App />);
 ```
 
-**Process:**
-1. Browser requests page
-2. Server returns empty HTML + JS bundle
-3. Browser downloads and parses JS
-4. React renders UI
-5. Data fetched after initial render
-
-**Pros:**
-- Simple deployment (static hosting)
-- Rich interactivity
-- Good for authenticated/personalized content
-
-**Cons:**
-- Poor SEO (empty initial HTML)
-- Slower First Contentful Paint
-- JS required for any content
-- Loading spinners on initial load
-
-**Best For:**
-- Admin dashboards
-- Internal tools
-- Apps behind authentication
-- Highly interactive applications
+**Use for**: Admin panels, internal tools, SPAs behind login.
 
 ---
 
-## 2. Server-Side Rendering (SSR)
+## 2. SSR (Server-Side Rendering)
 
-Server renders full HTML for each request.
+Server renders per request. Fresh data, good SEO.
 
-```jsx
-// Next.js App Router - Server Component (default)
-// app/products/[id]/page.tsx
-async function ProductPage({ params }: { params: { id: string } }) {
-  // Runs on server for every request
-  const product = await fetch(`https://api.example.com/products/${params.id}`, {
-    cache: 'no-store' // Opt out of caching = SSR
-  }).then(res => res.json());
+```tsx
+// Next.js App Router - cache: 'no-store' = SSR
+async function ProductPage({ params }) {
+  const product = await fetch(`/api/products/${params.id}`, {
+    cache: 'no-store'
+  }).then(r => r.json());
   
-  return (
-    <main>
-      <h1>{product.name}</h1>
-      <p>{product.description}</p>
-      <AddToCartButton productId={product.id} />
-    </main>
-  );
+  return <div><h1>{product.name}</h1></div>;
 }
-
-export default ProductPage;
 ```
 
-```jsx
+```tsx
 // Next.js Pages Router
-// pages/products/[id].tsx
 export async function getServerSideProps({ params }) {
-  const product = await fetch(`https://api.example.com/products/${params.id}`)
-    .then(res => res.json());
-  
-  return {
-    props: { product }
-  };
-}
-
-function ProductPage({ product }) {
-  return (
-    <main>
-      <h1>{product.name}</h1>
-      <p>{product.description}</p>
-    </main>
-  );
-}
-
-export default ProductPage;
-```
-
-```jsx
-// Remix SSR
-// app/routes/products.$id.tsx
-import { json } from '@remix-run/node';
-import { useLoaderData } from '@remix-run/react';
-
-export async function loader({ params }) {
   const product = await getProduct(params.id);
-  
-  if (!product) {
-    throw new Response('Not Found', { status: 404 });
-  }
-  
-  return json({ product });
-}
-
-export default function ProductPage() {
-  const { product } = useLoaderData<typeof loader>();
-  
-  return (
-    <main>
-      <h1>{product.name}</h1>
-      <p>{product.description}</p>
-    </main>
-  );
+  return { props: { product } };
 }
 ```
 
-**Process:**
-1. Browser requests page
-2. Server fetches data
-3. Server renders HTML with data
-4. Browser receives complete HTML
-5. React hydrates for interactivity
+```tsx
+// Remix
+export async function loader({ params }) {
+  return json({ product: await getProduct(params.id) });
+}
+```
 
-**Pros:**
-- SEO-friendly (complete HTML)
-- Fast First Contentful Paint
-- Works without JavaScript
-- Fresh data on every request
-
-**Cons:**
-- Higher server load
-- Slower Time to First Byte (TTFB)
-- Full page generation per request
-- Requires Node.js server
-
-**Best For:**
-- User-specific content
-- Real-time data requirements
-- Pages with frequent updates
-- E-commerce product pages
+**Use for**: User-specific content, real-time data, frequently changing pages.
 
 ---
 
-## 3. Static Site Generation (SSG)
+## 3. SSG (Static Site Generation)
 
-Pages pre-rendered at build time.
+Pre-rendered at build. Fastest, served from CDN.
 
-```jsx
-// Next.js App Router - Static by default
-// app/blog/[slug]/page.tsx
-import { notFound } from 'next/navigation';
-
-// Generate static paths at build time
+```tsx
+// Next.js App Router - static by default
 export async function generateStaticParams() {
   const posts = await getAllPosts();
-  
-  return posts.map((post) => ({
-    slug: post.slug,
-  }));
+  return posts.map(p => ({ slug: p.slug }));
 }
 
-// Static page component
-async function BlogPost({ params }: { params: { slug: string } }) {
-  const post = await getPostBySlug(params.slug);
-  
-  if (!post) {
-    notFound();
-  }
-  
-  return (
-    <article>
-      <h1>{post.title}</h1>
-      <time>{post.publishedAt}</time>
-      <div dangerouslySetInnerHTML={{ __html: post.content }} />
-    </article>
-  );
+async function BlogPost({ params }) {
+  const post = await getPost(params.slug);
+  return <article><h1>{post.title}</h1></article>;
 }
-
-export default BlogPost;
 ```
 
-```jsx
+```tsx
 // Next.js Pages Router
-// pages/blog/[slug].tsx
 export async function getStaticPaths() {
   const posts = await getAllPosts();
-  
   return {
-    paths: posts.map(post => ({
-      params: { slug: post.slug }
-    })),
-    fallback: false // 404 for unknown paths
+    paths: posts.map(p => ({ params: { slug: p.slug } })),
+    fallback: false
   };
 }
 
 export async function getStaticProps({ params }) {
-  const post = await getPostBySlug(params.slug);
-  
-  return {
-    props: { post }
-  };
+  return { props: { post: await getPost(params.slug) } };
 }
-
-function BlogPost({ post }) {
-  return (
-    <article>
-      <h1>{post.title}</h1>
-      <div dangerouslySetInnerHTML={{ __html: post.content }} />
-    </article>
-  );
-}
-
-export default BlogPost;
 ```
 
-**Process:**
-1. Build process fetches all data
-2. All pages pre-rendered to HTML
-3. HTML files deployed to CDN
-4. Browser receives pre-built HTML instantly
-
-**Pros:**
-- Fastest possible TTFB (CDN)
-- Excellent SEO
-- Low server costs
-- High reliability (static files)
-
-**Cons:**
-- Stale content until rebuild
-- Long build times for large sites
-- Not suitable for dynamic content
-- Rebuild needed for updates
-
-**Best For:**
-- Marketing/landing pages
-- Documentation sites
-- Blogs
-- Any content that changes infrequently
+**Use for**: Blogs, docs, marketing pages, content that rarely changes.
 
 ---
 
-## 4. Incremental Static Regeneration (ISR)
+## 4. ISR (Incremental Static Regeneration)
 
-Static pages that revalidate and regenerate in the background.
+Static + background revalidation. Best of SSG and SSR.
 
-```jsx
-// Next.js App Router - Time-based revalidation
-// app/products/page.tsx
-async function ProductsPage() {
-  const products = await fetch('https://api.example.com/products', {
-    next: { revalidate: 60 } // Revalidate every 60 seconds
-  }).then(res => res.json());
-  
-  return (
-    <ul>
-      {products.map(product => (
-        <li key={product.id}>{product.name}</li>
-      ))}
-    </ul>
-  );
-}
+```tsx
+// Next.js App Router - time-based
+const products = await fetch('/api/products', {
+  next: { revalidate: 60 } // Refresh every 60s
+}).then(r => r.json());
 
-export default ProductsPage;
-```
+// Tag-based revalidation
+const data = await fetch('/api/data', {
+  next: { tags: ['products'] }
+});
 
-```jsx
-// Next.js App Router - On-demand revalidation
-// app/api/revalidate/route.ts
-import { revalidatePath, revalidateTag } from 'next/cache';
-
-export async function POST(request: Request) {
-  const { path, tag, secret } = await request.json();
-  
-  // Validate secret
-  if (secret !== process.env.REVALIDATION_SECRET) {
-    return Response.json({ error: 'Invalid secret' }, { status: 401 });
-  }
-  
-  // Revalidate by path or tag
-  if (path) {
-    revalidatePath(path);
-  }
-  
-  if (tag) {
-    revalidateTag(tag);
-  }
-  
+// On-demand revalidation API
+import { revalidateTag } from 'next/cache';
+export async function POST(req) {
+  revalidateTag('products');
   return Response.json({ revalidated: true });
 }
-
-// Usage in data fetching with tags
-async function getProducts() {
-  const res = await fetch('https://api.example.com/products', {
-    next: { tags: ['products'] }
-  });
-  return res.json();
-}
-
-// Trigger from CMS webhook
-// POST /api/revalidate
-// { "tag": "products", "secret": "xxx" }
 ```
 
-```jsx
+```tsx
 // Next.js Pages Router
-// pages/products/[id].tsx
-export async function getStaticProps({ params }) {
-  const product = await getProduct(params.id);
-  
+export async function getStaticProps() {
   return {
-    props: { product },
-    revalidate: 60 // Regenerate after 60 seconds
-  };
-}
-
-export async function getStaticPaths() {
-  const products = await getTopProducts(100);
-  
-  return {
-    paths: products.map(p => ({ params: { id: p.id } })),
-    fallback: 'blocking' // Generate unknown paths on-demand
+    props: { products: await getProducts() },
+    revalidate: 60
   };
 }
 ```
 
-**Fallback Strategies:**
-- `fallback: false` - 404 for paths not in getStaticPaths
-- `fallback: true` - Show loading state, then render
-- `fallback: 'blocking'` - Wait for generation (SSR-like)
+**Fallback options**: `false` (404), `true` (loading state), `'blocking'` (wait).
 
-**Process:**
-1. Static pages served from cache
-2. After revalidation period, next request triggers regeneration
-3. New page generated in background
-4. Cache updated, subsequent requests get fresh content
-
-**Pros:**
-- Static performance with fresh content
-- Scales infinitely (CDN)
-- No full rebuild needed
-- Hybrid of SSG and SSR benefits
-
-**Cons:**
-- Data can be stale for revalidation period
-- More complex caching logic
-- Cold starts for uncached pages
-
-**Best For:**
-- E-commerce catalogs
-- News/media sites
-- Content that updates periodically
-- Large sites with many pages
+**Use for**: E-commerce, news, large sites with periodic updates.
 
 ---
 
 ## 5. Streaming SSR
 
-Progressive rendering that sends HTML in chunks as it becomes available.
+Progressive HTML chunks. Fast initial paint.
 
-```jsx
-// Next.js App Router - Streaming with Suspense
-// app/dashboard/page.tsx
+```tsx
+// Next.js - Suspense boundaries
 import { Suspense } from 'react';
 
-// Fast component - renders immediately
-function Header() {
-  return <header><h1>Dashboard</h1></header>;
-}
-
-// Slow component - data fetching
-async function Analytics() {
-  const data = await fetchAnalytics(); // Slow API call
-  return <AnalyticsChart data={data} />;
-}
-
-async function RecentOrders() {
-  const orders = await fetchRecentOrders(); // Another slow call
-  return <OrdersList orders={orders} />;
-}
-
-// Page streams content progressively
-export default function DashboardPage() {
-  return (
-    <div>
-      <Header /> {/* Sent immediately */}
-      
-      <Suspense fallback={<AnalyticsSkeleton />}>
-        <Analytics /> {/* Streamed when ready */}
-      </Suspense>
-      
-      <Suspense fallback={<OrdersSkeleton />}>
-        <RecentOrders /> {/* Streamed when ready */}
-      </Suspense>
-    </div>
-  );
-}
-```
-
-```jsx
-// Loading UI with loading.tsx
-// app/dashboard/loading.tsx
-export default function Loading() {
-  return (
-    <div className="dashboard-skeleton">
-      <HeaderSkeleton />
-      <ChartSkeleton />
-      <TableSkeleton />
-    </div>
-  );
-}
-
-// Nested loading states
-// app/dashboard/@analytics/loading.tsx
-export default function AnalyticsLoading() {
-  return <ChartSkeleton />;
-}
-```
-
-```jsx
-// Remix streaming
-// app/routes/dashboard.tsx
-import { defer } from '@remix-run/node';
-import { Await, useLoaderData } from '@remix-run/react';
-
-export async function loader() {
-  // Start slow requests but don't await
-  const analyticsPromise = fetchAnalytics();
-  const ordersPromise = fetchRecentOrders();
-  
-  // Return immediately, stream later
-  return defer({
-    analytics: analyticsPromise,
-    orders: ordersPromise,
-  });
-}
-
 export default function Dashboard() {
-  const { analytics, orders } = useLoaderData<typeof loader>();
-  
   return (
     <div>
-      <Header />
-      
+      <Header /> {/* Immediate */}
       <Suspense fallback={<ChartSkeleton />}>
-        <Await resolve={analytics}>
-          {(data) => <AnalyticsChart data={data} />}
-        </Await>
-      </Suspense>
-      
-      <Suspense fallback={<TableSkeleton />}>
-        <Await resolve={orders}>
-          {(data) => <OrdersList orders={data} />}
-        </Await>
+        <SlowAnalytics /> {/* Streams when ready */}
       </Suspense>
     </div>
   );
 }
+
+// loading.tsx for route-level loading
+export default function Loading() {
+  return <DashboardSkeleton />;
+}
 ```
 
-**Process:**
-1. Server starts rendering
-2. Fast parts sent immediately
-3. Suspense boundaries show fallbacks
-4. Slow data streams in as available
-5. HTML chunks replace fallbacks
-
-**Pros:**
-- Improved perceived performance
-- Better TTFB than traditional SSR
-- Parallel data fetching
-- Progressive enhancement
-
-**Cons:**
-- More complex architecture
-- Requires Suspense planning
-- Infrastructure must support streaming
-
-**Best For:**
-- Dashboards with multiple data sources
-- Pages with slow APIs
-- Large pages with independent sections
-
----
-
-## 6. React Server Components (RSC)
-
-Components that run only on the server, sending serialized output to client.
-
-```jsx
-// Server Component (default in App Router)
-// app/products/page.tsx
-import { db } from '@/lib/db';
-
-// This NEVER runs in browser
-// Can use Node.js APIs, direct DB access, etc.
-async function ProductsPage() {
-  // Direct database query - no API needed
-  const products = await db.product.findMany({
-    orderBy: { createdAt: 'desc' },
-    take: 20,
+```tsx
+// Remix - defer
+export async function loader() {
+  return defer({
+    analytics: fetchAnalytics(), // Don't await
   });
-  
-  return (
-    <main>
-      <h1>Products</h1>
-      {products.map(product => (
-        <ProductCard key={product.id} product={product} />
-      ))}
-    </main>
-  );
 }
 
-export default ProductsPage;
-```
-
-```jsx
-// Client Component - explicitly marked
-// components/AddToCartButton.tsx
-'use client';
-
-import { useState } from 'react';
-
-export function AddToCartButton({ productId }: { productId: string }) {
-  const [isAdding, setIsAdding] = useState(false);
-  
-  const handleClick = async () => {
-    setIsAdding(true);
-    await addToCart(productId);
-    setIsAdding(false);
-  };
-  
+export default function Page() {
+  const { analytics } = useLoaderData();
   return (
-    <button onClick={handleClick} disabled={isAdding}>
-      {isAdding ? 'Adding...' : 'Add to Cart'}
-    </button>
-  );
-}
-```
-
-```jsx
-// Mixing Server and Client Components
-// app/products/[id]/page.tsx (Server Component)
-import { AddToCartButton } from '@/components/AddToCartButton';
-
-async function ProductPage({ params }: { params: { id: string } }) {
-  const product = await db.product.findUnique({
-    where: { id: params.id }
-  });
-  
-  return (
-    <div>
-      {/* Static content rendered on server */}
-      <h1>{product.name}</h1>
-      <p>{product.description}</p>
-      <span>${product.price}</span>
-      
-      {/* Interactive part - Client Component */}
-      <AddToCartButton productId={product.id} />
-    </div>
-  );
-}
-```
-
-```jsx
-// Passing Server Data to Client Components
-// ❌ Wrong - Can't pass functions or non-serializable data
-<ClientComponent onClick={handleClick} db={dbConnection} />
-
-// ✅ Correct - Pass serializable props
-<ClientComponent productId={product.id} initialData={product} />
-
-// ✅ Correct - Children pattern
-async function ServerWrapper() {
-  const data = await fetchData();
-  
-  return (
-    <ClientInteractiveWrapper>
-      <ServerRenderedContent data={data} />
-    </ClientInteractiveWrapper>
-  );
-}
-```
-
-**Server vs Client Components:**
-
-| Feature | Server Component | Client Component |
-|---------|-----------------|------------------|
-| Interactivity | ❌ No hooks/events | ✅ Full React |
-| Direct data access | ✅ DB, filesystem | ❌ API only |
-| Bundle size | ✅ Zero JS | ❌ Adds to bundle |
-| Secrets/API keys | ✅ Safe | ❌ Exposed |
-| Browser APIs | ❌ No window/document | ✅ Full access |
-
-**Pros:**
-- Zero client JS for server components
-- Direct backend access
-- Smaller bundles
-- Better security (secrets stay on server)
-
-**Cons:**
-- New mental model
-- Can't use hooks in server components
-- Serialization constraints
-- Limited ecosystem support
-
-**Best For:**
-- Data-heavy pages
-- Components that don't need interactivity
-- Security-sensitive data display
-- Large applications (bundle size matters)
-
----
-
-## Choosing the Right Pattern
-
-### Decision Tree
-
-```
-Need real-time/personalized data?
-├── Yes → SSR or Streaming
-└── No → Content changes frequently?
-    ├── Yes → ISR
-    └── No → SSG
-
-Need interactivity?
-├── Heavy interactivity → CSR (or hybrid)
-└── Light interactivity → Server Components + Client islands
-```
-
-### Pattern Combinations
-
-```jsx
-// Next.js - Hybrid approach
-// Static shell + dynamic content
-
-// app/layout.tsx - Static
-export default function RootLayout({ children }) {
-  return (
-    <html>
-      <body>
-        <Header /> {/* Static */}
-        <Nav /> {/* Static */}
-        {children}
-        <Footer /> {/* Static */}
-      </body>
-    </html>
-  );
-}
-
-// app/page.tsx - ISR
-export const revalidate = 3600; // 1 hour
-
-async function HomePage() {
-  const featured = await getFeaturedProducts();
-  return <FeaturedGrid products={featured} />;
-}
-
-// app/dashboard/page.tsx - SSR with streaming
-export const dynamic = 'force-dynamic';
-
-async function DashboardPage() {
-  return (
-    <Suspense fallback={<DashboardSkeleton />}>
-      <Dashboard />
+    <Suspense fallback={<Skeleton />}>
+      <Await resolve={analytics}>
+        {data => <Chart data={data} />}
+      </Await>
     </Suspense>
   );
 }
 ```
 
+**Use for**: Dashboards, pages with slow APIs, multiple data sources.
+
 ---
 
-## Performance Metrics Impact
+## 6. React Server Components (RSC)
 
-| Pattern | FCP | LCP | TTI | TTFB |
-|---------|-----|-----|-----|------|
-| CSR | Poor | Poor | Good | Excellent |
-| SSR | Good | Good | Medium | Medium |
-| SSG | Excellent | Excellent | Excellent | Excellent |
-| ISR | Excellent | Excellent | Excellent | Excellent |
-| Streaming | Excellent | Good | Good | Excellent |
+Server-only components. Zero client JS, direct DB access.
 
-## Related Skills
+```tsx
+// Server Component (default) - no 'use client'
+async function Products() {
+  const products = await db.product.findMany(); // Direct DB
+  return products.map(p => <Card key={p.id} product={p} />);
+}
 
-- For React component patterns, see: `react-patterns`
-- For performance optimization, see: `performance-patterns`
+// Client Component - interactive
+'use client';
+export function AddToCart({ id }) {
+  const [adding, setAdding] = useState(false);
+  return <button onClick={() => addToCart(id)}>Add</button>;
+}
+
+// Mix them
+async function ProductPage({ params }) {
+  const product = await db.product.findUnique({ where: { id: params.id } });
+  return (
+    <div>
+      <h1>{product.name}</h1> {/* Server */}
+      <AddToCart id={product.id} /> {/* Client */}
+    </div>
+  );
+}
+```
+
+| | Server Component | Client Component |
+|-|-----------------|------------------|
+| Hooks/events | ❌ | ✅ |
+| DB/filesystem | ✅ | ❌ |
+| Bundle size | Zero | Adds JS |
+| Secrets safe | ✅ | ❌ |
+
+---
+
+## Next.js Route Config
+
+```tsx
+// Force SSR
+export const dynamic = 'force-dynamic';
+
+// Force static
+export const dynamic = 'force-static';
+
+// ISR
+export const revalidate = 60;
+
+// No cache
+export const fetchCache = 'force-no-store';
+```
+
+---
+
+## Performance Impact
+
+| Pattern | FCP | LCP | TTFB |
+|---------|-----|-----|------|
+| CSR | Poor | Poor | Best |
+| SSR | Good | Good | Medium |
+| SSG/ISR | Best | Best | Best |
+| Streaming | Best | Good | Best |
