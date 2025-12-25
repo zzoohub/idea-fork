@@ -7,6 +7,7 @@ This module initializes the FastAPI application with:
 - OpenAPI documentation
 """
 
+import logging
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
@@ -18,13 +19,40 @@ from src.health.router import router as health_router
 from src.ideas.router import router as ideas_router
 from src.taxonomies.router import router as taxonomies_router
 
+logger = logging.getLogger(__name__)
+
+
+def _configure_idea_generator() -> None:
+    """Configure idea-generator package with API settings (one-time init)."""
+    try:
+        from idea_generator.pipeline.config import PipelineSettings, configure_settings
+
+        pipeline_settings = PipelineSettings(
+            google_api_key=settings.google_api_key,
+            llm_model=settings.llm_model,
+            llm_temperature=settings.llm_temperature,
+            llm_max_tokens=settings.llm_max_tokens,
+            database_url=settings.database_url.replace("+asyncpg", ""),
+        )
+        configure_settings(pipeline_settings)
+        logger.info("idea-generator configured successfully")
+    except ImportError:
+        logger.warning("idea-generator not installed, SSE streaming will not work")
+    except Exception as e:
+        logger.error(f"Failed to configure idea-generator: {e}")
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Application lifespan handler for startup/shutdown events."""
-    print(f"Starting {settings.app_name}...")
+    logger.info(f"Starting {settings.app_name}...")
+
+    # Initialize idea-generator (one-time)
+    _configure_idea_generator()
+
     yield
-    print(f"Shutting down {settings.app_name}...")
+
+    logger.info(f"Shutting down {settings.app_name}...")
 
 
 app = FastAPI(

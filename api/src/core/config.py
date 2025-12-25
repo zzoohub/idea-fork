@@ -50,6 +50,24 @@ class Settings(BaseSettings):
         description="Allowed CORS origins",
     )
 
+    # Idea Generator (LLM settings for direct API generation)
+    google_api_key: str = Field(
+        default="",
+        description="Google API key for Gemini LLM",
+    )
+    llm_model: str = Field(
+        default="gemini-2.0-flash",
+        description="LLM model name",
+    )
+    llm_temperature: float = Field(
+        default=0.8,
+        description="LLM temperature for generation",
+    )
+    llm_max_tokens: int = Field(
+        default=8192,
+        description="Maximum tokens for LLM response",
+    )
+
     # Pagination
     default_page_size: int = Field(default=20, description="Default items per page")
     max_page_size: int = Field(default=100, description="Maximum items per page")

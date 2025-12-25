@@ -6,6 +6,7 @@ Defines the state schema that flows through the graph nodes.
 
 from enum import Enum
 from typing import Any, Optional
+
 from typing_extensions import TypedDict
 
 
@@ -21,13 +22,18 @@ class GenerationStatus(str, Enum):
     FAILED = "failed"
 
 
-class GenerationProgress(TypedDict):
+class GenerationProgress(TypedDict, total=False):
     """Progress tracking for the generation pipeline."""
 
-    status: GenerationStatus
-    current_step: int
-    total_steps: int
-    message: str
+    status: GenerationStatus  # Required
+    current_step: int  # Required
+    total_steps: int  # Required
+    message: str  # Required
+
+    # Optional fields (only on completion/failure)
+    idea_id: Optional[int]
+    idea_slug: Optional[str]
+    error: Optional[str]
 
 
 class IdeaConcept(TypedDict):
@@ -156,7 +162,7 @@ def create_initial_state(
     available_functions: list[str],
     available_industries: list[str],
     available_target_users: list[str],
-    available_categories: list[str] = None,  # Legacy, optional
+    available_categories: Optional[list[str]] = None,  # Legacy, optional
     target_industry: Optional[str] = None,
     idea_seed: Optional[str] = None,
     user_id: Optional[str] = None,
@@ -215,7 +221,7 @@ def create_fork_state(
     available_functions: list[str],
     available_industries: list[str],
     available_target_users: list[str],
-    available_categories: list[str] = None,  # Legacy, optional
+    available_categories: Optional[list[str]] = None,  # Legacy, optional
     user_id: Optional[str] = None,
     modifications: Optional[dict[str, Any]] = None,
 ) -> IdeaGenerationState:
@@ -239,6 +245,8 @@ def create_fork_state(
         run_id=run_id,
         idea_index=0,
         target_function=target_function,
+        target_industry=None,
+        idea_seed=None,
         available_functions=available_functions,
         available_industries=available_industries,
         available_target_users=available_target_users,

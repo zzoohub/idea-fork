@@ -17,6 +17,11 @@ from idea_generator.models.state import (
 from idea_generator.pipeline.graph import (
     create_idea_generation_graph,
     generate_single_idea,
+    generate_single_idea_stream,
+)
+from idea_generator.pipeline.repository import (
+    IdeaCoreRepository,
+    get_async_session,
 )
 
 __version__ = "0.1.0"
@@ -33,4 +38,8 @@ __all__ = [
     # Pipeline
     "create_idea_generation_graph",
     "generate_single_idea",
+    "generate_single_idea_stream",
+    # Repository
+    "IdeaCoreRepository",
+    "get_async_session",
 ]

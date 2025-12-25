@@ -14,6 +14,7 @@ import uuid
 from datetime import datetime, timezone
 from typing import Any, Optional
 
+from idea_generator.models.state import GenerationProgress, GenerationStatus
 from rq import get_current_job
 
 from src.core.config import settings
@@ -53,7 +54,7 @@ def _update_job_meta(status: str, message: str, progress: int = 0) -> None:
         logger.debug(f"Job {job.id} progress: {status} - {message} ({progress}%)")
 
 
-def _progress_callback(progress_data: dict) -> None:
+def _progress_callback(progress_data: "GenerationProgress") -> None:
     """Callback for progress updates from the pipeline.
 
     Maps GenerationProgress to job.meta updates.
@@ -69,7 +70,7 @@ def _progress_callback(progress_data: dict) -> None:
     }
 
     status = progress_data.get("status", "queued")
-    if hasattr(status, "value"):
+    if isinstance(status, GenerationStatus):
         status = status.value
 
     mapped_status, default_progress = status_map.get(status, ("UNKNOWN", 0))
@@ -241,11 +242,21 @@ def fork_idea_task(
         from idea_generator.pipeline.repository import IdeaCoreRepository, get_async_session
 
         async def _run_fork():
-            # Get available categories
+            # Get available taxonomies from database
             async with get_async_session() as session:
                 repo = IdeaCoreRepository(session)
+                available_functions = await repo.get_all_function_slugs()
+                available_industries = await repo.get_all_industry_slugs()
+                available_target_users = await repo.get_all_target_user_slugs()
                 available_categories = await repo.get_all_category_slugs()
 
+            # Fallback defaults
+            if not available_functions:
+                available_functions = ["create", "automate", "analyze", "connect"]
+            if not available_industries:
+                available_industries = ["technology", "healthcare", "finance", "education"]
+            if not available_target_users:
+                available_target_users = ["developers", "businesses", "consumers"]
             if not available_categories:
                 available_categories = ["saas", "ai", "productivity"]
 
@@ -253,6 +264,9 @@ def fork_idea_task(
             idea_id, idea_slug, error = await fork_idea(
                 run_id=run_id,
                 forked_from_slug=fork_from_slug,
+                available_functions=available_functions,
+                available_industries=available_industries,
+                available_target_users=available_target_users,
                 available_categories=available_categories,
                 user_id=user_id,
                 modifications=modifications,
@@ -340,11 +354,22 @@ def generate_daily_ideas_task(count: int = 3) -> dict[str, Any]:
         from idea_generator.pipeline.repository import IdeaCoreRepository, get_async_session
 
         async def _run_batch_generation():
-            # Get available categories once
+            # Get available taxonomies once
             async with get_async_session() as session:
                 repo = IdeaCoreRepository(session)
+                available_functions = await repo.get_all_function_slugs()
+                available_industries = await repo.get_all_industry_slugs()
+                available_target_users = await repo.get_all_target_user_slugs()
                 available_categories = await repo.get_all_category_slugs()
 
+            # Fallback defaults if empty
+            if not available_functions:
+                logger.warning(f"[{run_id}] No functions found, using defaults")
+                available_functions = ["create", "automate", "analyze", "connect"]
+            if not available_industries:
+                available_industries = ["technology", "healthcare", "finance", "education"]
+            if not available_target_users:
+                available_target_users = ["developers", "businesses", "consumers"]
             if not available_categories:
                 logger.warning(f"[{run_id}] No categories found, using defaults")
                 available_categories = ["saas", "ai", "productivity"]
@@ -366,6 +391,9 @@ def generate_daily_ideas_task(count: int = 3) -> dict[str, Any]:
                     idea_id, idea_slug, error = await generate_single_idea(
                         run_id=idea_run_id,
                         idea_index=i,
+                        available_functions=available_functions,
+                        available_industries=available_industries,
+                        available_target_users=available_target_users,
                         available_categories=available_categories,
                         user_id=None,  # System-generated
                         progress_callback=None,  # No per-idea progress for batch

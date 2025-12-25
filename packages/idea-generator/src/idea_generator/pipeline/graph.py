@@ -7,7 +7,7 @@ generate_concept -> expand_prd -> categorize -> save
 
 import logging
 import uuid
-from typing import Any, Callable, Optional
+from typing import Any, AsyncGenerator, Callable, Optional
 
 from langgraph.graph import END, START, StateGraph
 
@@ -182,6 +182,9 @@ async def generate_single_idea(
 async def fork_idea(
     run_id: str,
     forked_from_slug: str,
+    available_functions: list[str],
+    available_industries: list[str],
+    available_target_users: list[str],
     available_categories: list[str],
     user_id: Optional[str] = None,
     modifications: Optional[dict[str, Any]] = None,
@@ -192,6 +195,9 @@ async def fork_idea(
     Args:
         run_id: Unique run identifier
         forked_from_slug: Slug of the idea to fork
+        available_functions: List of function slugs from database
+        available_industries: List of industry slugs from database
+        available_target_users: List of target user slugs from database
         available_categories: List of category slugs from database
         user_id: Optional user ID for on-demand generation
         modifications: Optional modifications to apply
@@ -214,6 +220,9 @@ async def fork_idea(
 
         forked_from_id = original_idea["id"]
 
+    # Get function from original idea for fork
+    target_function = original_idea.get("function_slug", "create")
+
     # Create fork state with original idea data
     fork_modifications = {
         "original_idea": original_idea,
@@ -223,6 +232,10 @@ async def fork_idea(
     initial_state = create_fork_state(
         run_id=run_id,
         forked_from_id=forked_from_id,
+        target_function=target_function,
+        available_functions=available_functions,
+        available_industries=available_industries,
+        available_target_users=available_target_users,
         available_categories=available_categories,
         user_id=user_id,
         modifications=fork_modifications,
@@ -260,6 +273,135 @@ async def fork_idea(
                 )
             )
         return None, None, str(e)
+
+
+async def generate_single_idea_stream(
+    run_id: str,
+    idea_index: int,
+    available_functions: list[str],
+    available_industries: list[str],
+    available_target_users: list[str],
+    available_categories: list[str],
+    function_slug: Optional[str] = None,
+    industry_slug: Optional[str] = None,
+    idea_seed: Optional[str] = None,
+    user_id: Optional[str] = None,
+) -> AsyncGenerator[GenerationProgress, None]:
+    """Generate a single idea with streaming progress updates.
+
+    Yields GenerationProgress at each pipeline step for real-time SSE streaming.
+    Use this for user-triggered generation that requires immediate feedback.
+
+    Args:
+        run_id: Unique run identifier
+        idea_index: Index of this idea in the batch (0-based)
+        available_functions: List of function slugs from database
+        available_industries: List of industry slugs from database
+        available_target_users: List of target user slugs from database
+        available_categories: List of category slugs (legacy)
+        function_slug: Optional function type (random if not provided)
+        industry_slug: Optional industry (random if not provided)
+        idea_seed: Optional user idea text for seed-based generation
+        user_id: Optional user ID for on-demand generation
+
+    Yields:
+        GenerationProgress objects at each step
+    """
+    import random
+
+    # Random selection if not provided
+    target_function = function_slug or random.choice(available_functions)
+    target_industry = industry_slug or random.choice(available_industries)
+
+    logger.info(
+        f"[{run_id}] Starting streaming idea generation "
+        f"(function={target_function}, industry={target_industry}, has_seed={bool(idea_seed)})"
+    )
+
+    # Initial progress
+    yield GenerationProgress(
+        status=GenerationStatus.QUEUED,
+        current_step=0,
+        total_steps=4,
+        message="Starting idea generation...",
+    )
+
+    # Create initial state with taxonomy info
+    initial_state = create_initial_state(
+        run_id=run_id,
+        idea_index=idea_index,
+        target_function=target_function,
+        available_functions=available_functions,
+        available_industries=available_industries,
+        available_target_users=available_target_users,
+        available_categories=available_categories,
+        target_industry=target_industry,
+        idea_seed=idea_seed,
+        user_id=user_id,
+    )
+
+    # Create graph
+    graph = create_idea_generation_graph()
+
+    # Node to step mapping for progress tracking
+    node_progress = {
+        "generate_concept": (GenerationStatus.GENERATING_CONCEPT, 1, "Generating concept..."),
+        "expand_prd": (GenerationStatus.EXPANDING_PRD, 2, "Expanding PRD..."),
+        "categorize": (GenerationStatus.CATEGORIZING, 3, "Categorizing..."),
+        "save": (GenerationStatus.SAVING, 4, "Saving to database..."),
+    }
+
+    try:
+        # Stream through each node
+        async for event in graph.astream(initial_state, stream_mode="updates"):
+            for node_name, node_output in event.items():
+                if node_name in node_progress:
+                    status, step, message = node_progress[node_name]
+
+                    # Get progress from node output if available
+                    if node_output.get("progress"):
+                        progress = node_output["progress"]
+                        yield progress
+                    else:
+                        yield GenerationProgress(
+                            status=status,
+                            current_step=step,
+                            total_steps=4,
+                            message=message,
+                        )
+
+                    # Check for error
+                    if node_output.get("error"):
+                        yield GenerationProgress(
+                            status=GenerationStatus.FAILED,
+                            current_step=step,
+                            total_steps=4,
+                            message=node_output["error"],
+                            error=node_output["error"],
+                        )
+                        return
+
+                    # Check for completion
+                    if node_output.get("completed"):
+                        yield GenerationProgress(
+                            status=GenerationStatus.COMPLETED,
+                            current_step=4,
+                            total_steps=4,
+                            message=f"Successfully generated: {node_output.get('idea_slug', 'idea')}",
+                            idea_id=node_output.get("idea_id"),
+                            idea_slug=node_output.get("idea_slug"),
+                        )
+                        return
+
+    except Exception as e:
+        logger.error(f"[{run_id}] Pipeline streaming failed: {e}")
+        yield GenerationProgress(
+            status=GenerationStatus.FAILED,
+            current_step=0,
+            total_steps=4,
+            message=str(e),
+            error=str(e),
+        )
 
 
 async def generate_ideas(count: int = 3, user_id: Optional[str] = None) -> list[int]:
