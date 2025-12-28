@@ -95,7 +95,7 @@ async def get_current_user_optional(
         return None
 
     result = await session.execute(
-        select(User).where(User.id == user_id, User.is_active == True)  # noqa: E712
+        select(User).where(User.id == user_id, User.is_active == True)  # pyright: ignore[reportArgumentType]
     )
     user = result.scalar_one_or_none()
 

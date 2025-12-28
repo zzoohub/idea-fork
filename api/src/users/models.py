@@ -51,7 +51,7 @@ class User(SQLModel, table=True):
     Currently, only Google OAuth is implemented.
     """
 
-    __tablename__ = "users"
+    __tablename__ = "users"  # type: ignore
 
     # Primary key
     id: UUID = Field(
@@ -161,7 +161,9 @@ class User(SQLModel, table=True):
         Returns:
             Monthly credit count, or -1 for unlimited (enterprise).
         """
-        return _TIER_CREDITS.get(self.subscription_tier, _TIER_CREDITS[SubscriptionTier.FREE])
+        return _TIER_CREDITS.get(
+            self.subscription_tier, _TIER_CREDITS[SubscriptionTier.FREE]
+        )
 
     def reset_credits(self) -> None:
         """Reset credits to monthly allocation (for billing cycle)."""

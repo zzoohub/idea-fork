@@ -1,5 +1,5 @@
 [project]
-name = "idea-fork-server"
+name = "idea-fork-api"
 version = "0.1.0"
 description = "Idea Fork API - AI-powered product idea generation platform"
 readme = "README.md"

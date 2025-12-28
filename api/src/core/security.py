@@ -65,14 +65,15 @@ def create_access_token(
     to_encode = data.copy()
     now = datetime.now(timezone.utc)
     expire = now + (
-        expires_delta
-        or timedelta(minutes=settings.jwt_access_token_expire_minutes)
+        expires_delta or timedelta(minutes=settings.jwt_access_token_expire_minutes)
     )
 
-    to_encode.update({
-        "exp": expire,
-        "iat": now,
-    })
+    to_encode.update(
+        {
+            "exp": expire,
+            "iat": now,
+        }
+    )
 
     token = jwt.encode(
         to_encode,
