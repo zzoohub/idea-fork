@@ -18,6 +18,15 @@ from uuid import UUID
 from fastapi import APIRouter, HTTPException, status
 from fastapi.responses import StreamingResponse
 
+# Import from idea-generator (configured in main.py lifespan)
+# Import from idea-generator (configured in main.py lifespan)
+from idea_generator import (
+    GenerationStatus,
+    IdeaCoreRepository,
+    generate_single_idea_stream,
+    get_async_session,
+)
+
 from src.core.database import DbSession
 from src.core.exceptions import NotFoundError
 from src.generation.schemas import (
@@ -30,14 +39,6 @@ from src.generation.schemas import (
     SSEProgressEvent,
 )
 from src.generation.service import GenerationService
-
-# Import from idea-generator (configured in main.py lifespan)
-from idea_generator import (
-    GenerationStatus,
-    IdeaCoreRepository,
-    generate_single_idea_stream,
-    get_async_session,
-)
 
 logger = logging.getLogger(__name__)
 
@@ -104,7 +105,12 @@ async def generate_idea_stream(
                 if not available_functions:
                     available_functions = ["create", "automate", "analyze", "connect"]
                 if not available_industries:
-                    available_industries = ["technology", "healthcare", "finance", "education"]
+                    available_industries = [
+                        "technology",
+                        "healthcare",
+                        "finance",
+                        "education",
+                    ]
                 if not available_target_users:
                     available_target_users = ["developers", "businesses", "consumers"]
                 if not available_categories:
@@ -130,7 +136,11 @@ async def generate_idea_stream(
                     # Calculate progress percent from actual step/total
                     total_steps = progress.get("total_steps", 4)
                     current_step = progress.get("current_step", 0)
-                    progress_percent = int((current_step / total_steps) * 100) if total_steps > 0 else 0
+                    progress_percent = (
+                        int((current_step / total_steps) * 100)
+                        if total_steps > 0
+                        else 0
+                    )
 
                     # Determine event type
                     if progress["status"] == GenerationStatus.COMPLETED:
@@ -157,7 +167,9 @@ async def generate_idea_stream(
                         break
 
         except asyncio.TimeoutError:
-            logger.error(f"[{run_id}] Generation timed out after {SSE_TIMEOUT_SECONDS}s")
+            logger.error(
+                f"[{run_id}] Generation timed out after {SSE_TIMEOUT_SECONDS}s"
+            )
             event = SSEProgressEvent(
                 event="failed",
                 status=GenerationProgressStatus.FAILED,

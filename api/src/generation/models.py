@@ -25,7 +25,7 @@ class RequestStatus(str, Enum):
 class GenerationRequest(SQLModel, table=True):
     """Tracks idea generation requests and their status."""
 
-    __tablename__ = "generation_requests"
+    __tablename__ = "generation_requests"  # type: ignore
 
     id: UUID = Field(
         default_factory=uuid4,

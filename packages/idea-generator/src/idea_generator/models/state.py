@@ -7,7 +7,7 @@ Defines the state schema that flows through the graph nodes.
 from enum import Enum
 from typing import Any, Optional
 
-from typing_extensions import TypedDict
+from typing_extensions import NotRequired, TypedDict
 
 
 class GenerationStatus(str, Enum):
@@ -22,18 +22,18 @@ class GenerationStatus(str, Enum):
     FAILED = "failed"
 
 
-class GenerationProgress(TypedDict, total=False):
+class GenerationProgress(TypedDict):
     """Progress tracking for the generation pipeline."""
 
-    status: GenerationStatus  # Required
-    current_step: int  # Required
-    total_steps: int  # Required
-    message: str  # Required
+    status: GenerationStatus
+    current_step: int
+    total_steps: int
+    message: str
 
     # Optional fields (only on completion/failure)
-    idea_id: Optional[int]
-    idea_slug: Optional[str]
-    error: Optional[str]
+    idea_id: NotRequired[Optional[int]]
+    idea_slug: NotRequired[Optional[str]]
+    error: NotRequired[Optional[str]]
 
 
 class IdeaConcept(TypedDict):

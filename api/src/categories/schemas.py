@@ -5,31 +5,25 @@ Matches the frontend CategoryBadge TypeScript interface.
 """
 
 from datetime import datetime
-from typing import Literal
+from typing import Any, Literal, Mapping
 
 from pydantic import BaseModel, ConfigDict
 
-
-def to_camel(string: str) -> str:
-    """Convert snake_case to camelCase."""
-    components = string.split("_")
-    return components[0] + "".join(x.title() for x in components[1:])
+ColorVariant = Literal["primary", "teal", "orange", "indigo", "secondary"]
 
 
 class CategoryBadgeResponse(BaseModel):
     """Category badge response matching frontend CategoryBadge type."""
 
-    model_config = ConfigDict(
-        from_attributes=True,
-        populate_by_name=True,
-        alias_generator=to_camel,
-    )
+    model_config = ConfigDict(from_attributes=True)
 
     label: str
-    variant: Literal["primary", "teal", "orange", "indigo", "secondary"]
+    variant: ColorVariant
 
     @classmethod
-    def from_category(cls, name: str, color_variant: str) -> "CategoryBadgeResponse":
+    def from_category(
+        cls, name: str, color_variant: ColorVariant
+    ) -> "CategoryBadgeResponse":
         """Create CategoryBadgeResponse from category data."""
         return cls(label=name, variant=color_variant)
 
@@ -37,29 +31,25 @@ class CategoryBadgeResponse(BaseModel):
 class CategoryResponse(BaseModel):
     """Full category response for category listing endpoints."""
 
-    model_config = ConfigDict(
-        from_attributes=True,
-        populate_by_name=True,
-        alias_generator=to_camel,
-    )
+    model_config = ConfigDict(from_attributes=True)
 
     id: int
     name: str
     slug: str
-    colorVariant: Literal["primary", "teal", "orange", "indigo", "secondary"]
-    displayOrder: int
-    createdAt: datetime
-    updatedAt: datetime
+    color_variant: ColorVariant
+    display_order: int
+    created_at: datetime
+    updated_at: datetime
 
     @classmethod
-    def from_db_row(cls, row: dict) -> "CategoryResponse":
+    def from_db_row(cls, row: Mapping[str, Any]) -> "CategoryResponse":
         """Create CategoryResponse from database row."""
         return cls(
             id=row["id"],
             name=row["name"],
             slug=row["slug"],
-            colorVariant=row["color_variant"],
-            displayOrder=row["display_order"],
-            createdAt=row["created_at"],
-            updatedAt=row["updated_at"],
+            color_variant=row["color_variant"],
+            display_order=row["display_order"],
+            created_at=row["created_at"],
+            updated_at=row["updated_at"],
         )

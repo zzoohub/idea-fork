@@ -37,7 +37,6 @@ async def list_ideas(
     ),
     sort_by: SortBy = Query(
         SortBy.NEWEST,
-        alias="sortBy",
         description="Sort order: newest, oldest, popular, or alphabetical",
     ),
     limit: int = Query(

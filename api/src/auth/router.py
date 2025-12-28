@@ -95,12 +95,4 @@ async def google_login(
 async def get_me(current_user: CurrentUser) -> UserResponse:
     """Get current authenticated user profile."""
     logger.debug("User profile requested: %s", current_user.email)
-    return UserResponse(
-        id=str(current_user.id),
-        email=current_user.email,
-        name=current_user.name,
-        avatar_url=current_user.avatar_url,
-        subscription_tier=current_user.subscription_tier.value,
-        generation_credits=current_user.generation_credits,
-        is_verified=current_user.is_verified,
-    )
+    return UserResponse.model_validate(current_user)

@@ -14,12 +14,6 @@ from pydantic import BaseModel, ConfigDict, Field
 from src.generation.models import RequestStatus
 
 
-def to_camel(string: str) -> str:
-    """Convert snake_case to camelCase."""
-    components = string.split("_")
-    return components[0] + "".join(x.title() for x in components[1:])
-
-
 class GenerationProgressStatus(str, Enum):
     """Detailed progress status for SSE updates."""
 
@@ -42,27 +36,19 @@ class GenerateIdeaRequest(BaseModel):
     3. Seed-based: User provides idea_seed text, AI structures and expands it
     """
 
-    model_config = ConfigDict(
-        populate_by_name=True,
-        alias_generator=to_camel,
-    )
-
     # Taxonomy selection (optional - random if not provided)
     function_slug: Optional[str] = Field(
-        None,
-        alias="functionSlug",
+        default=None,
         description="Function type slug (e.g., 'create', 'automate'). Random if not provided.",
     )
     industry_slug: Optional[str] = Field(
-        None,
-        alias="industrySlug",
+        default=None,
         description="Industry slug (e.g., 'healthcare', 'finance'). Random if not provided.",
     )
 
     # User idea seed (optional)
     idea_seed: Optional[str] = Field(
-        None,
-        alias="ideaSeed",
+        default=None,
         max_length=2000,
         description="Free-form text describing user's idea. AI will structure and expand it.",
     )
@@ -71,32 +57,25 @@ class GenerateIdeaRequest(BaseModel):
 class ForkIdeaRequest(BaseModel):
     """Request to fork an existing idea with modifications."""
 
-    model_config = ConfigDict(
-        populate_by_name=True,
-        alias_generator=to_camel,
-    )
-
     # Optional modifications to apply when forking
     focus: Optional[str] = Field(
-        None,
+        default=None,
         max_length=500,
         description="New focus or direction for the forked idea",
     )
     target_audience: Optional[str] = Field(
-        None,
+        default=None,
         max_length=500,
-        alias="targetAudience",
         description="New target audience to adapt the idea for",
     )
     industry: Optional[str] = Field(
-        None,
+        default=None,
         max_length=200,
         description="Apply the idea to a different industry",
     )
     additional_notes: Optional[str] = Field(
-        None,
+        default=None,
         max_length=1000,
-        alias="additionalNotes",
         description="Additional context or requirements for the fork",
     )
 
@@ -105,11 +84,7 @@ class ForkIdeaRequest(BaseModel):
 class GenerationRequestResponse(BaseModel):
     """Response after initiating a generation request."""
 
-    model_config = ConfigDict(
-        from_attributes=True,
-        populate_by_name=True,
-        alias_generator=to_camel,
-    )
+    model_config = ConfigDict(from_attributes=True)
 
     request_id: UUID
     status: RequestStatus
@@ -119,11 +94,7 @@ class GenerationRequestResponse(BaseModel):
 class GenerationStatusResponse(BaseModel):
     """Response for generation request status check."""
 
-    model_config = ConfigDict(
-        from_attributes=True,
-        populate_by_name=True,
-        alias_generator=to_camel,
-    )
+    model_config = ConfigDict(from_attributes=True)
 
     request_id: UUID
     status: RequestStatus
@@ -145,11 +116,6 @@ class GenerationStatusResponse(BaseModel):
 
 class SSEProgressEvent(BaseModel):
     """Server-Sent Event for real-time progress updates."""
-
-    model_config = ConfigDict(
-        populate_by_name=True,
-        alias_generator=to_camel,
-    )
 
     event: str  # "progress", "completed", "failed"
     status: GenerationProgressStatus

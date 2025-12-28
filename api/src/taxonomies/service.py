@@ -3,9 +3,9 @@ Service layer for taxonomy operations.
 """
 
 from datetime import datetime
-from typing import Optional
+from typing import Any, Optional, cast
 
-from sqlalchemy import text
+from sqlalchemy import CursorResult, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.taxonomies.models import (
@@ -130,8 +130,11 @@ class TaxonomyService:
             WHERE slug = :slug AND deleted_at IS NULL
         """)
         now = datetime.utcnow()
-        result = await self.session.execute(
-            query, {"slug": slug, "deleted_at": now, "updated_at": now}
+        result = cast(
+            CursorResult[Any],
+            await self.session.execute(
+                query, {"slug": slug, "deleted_at": now, "updated_at": now}
+            ),
         )
         await self.session.commit()
         return result.rowcount > 0

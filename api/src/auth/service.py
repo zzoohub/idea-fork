@@ -184,9 +184,7 @@ class AuthService:
                 )
             except httpx.RequestError as e:
                 logger.error("Failed to fetch Google user info: %s", str(e))
-                raise UnauthorizedError(
-                    "Unable to retrieve user information"
-                ) from e
+                raise UnauthorizedError("Unable to retrieve user information") from e
 
             if response.status_code != 200:
                 logger.warning(
@@ -251,16 +249,15 @@ class AuthService:
 
     async def _find_user_by_google_id(self, google_id: str) -> User | None:
         """Find user by Google ID."""
+
         result = await self._session.execute(
-            select(User).where(User.google_id == google_id)
+            select(User).where(User.google_id == google_id)  # type: ignore
         )
         return result.scalar_one_or_none()
 
     async def _find_user_by_email(self, email: str) -> User | None:
         """Find user by email address."""
-        result = await self._session.execute(
-            select(User).where(User.email == email)
-        )
+        result = await self._session.execute(select(User).where(User.email == email))  # type: ignore
         return result.scalar_one_or_none()
 
     async def _update_user_from_google(
@@ -298,13 +295,5 @@ class AuthService:
                 token_type="bearer",
                 expires_in=settings.jwt_expire_seconds,
             ),
-            user=UserResponse(
-                id=str(user.id),
-                email=user.email,
-                name=user.name,
-                avatar_url=user.avatar_url,
-                subscription_tier=user.subscription_tier.value,
-                generation_credits=user.generation_credits,
-                is_verified=user.is_verified,
-            ),
+            user=UserResponse.model_validate(user),
         )

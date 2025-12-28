@@ -1,7 +1,7 @@
 """
 Idea Pydantic schemas for API responses.
 
-Matches the frontend Idea TypeScript interface with camelCase keys.
+Matches the frontend Idea TypeScript interface.
 """
 
 from enum import Enum
@@ -10,12 +10,6 @@ from typing import Any, Optional
 from pydantic import BaseModel, ConfigDict, Field
 
 from src.categories.schemas import CategoryBadgeResponse
-
-
-def to_camel(string: str) -> str:
-    """Convert snake_case to camelCase."""
-    components = string.split("_")
-    return components[0] + "".join(x.title() for x in components[1:])
 
 
 class SortBy(str, Enum):
@@ -30,59 +24,47 @@ class SortBy(str, Enum):
 class TaxonomyResponse(BaseModel):
     """Taxonomy classification for an idea."""
 
-    model_config = ConfigDict(
-        from_attributes=True,
-        populate_by_name=True,
-        alias_generator=to_camel,
-    )
+    model_config = ConfigDict(from_attributes=True)
 
-    functionSlug: str
-    industrySlug: Optional[str] = None
-    targetUserSlug: Optional[str] = None
+    function_slug: str
+    industry_slug: Optional[str] = None
+    target_user_slug: Optional[str] = None
 
 
 class IdeaResponse(BaseModel):
     """Idea response matching frontend Idea type."""
 
-    model_config = ConfigDict(
-        from_attributes=True,
-        populate_by_name=True,
-        alias_generator=to_camel,
-    )
+    model_config = ConfigDict(from_attributes=True)
 
     id: str
     title: str
     slug: str
-    imageUrl: str
-    imageAlt: str
+    image_url: str
+    image_alt: str
     categories: list[CategoryBadgeResponse]  # Legacy, kept for compatibility
     taxonomy: TaxonomyResponse  # New taxonomy classification
     problem: str
     solution: str
-    targetUsers: str
-    createdAt: str
+    target_users: str
+    created_at: str
     popularity: Optional[int] = None
 
 
 class IdeaDetailResponse(IdeaResponse):
     """Extended idea response with full details for single idea view."""
 
-    keyFeatures: list[str] = Field(default=[])
-    prdContent: Optional[dict[str, Any]] = None
-    viewCount: int = 0
-    publishedAt: Optional[str] = None
-    updatedAt: str
+    key_features: list[str] = Field(default=[])
+    prd_content: Optional[dict[str, Any]] = None
+    view_count: int = 0
+    published_at: Optional[str] = None
+    updated_at: str
 
 
 class IdeaListResponse(BaseModel):
     """Response wrapper for list of ideas with pagination metadata."""
 
-    model_config = ConfigDict(
-        from_attributes=True,
-        populate_by_name=True,
-        alias_generator=to_camel,
-    )
+    model_config = ConfigDict(from_attributes=True)
 
     items: list[IdeaResponse]
-    nextCursor: Optional[str] = None
-    hasMore: bool = False
+    next_cursor: Optional[str] = None
+    has_more: bool = False

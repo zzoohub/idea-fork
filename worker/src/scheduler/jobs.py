@@ -6,10 +6,12 @@ Contains the job registration functions that set up daily idea generation.
 
 import logging
 from datetime import datetime
+from typing import cast
 from zoneinfo import ZoneInfo
 
 from redis import Redis
 from rq import Queue
+from rq.job import Job
 from rq_scheduler import Scheduler
 
 from src.core.config import settings
@@ -49,7 +51,7 @@ def schedule_daily_idea_generation(scheduler: Scheduler, queue_name: str) -> Non
     job_id = "daily_idea_generation"
 
     # Check if job already exists and cancel it
-    for job in scheduler.get_jobs():
+    for job in cast(list[Job], scheduler.get_jobs()):
         if job.id == job_id:
             scheduler.cancel(job)
             logger.info(f"Cancelled existing scheduled job: {job_id}")
@@ -101,9 +103,7 @@ def run_scheduler_loop(redis_conn: Redis, queue_name: str) -> None:
     schedule_daily_idea_generation(scheduler, queue_name)
 
     logger.info("Starting rq-scheduler loop...")
-    logger.info(
-        f"Scheduler will enqueue jobs to queue: {queue_name}"
-    )
+    logger.info(f"Scheduler will enqueue jobs to queue: {queue_name}")
 
     # Run the scheduler (blocking)
     scheduler.run()

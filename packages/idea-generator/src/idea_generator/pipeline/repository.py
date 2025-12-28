@@ -78,7 +78,7 @@ class IdeaCoreRepository:
         function_slug: str,
         industry_slug: Optional[str] = None,
         target_user_slug: Optional[str] = None,
-        category_slugs: list[str] = None,  # Legacy, optional
+        category_slugs: Optional[list[str]] = None,  # Legacy, optional
         user_id: Optional[str] = None,
         forked_from_id: Optional[str] = None,
         image_url: str = "",
@@ -161,6 +161,8 @@ class IdeaCoreRepository:
         )
 
         row = result.fetchone()
+        if row is None:
+            raise RuntimeError("Failed to create idea: no row returned")
         idea_id = row[0]
         idea_slug = row[1]
         logger.info(f"Created idea with ID {idea_id}: {title} (function: {function_slug})")
@@ -273,7 +275,7 @@ class IdeaCoreRepository:
         """)
         try:
             result = await self.session.execute(query, {"title": title})
-            return result.scalar()
+            return bool(result.scalar())
         except Exception:
             # Fallback to exact match if pg_trgm not available
             query = text("""
@@ -282,7 +284,7 @@ class IdeaCoreRepository:
                 )
             """)
             result = await self.session.execute(query, {"title": title})
-            return result.scalar()
+            return bool(result.scalar())
 
     async def get_idea_by_id(self, idea_id: str) -> Optional[dict]:
         """Get an idea by its ID for forking."""

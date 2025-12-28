@@ -10,6 +10,7 @@ from datetime import datetime
 from typing import Optional
 
 from sqlalchemy import text
+from sqlalchemy.engine import RowMapping
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.categories.schemas import CategoryBadgeResponse
@@ -63,8 +64,8 @@ class IdeaService:
 
         return IdeaListResponse(
             items=items,
-            nextCursor=next_cursor,
-            hasMore=has_more,
+            next_cursor=next_cursor,
+            has_more=has_more,
         )
 
     async def get_idea_by_slug(self, slug: str) -> Optional[IdeaDetailResponse]:
@@ -170,7 +171,9 @@ class IdeaService:
             params["category"] = category
 
         if search:
-            where_clauses.append("i.search_vector @@ plainto_tsquery('english', :search)")
+            where_clauses.append(
+                "i.search_vector @@ plainto_tsquery('english', :search)"
+            )
             params["search"] = search
 
         cursor_clause = self._build_cursor_clause(sort_by, cursor_data, params)
@@ -233,7 +236,7 @@ class IdeaService:
             return " ORDER BY i.title ASC, i.id ASC"
         return " ORDER BY i.published_at DESC, i.id DESC"
 
-    def _encode_cursor(self, row: dict, sort_by: SortBy) -> str:
+    def _encode_cursor(self, row: RowMapping, sort_by: SortBy) -> str:
         """Encode pagination cursor from the last row."""
         cursor_data = {"id": row["id"]}
 
@@ -265,7 +268,7 @@ class IdeaService:
         except (ValueError, json.JSONDecodeError):
             return None
 
-    def _row_to_idea_response(self, row: dict) -> IdeaResponse:
+    def _row_to_idea_response(self, row: RowMapping) -> IdeaResponse:
         """Convert database row to IdeaResponse."""
         categories_data = row["categories"]
         if isinstance(categories_data, str):
@@ -278,9 +281,9 @@ class IdeaService:
 
         # Build taxonomy response
         taxonomy = TaxonomyResponse(
-            functionSlug=row.get("function_slug", "create"),
-            industrySlug=row.get("industry_slug"),
-            targetUserSlug=row.get("target_user_slug"),
+            function_slug=row.get("function_slug", "create"),
+            industry_slug=row.get("industry_slug"),
+            target_user_slug=row.get("target_user_slug"),
         )
 
         created_at = row.get("published_at") or row["created_at"]
@@ -294,18 +297,18 @@ class IdeaService:
             id=str(row["id"]),
             title=row["title"],
             slug=row["slug"],
-            imageUrl=row["image_url"],
-            imageAlt=row["image_alt"],
+            image_url=row["image_url"],
+            image_alt=row["image_alt"],
             categories=categories,
             taxonomy=taxonomy,
             problem=row["problem"],
             solution=row["solution"],
-            targetUsers=row["target_users"],
-            createdAt=created_at_str,
+            target_users=row["target_users"],
+            created_at=created_at_str,
             popularity=row["popularity_score"],
         )
 
-    def _row_to_idea_detail_response(self, row: dict) -> IdeaDetailResponse:
+    def _row_to_idea_detail_response(self, row: RowMapping) -> IdeaDetailResponse:
         """Convert database row to IdeaDetailResponse with full details."""
         categories_data = row["categories"]
         if isinstance(categories_data, str):
@@ -318,9 +321,9 @@ class IdeaService:
 
         # Build taxonomy response
         taxonomy = TaxonomyResponse(
-            functionSlug=row.get("function_slug", "create"),
-            industrySlug=row.get("industry_slug"),
-            targetUserSlug=row.get("target_user_slug"),
+            function_slug=row.get("function_slug", "create"),
+            industry_slug=row.get("industry_slug"),
+            target_user_slug=row.get("target_user_slug"),
         )
 
         key_features = row.get("key_features", [])
@@ -352,18 +355,18 @@ class IdeaService:
             id=str(row["id"]),
             title=row["title"],
             slug=row["slug"],
-            imageUrl=row["image_url"],
-            imageAlt=row["image_alt"],
+            image_url=row["image_url"],
+            image_alt=row["image_alt"],
             categories=categories,
             taxonomy=taxonomy,
             problem=row["problem"],
             solution=row["solution"],
-            targetUsers=row["target_users"],
-            createdAt=created_at_str,
+            target_users=row["target_users"],
+            created_at=created_at_str,
             popularity=row["popularity_score"],
-            keyFeatures=key_features,
-            prdContent=row.get("prd_content"),
-            viewCount=row.get("view_count", 0),
-            publishedAt=published_at_str,
-            updatedAt=updated_at_str,
+            key_features=key_features,
+            prd_content=row.get("prd_content"),
+            view_count=row.get("view_count", 0),
+            published_at=published_at_str,
+            updated_at=updated_at_str,
         )

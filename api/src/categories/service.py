@@ -7,6 +7,7 @@ Handles category listing and retrieval.
 from typing import Optional
 
 from sqlalchemy import text
+from sqlalchemy.engine import RowMapping
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.categories.schemas import CategoryResponse
@@ -61,14 +62,14 @@ class CategoryService:
 
         return self._row_to_category_response(row)
 
-    def _row_to_category_response(self, row: dict) -> CategoryResponse:
+    def _row_to_category_response(self, row: RowMapping) -> CategoryResponse:
         """Convert database row to CategoryResponse."""
         return CategoryResponse(
             id=row["id"],
             name=row["name"],
             slug=row["slug"],
-            colorVariant=row["color_variant"],
-            displayOrder=row["display_order"],
-            createdAt=row["created_at"],
-            updatedAt=row["updated_at"],
+            color_variant=row["color_variant"],
+            display_order=row["display_order"],
+            created_at=row["created_at"],
+            updated_at=row["updated_at"],
         )
