@@ -13,6 +13,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from src.auth.router import router as auth_router
 from src.core.config import settings
 from src.generation.router import router as generation_router
 from src.health.router import router as health_router
@@ -104,6 +105,7 @@ app.add_middleware(
 )
 
 # Include routers
+app.include_router(auth_router, prefix=settings.api_prefix)
 app.include_router(health_router, prefix=settings.api_prefix)
 app.include_router(ideas_router, prefix=settings.api_prefix)
 app.include_router(generation_router, prefix=settings.api_prefix)

@@ -16,7 +16,7 @@ if TYPE_CHECKING:
 class IdeaCategory(SQLModel, table=True):
     """Junction table for many-to-many relationship between ideas and categories."""
 
-    __tablename__ = "idea_categories"
+    __tablename__ = "idea_categories"  # type: ignore[assignment]
 
     idea_id: int = Field(foreign_key="ideas.id", primary_key=True, ondelete="CASCADE")
     category_id: int = Field(
@@ -28,7 +28,7 @@ class IdeaCategory(SQLModel, table=True):
 class Category(SQLModel, table=True):
     """Category model representing product idea categories."""
 
-    __tablename__ = "categories"
+    __tablename__ = "categories"  # type: ignore[assignment]
 
     id: Optional[int] = Field(default=None, primary_key=True)
     name: str = Field(index=True, unique=True)
