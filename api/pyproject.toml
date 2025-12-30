@@ -9,18 +9,18 @@ dependencies = [
     "sqlmodel>=0.0.22",
     "asyncpg>=0.30.0",
     "pydantic-settings>=2.6.0",
-    # Redis and RQ for background job management (worker cronjob polling)
-    "rq>=1.16.0",
+    # Redis for caching (optional, can remove if not used)
     "redis>=5.0.0",
-    # Shared idea generation pipeline
-    "idea-generator",
+    # LangGraph and LangChain for idea generation
+    "langgraph>=0.2.0",
+    "langchain-google-genai>=2.0.0",
+    "langchain-core>=0.3.0",
+    "sqlalchemy[asyncio]>=2.0.0",
+    "python-slugify>=8.0.0",
     # Authentication
     "pyjwt>=2.8.0",
     "httpx>=0.27.0",
 ]
-
-[tool.uv.sources]
-idea-generator = { path = "../packages/idea-generator", editable = true }
 
 [project.optional-dependencies]
 dev = [

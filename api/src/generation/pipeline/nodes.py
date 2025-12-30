@@ -11,12 +11,12 @@ Each node represents a step in the pipeline:
 import json
 import logging
 import re
-from typing import Any, Callable, Optional
+from typing import Any
 
-from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.messages import HumanMessage, SystemMessage
+from langchain_google_genai import ChatGoogleGenerativeAI
 
-from idea_generator.models.state import (
+from src.generation.models.state import (
     GenerationProgress,
     GenerationStatus,
     IdeaConcept,
@@ -24,15 +24,13 @@ from idea_generator.models.state import (
     PRDContent,
     TaxonomyClassification,
 )
-from idea_generator.pipeline.config import get_settings
-from idea_generator.prompts.templates import (
-    CATEGORIZE_PROMPT,
+from src.generation.pipeline.config import get_pipeline_config
+from src.generation.prompts.templates import (
     CLASSIFY_TAXONOMY_PROMPT,
     EXPAND_PRD_PROMPT,
     FORK_CONCEPT_PROMPT,
     GENERATE_CONCEPT_FROM_SEED_PROMPT,
     GENERATE_CONCEPT_PROMPT,
-    GENERATE_CONCEPT_PROMPT_LEGACY,
     GENERATE_CONCEPT_WITH_INDUSTRY_PROMPT,
     IDEA_GENERATOR_SYSTEM,
 )
@@ -72,12 +70,12 @@ logger = logging.getLogger(__name__)
 
 def _get_llm() -> ChatGoogleGenerativeAI:
     """Get configured LLM instance."""
-    settings = get_settings()
+    config = get_pipeline_config()
     return ChatGoogleGenerativeAI(
-        model=settings.llm_model,
-        temperature=settings.llm_temperature,
-        max_output_tokens=settings.llm_max_tokens,
-        google_api_key=settings.google_api_key,
+        model=config.llm_model,
+        temperature=config.llm_temperature,
+        max_output_tokens=config.llm_max_tokens,
+        google_api_key=config.google_api_key,
     )
 
 
@@ -563,7 +561,7 @@ async def save_idea(state: IdeaGenerationState) -> dict[str, Any]:
     )
 
     try:
-        from idea_generator.pipeline.repository import IdeaCoreRepository, get_async_session
+        from src.generation.pipeline.repository import IdeaCoreRepository, get_async_session
 
         async with get_async_session() as session:
             repo = IdeaCoreRepository(session)

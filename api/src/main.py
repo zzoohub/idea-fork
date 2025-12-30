@@ -23,36 +23,11 @@ from src.taxonomies.router import router as taxonomies_router
 logger = logging.getLogger(__name__)
 
 
-def _configure_idea_generator() -> None:
-    """Configure idea-generator package with API settings (one-time init)."""
-    try:
-        from idea_generator.pipeline.config import PipelineSettings, configure_settings
-
-        pipeline_settings = PipelineSettings(
-            google_api_key=settings.google_api_key,
-            llm_model=settings.llm_model,
-            llm_temperature=settings.llm_temperature,
-            llm_max_tokens=settings.llm_max_tokens,
-            database_url=settings.database_url.replace("+asyncpg", ""),
-        )
-        configure_settings(pipeline_settings)
-        logger.info("idea-generator configured successfully")
-    except ImportError:
-        logger.warning("idea-generator not installed, SSE streaming will not work")
-    except Exception as e:
-        logger.error(f"Failed to configure idea-generator: {e}")
-
-
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Application lifespan handler for startup/shutdown events."""
     logger.info(f"Starting {settings.app_name}...")
-
-    # Initialize idea-generator (one-time)
-    _configure_idea_generator()
-
     yield
-
     logger.info(f"Shutting down {settings.app_name}...")
 
 
@@ -71,10 +46,8 @@ app = FastAPI(
     ## On-Demand Generation
 
     Use the generation endpoints to request new ideas or fork existing ones:
-    - POST /api/ideas/generate - Generate a new idea
-    - POST /api/ideas/{slug}/fork - Fork an existing idea with modifications
-    - GET /api/requests/{id} - Check generation status
-    - GET /api/requests/{id}/stream - Real-time progress via SSE
+    - POST /api/generation/ideas/generate/stream - Generate a new idea with SSE progress
+    - POST /api/generation/ideas/{slug}/fork/stream - Fork an existing idea with SSE progress
 
     ## Pagination
 

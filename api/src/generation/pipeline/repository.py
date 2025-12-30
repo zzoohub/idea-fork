@@ -1,7 +1,7 @@
 """
 Repository for idea database operations.
 
-Provides CRUD operations for ideas and categories in the shared pipeline.
+Provides CRUD operations for ideas and categories in the pipeline.
 """
 
 import json
@@ -14,7 +14,7 @@ from slugify import slugify
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
-from idea_generator.pipeline.config import get_settings
+from src.generation.pipeline.config import get_pipeline_config
 
 logger = logging.getLogger(__name__)
 
@@ -27,9 +27,9 @@ def _get_engine():
     """Get or create the database engine."""
     global _engine
     if _engine is None:
-        settings = get_settings()
+        config = get_pipeline_config()
         _engine = create_async_engine(
-            settings.database_url,
+            config.database_url,
             echo=False,
             pool_size=5,
             max_overflow=10,
@@ -62,7 +62,7 @@ async def get_async_session() -> AsyncGenerator[AsyncSession, None]:
 
 
 class IdeaCoreRepository:
-    """Repository for idea CRUD operations in the shared pipeline."""
+    """Repository for idea CRUD operations in the pipeline."""
 
     def __init__(self, session: AsyncSession):
         self.session = session
@@ -291,7 +291,8 @@ class IdeaCoreRepository:
         query = text("""
             SELECT
                 id, title, slug, problem, solution,
-                target_users, key_features, prd_content
+                target_users, key_features, prd_content,
+                function_slug
             FROM ideas
             WHERE id = :idea_id
         """)
@@ -318,6 +319,7 @@ class IdeaCoreRepository:
             "target_users": row[5],
             "key_features": key_features,
             "prd_content": prd_content,
+            "function_slug": row[8] if len(row) > 8 else "create",
         }
 
     async def get_idea_by_slug(self, slug: str) -> Optional[dict]:
@@ -325,7 +327,8 @@ class IdeaCoreRepository:
         query = text("""
             SELECT
                 id, title, slug, problem, solution,
-                target_users, key_features, prd_content
+                target_users, key_features, prd_content,
+                function_slug
             FROM ideas
             WHERE slug = :slug
         """)
@@ -352,4 +355,5 @@ class IdeaCoreRepository:
             "target_users": row[5],
             "key_features": key_features,
             "prd_content": prd_content,
+            "function_slug": row[8] if len(row) > 8 else "create",
         }

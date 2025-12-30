@@ -1,17 +1,13 @@
 """
 Pydantic schemas for generation API endpoints.
 
-Request/response models for idea generation and forking.
+Request/response models for idea generation and forking SSE endpoints.
 """
 
-from datetime import datetime
 from enum import Enum
 from typing import Optional
-from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field
-
-from src.generation.models import RequestStatus
+from pydantic import BaseModel, Field
 
 
 class GenerationProgressStatus(str, Enum):
@@ -31,7 +27,7 @@ class GenerateIdeaRequest(BaseModel):
     """Request to generate a new idea.
 
     Supports multiple generation modes:
-    1. Auto-generate: No inputs → random function + random industry
+    1. Auto-generate: No inputs -> random function + random industry
     2. Taxonomy selection: User selects function/industry via dropdowns
     3. Seed-based: User provides idea_seed text, AI structures and expands it
     """
@@ -78,40 +74,6 @@ class ForkIdeaRequest(BaseModel):
         max_length=1000,
         description="Additional context or requirements for the fork",
     )
-
-
-# Response schemas
-class GenerationRequestResponse(BaseModel):
-    """Response after initiating a generation request."""
-
-    model_config = ConfigDict(from_attributes=True)
-
-    request_id: UUID
-    status: RequestStatus
-    message: str = "Request queued successfully"
-
-
-class GenerationStatusResponse(BaseModel):
-    """Response for generation request status check."""
-
-    model_config = ConfigDict(from_attributes=True)
-
-    request_id: UUID
-    status: RequestStatus
-    progress: Optional[GenerationProgressStatus] = None
-    progress_message: Optional[str] = None
-    progress_percent: Optional[int] = None
-
-    # Result fields (populated on completion)
-    idea_id: Optional[int] = None
-    idea_slug: Optional[str] = None
-
-    # Error field (populated on failure)
-    error: Optional[str] = None
-
-    # Timestamps
-    created_at: datetime
-    completed_at: Optional[datetime] = None
 
 
 class SSEProgressEvent(BaseModel):

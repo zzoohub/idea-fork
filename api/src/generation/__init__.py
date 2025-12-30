@@ -1,7 +1,5 @@
 """
-Generation module for on-demand idea generation via RQ.
+Generation module for AI-powered idea generation.
+
+Provides SSE streaming endpoints for real-time idea generation and forking.
 """
-
-from src.generation.models import GenerationRequest, RequestStatus
-
-__all__ = ["GenerationRequest", "RequestStatus"]

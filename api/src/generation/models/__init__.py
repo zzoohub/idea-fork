@@ -1,25 +1,23 @@
-"""
-Pydantic models for the idea generation pipeline state.
-"""
+"""State models for the idea generation pipeline."""
 
-from idea_generator.models.state import (
+from src.generation.models.state import (
     GenerationProgress,
     GenerationStatus,
-    GeneratedIdea,
     IdeaConcept,
     IdeaGenerationState,
     PRDContent,
+    TaxonomyClassification,
     create_fork_state,
     create_initial_state,
 )
 
 __all__ = [
-    "IdeaGenerationState",
-    "IdeaConcept",
-    "PRDContent",
-    "GeneratedIdea",
     "GenerationProgress",
     "GenerationStatus",
-    "create_initial_state",
+    "IdeaConcept",
+    "IdeaGenerationState",
+    "PRDContent",
+    "TaxonomyClassification",
     "create_fork_state",
+    "create_initial_state",
 ]

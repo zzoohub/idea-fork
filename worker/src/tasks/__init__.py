@@ -1,11 +1,10 @@
 """
-RQ task definitions for idea generation.
+RQ task definitions for scheduled idea generation.
+
+Note: On-demand generation and forking are now handled directly by
+the API via SSE streaming endpoints.
 """
 
-from src.tasks.idea_generation import (
-    generate_idea_task,
-    fork_idea_task,
-    generate_daily_ideas_task,
-)
+from src.tasks.idea_generation import generate_daily_ideas_task
 
-__all__ = ["generate_idea_task", "fork_idea_task", "generate_daily_ideas_task"]
+__all__ = ["generate_daily_ideas_task"]

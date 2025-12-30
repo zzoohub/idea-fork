@@ -15,6 +15,7 @@ class Settings(BaseSettings):
         env_file=".env",
         env_file_encoding="utf-8",
         case_sensitive=False,
+        extra="ignore",  # Ignore extra env vars not defined in the model
     )
 
     # Application
@@ -46,32 +47,14 @@ class Settings(BaseSettings):
         description="Time to keep failed job info in Redis (7 days)",
     )
 
-    # Database
-    database_url: str = Field(
-        default="postgresql+asyncpg://postgres:postgres@localhost:5432/idea_fork",
-        description="PostgreSQL connection URL with asyncpg driver",
+    # API URL (for calling idea generation endpoints)
+    api_url: str = Field(
+        default="http://localhost:8000",
+        description="Base URL of the Idea Fork API",
     )
-
-    # Google API
-    google_api_key: str = Field(
-        default="",
-        description="Google API key for Gemini",
-    )
-
-    # LLM Settings
-    llm_model: str = Field(
-        default="gemini-2.0-flash",
-        description="Google Gemini model to use for generation",
-    )
-    llm_temperature: float = Field(
-        default=0.8,
-        ge=0.0,
-        le=1.0,
-        description="Temperature for LLM generation (higher = more creative)",
-    )
-    llm_max_tokens: int = Field(
-        default=4096,
-        description="Maximum tokens for LLM responses",
+    api_timeout: int = Field(
+        default=120,
+        description="Timeout in seconds for API calls (idea generation takes time)",
     )
 
 
