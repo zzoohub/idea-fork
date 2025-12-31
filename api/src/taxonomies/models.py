@@ -6,10 +6,16 @@ Taxonomy models for classifying ideas along three dimensions.
 - TargetUserType: Who the primary users are
 """
 
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional
 
-from sqlmodel import Field, SQLModel
+from sqlalchemy import DateTime
+from sqlmodel import Column, Field, SQLModel
+
+
+def _utc_now() -> datetime:
+    """Get current UTC datetime (timezone-aware)."""
+    return datetime.now(timezone.utc)
 
 
 class FunctionType(SQLModel, table=True):
@@ -26,10 +32,19 @@ class FunctionType(SQLModel, table=True):
 
     # Soft delete support
     is_active: bool = Field(default=True, index=True)
-    deleted_at: Optional[datetime] = Field(default=None)
+    deleted_at: Optional[datetime] = Field(
+        default=None,
+        sa_column=Column(DateTime(timezone=True), nullable=True),
+    )
 
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-    updated_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(
+        default_factory=_utc_now,
+        sa_column=Column(DateTime(timezone=True), nullable=False),
+    )
+    updated_at: datetime = Field(
+        default_factory=_utc_now,
+        sa_column=Column(DateTime(timezone=True), nullable=False),
+    )
 
 
 class IndustryType(SQLModel, table=True):
@@ -44,10 +59,19 @@ class IndustryType(SQLModel, table=True):
 
     # Soft delete support
     is_active: bool = Field(default=True, index=True)
-    deleted_at: Optional[datetime] = Field(default=None)
+    deleted_at: Optional[datetime] = Field(
+        default=None,
+        sa_column=Column(DateTime(timezone=True), nullable=True),
+    )
 
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-    updated_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(
+        default_factory=_utc_now,
+        sa_column=Column(DateTime(timezone=True), nullable=False),
+    )
+    updated_at: datetime = Field(
+        default_factory=_utc_now,
+        sa_column=Column(DateTime(timezone=True), nullable=False),
+    )
 
 
 class TargetUserType(SQLModel, table=True):
@@ -62,10 +86,19 @@ class TargetUserType(SQLModel, table=True):
 
     # Soft delete support
     is_active: bool = Field(default=True, index=True)
-    deleted_at: Optional[datetime] = Field(default=None)
+    deleted_at: Optional[datetime] = Field(
+        default=None,
+        sa_column=Column(DateTime(timezone=True), nullable=True),
+    )
 
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-    updated_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(
+        default_factory=_utc_now,
+        sa_column=Column(DateTime(timezone=True), nullable=False),
+    )
+    updated_at: datetime = Field(
+        default_factory=_utc_now,
+        sa_column=Column(DateTime(timezone=True), nullable=False),
+    )
 
 
 # Seed data for initial population

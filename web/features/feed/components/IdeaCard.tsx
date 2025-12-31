@@ -55,8 +55,8 @@ export function IdeaCard({ idea }: IdeaCardProps) {
       {/* Image */}
       <div className="relative h-48 w-full overflow-hidden">
         <Image
-          src={idea.imageUrl}
-          alt={idea.imageAlt}
+          src={idea.image_url}
+          alt={idea.image_alt}
           fill
           className="object-cover"
           sizes="(max-width: 768px) 100vw, (max-width: 1280px) 50vw, 33vw"
@@ -69,12 +69,12 @@ export function IdeaCard({ idea }: IdeaCardProps) {
           <CardTitle>{idea.title}</CardTitle>
           <div className="flex flex-wrap gap-2">
             {/* Function badge (always shown) */}
-            <Badge variant={functionVariants[idea.functionSlug]}>
-              {functionLabels[idea.functionSlug]}
+            <Badge variant={functionVariants[idea.function_slug]}>
+              {functionLabels[idea.function_slug]}
             </Badge>
             {/* Industry badge (if present) */}
-            {idea.industrySlug && (
-              <Badge variant="secondary">{idea.industrySlug}</Badge>
+            {idea.industry_slug && (
+              <Badge variant="secondary">{idea.industry_slug}</Badge>
             )}
           </div>
         </CardHeader>
@@ -89,7 +89,7 @@ export function IdeaCard({ idea }: IdeaCardProps) {
           </p>
           <p>
             <strong className="text-white/90">Target Users:</strong>{" "}
-            {idea.targetUsers}
+            {idea.target_users}
           </p>
         </div>
 

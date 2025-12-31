@@ -10,6 +10,7 @@ from enum import Enum
 from typing import TYPE_CHECKING, ClassVar
 from uuid import UUID, uuid4
 
+from sqlalchemy import DateTime
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID
 from sqlmodel import Column, Field, SQLModel
 
@@ -116,10 +117,12 @@ class User(SQLModel, table=True):
     # Timestamps (timezone-aware UTC)
     created_at: datetime = Field(
         default_factory=_utc_now,
+        sa_column=Column(DateTime(timezone=True), nullable=False),
         description="Account creation timestamp",
     )
     updated_at: datetime = Field(
         default_factory=_utc_now,
+        sa_column=Column(DateTime(timezone=True), nullable=False),
         description="Last update timestamp",
     )
 

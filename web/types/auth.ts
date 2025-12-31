@@ -9,9 +9,9 @@ export type SubscriptionTier = "free" | "pro" | "enterprise";
  * OAuth token response from backend
  */
 export interface TokenResponse {
-  accessToken: string;
-  tokenType: string;
-  expiresIn: number;
+  access_token: string;
+  token_type: string;
+  expires_in: number;
 }
 
 /**
@@ -21,10 +21,10 @@ export interface AuthUser {
   id: string;
   email: string;
   name: string | null;
-  avatarUrl: string | null;
-  subscriptionTier: SubscriptionTier;
-  generationCredits: number;
-  isVerified: boolean;
+  avatar_url: string | null;
+  subscription_tier: SubscriptionTier;
+  generation_credits: number;
+  is_verified: boolean;
 }
 
 /**
@@ -40,7 +40,7 @@ export interface AuthResponse {
  */
 export interface GoogleAuthRequest {
   code: string;
-  redirectUri: string;
+  redirect_uri: string;
 }
 
 /**

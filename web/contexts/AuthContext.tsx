@@ -77,12 +77,15 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const login = useCallback(async (code: string, redirectUri: string) => {
     setError(null);
 
-    const payload: GoogleAuthRequest = { code, redirectUri };
+    const payload: { code: string; redirect_uri: string } = {
+      code,
+      redirect_uri: redirectUri,
+    };
     const response = await api.post<AuthResponse>("/auth/google", payload, {
       skipAuth: true,
     });
 
-    tokenStorage.set(response.token.accessToken);
+    tokenStorage.set(response.token.access_token);
     setUser(response.user);
   }, []);
 
@@ -107,7 +110,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       logout,
       clearError,
     }),
-    [user, isLoading, error, login, logout, clearError]
+    [user, isLoading, error, login, logout, clearError],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

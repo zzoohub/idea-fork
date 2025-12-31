@@ -14,14 +14,13 @@ from sqlalchemy.ext.asyncio import async_engine_from_config
 from sqlmodel import SQLModel
 
 from alembic import context  # type: ignore[attr-defined]
-from src.categories.models import Category, IdeaCategory  # noqa: F401
-from src.generation.models import GenerationRequest  # noqa: F401
 
 # =============================================================================
 # SQLModel 모델 Import
 # =============================================================================
 # 중요: 모든 모델을 여기서 import 해야 Alembic이 테이블을 인식합니다.
 # 새 모델을 추가할 때마다 여기에도 추가해야 합니다.
+from src.categories.models import Category, IdeaCategory  # noqa: F401
 from src.ideas.models import Idea  # noqa: F401
 from src.taxonomies.models import (  # noqa: F401
     FunctionType,

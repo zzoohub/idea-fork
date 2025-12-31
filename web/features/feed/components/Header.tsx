@@ -45,7 +45,7 @@ function UserAvatar({ user, className }: UserAvatarProps) {
   return (
     <Avatar className={className}>
       <AvatarImage
-        src={user.avatarUrl || undefined}
+        src={user.avatar_url || undefined}
         alt={user.name || "User avatar"}
       />
       <AvatarFallback>{initials}</AvatarFallback>

@@ -4,10 +4,16 @@ Category SQLModel for the categories table.
 Categories are predefined labels for classifying ideas.
 """
 
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import TYPE_CHECKING, Optional
 
-from sqlmodel import Field, Relationship, SQLModel
+from sqlalchemy import DateTime
+from sqlmodel import Column, Field, Relationship, SQLModel
+
+
+def _utc_now() -> datetime:
+    """Get current UTC datetime (timezone-aware)."""
+    return datetime.now(timezone.utc)
 
 if TYPE_CHECKING:
     from src.ideas.models import Idea
@@ -22,7 +28,10 @@ class IdeaCategory(SQLModel, table=True):
     category_id: int = Field(
         foreign_key="categories.id", primary_key=True, ondelete="CASCADE"
     )
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(
+        default_factory=_utc_now,
+        sa_column=Column(DateTime(timezone=True), nullable=False),
+    )
 
 
 class Category(SQLModel, table=True):
@@ -35,8 +44,14 @@ class Category(SQLModel, table=True):
     slug: str = Field(index=True, unique=True)
     color_variant: str = Field(default="secondary")
     display_order: int = Field(default=0)
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-    updated_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(
+        default_factory=_utc_now,
+        sa_column=Column(DateTime(timezone=True), nullable=False),
+    )
+    updated_at: datetime = Field(
+        default_factory=_utc_now,
+        sa_column=Column(DateTime(timezone=True), nullable=False),
+    )
 
     # Relationships
     ideas: list["Idea"] = Relationship(

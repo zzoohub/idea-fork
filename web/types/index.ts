@@ -60,15 +60,15 @@ export type BadgeVariant = "primary" | "teal" | "orange" | "indigo" | "secondary
 export interface Idea {
   id: string;
   title: string;
-  imageUrl: string;
-  imageAlt: string;
-  functionSlug: FunctionType;
-  industrySlug?: IndustryType;
-  targetUserSlug?: TargetUserType;
+  image_url: string;
+  image_alt: string;
+  function_slug: FunctionType;
+  industry_slug?: IndustryType;
+  target_user_slug?: TargetUserType;
   problem: string;
   solution: string;
-  targetUsers: string;
-  createdAt: string;
+  target_users: string;
+  created_at: string;
   popularity?: number;
 }
 
@@ -78,5 +78,5 @@ export interface Idea {
 export interface User {
   id: string;
   name: string;
-  avatarUrl: string;
+  avatar_url: string;
 }

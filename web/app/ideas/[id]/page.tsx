@@ -76,8 +76,8 @@ export default async function IdeaPage({ params }: IdeaPageProps) {
       {/* Hero image */}
       <div className="relative mb-8 h-64 w-full overflow-hidden rounded-xl">
         <Image
-          src={idea.imageUrl}
-          alt={idea.imageAlt}
+          src={idea.image_url}
+          alt={idea.image_alt}
           fill
           className="object-cover"
         />
@@ -87,11 +87,11 @@ export default async function IdeaPage({ params }: IdeaPageProps) {
       <div className="mb-8">
         <h1 className="mb-4 text-3xl font-black text-white">{idea.title}</h1>
         <div className="flex flex-wrap gap-2">
-          <Badge variant={functionVariants[idea.functionSlug]}>
-            {functionLabels[idea.functionSlug]}
+          <Badge variant={functionVariants[idea.function_slug]}>
+            {functionLabels[idea.function_slug]}
           </Badge>
-          {idea.industrySlug && (
-            <Badge variant="secondary">{idea.industrySlug}</Badge>
+          {idea.industry_slug && (
+            <Badge variant="secondary">{idea.industry_slug}</Badge>
           )}
         </div>
       </div>
@@ -114,7 +114,7 @@ export default async function IdeaPage({ params }: IdeaPageProps) {
 
         <section className="rounded-xl border border-(--color-border) bg-(--color-surface) p-6">
           <h2 className="mb-3 text-lg font-bold text-white">Target Users</h2>
-          <p className="text-neutral-300">{idea.targetUsers}</p>
+          <p className="text-neutral-300">{idea.target_users}</p>
         </section>
       </div>
     </div>

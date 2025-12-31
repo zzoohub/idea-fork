@@ -4,13 +4,19 @@ Idea SQLModel for the ideas table.
 Ideas are AI-generated product concepts with metadata and PRD content.
 """
 
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Optional
 from uuid import UUID
 
+from sqlalchemy import DateTime
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID
 from sqlmodel import Column, Field, Relationship, SQLModel
+
+
+def _utc_now() -> datetime:
+    """Get current UTC datetime (timezone-aware)."""
+    return datetime.now(timezone.utc)
 
 
 class Idea(SQLModel, table=True):
@@ -48,7 +54,10 @@ class Idea(SQLModel, table=True):
 
     # Publication status
     is_published: bool = Field(default=False)
-    published_at: Optional[datetime] = Field(default=None)
+    published_at: Optional[datetime] = Field(
+        default=None,
+        sa_column=Column(DateTime(timezone=True), nullable=True),
+    )
 
     # Fork and creator references
     forked_from_id: Optional[int] = Field(
@@ -62,8 +71,14 @@ class Idea(SQLModel, table=True):
     )
 
     # Timestamps
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-    updated_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(
+        default_factory=_utc_now,
+        sa_column=Column(DateTime(timezone=True), nullable=False),
+    )
+    updated_at: datetime = Field(
+        default_factory=_utc_now,
+        sa_column=Column(DateTime(timezone=True), nullable=False),
+    )
 
     # Self-referential relationship for forks
     forked_from: Optional["Idea"] = Relationship(
