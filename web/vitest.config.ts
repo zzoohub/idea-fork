@@ -12,12 +12,12 @@ export default defineConfig({
       provider: "v8",
       reporter: ["text", "json", "html"],
       include: [
-        "src/lib/utils.ts",
-        "src/lib/constants.ts",
-        "src/components/tag-badge.tsx",
-        "src/components/opportunity-score.tsx",
-        "src/components/sparkline.tsx",
-        "src/components/empty-state.tsx",
+        "src/shared/lib/utils.ts",
+        "src/shared/config/constants.ts",
+        "src/shared/ui/tag-badge.tsx",
+        "src/shared/ui/opportunity-score.tsx",
+        "src/shared/ui/sparkline.tsx",
+        "src/shared/ui/empty-state.tsx",
       ],
       thresholds: {
         lines: 100,

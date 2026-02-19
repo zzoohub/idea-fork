@@ -1,0 +1,176 @@
+erDiagram
+    pipeline_cycle ||--o{ post : "produces"
+    pipeline_cycle ||--o{ need_cluster : "produces"
+    pipeline_cycle ||--o{ brief : "produces"
+    pipeline_cycle ||--o{ trending_keyword : "produces"
+
+    post }o--o{ need_cluster : "cluster_post"
+    need_cluster ||--o| brief : "generates"
+    post }o--o{ brief : "brief_source"
+    post }o--o{ product : "product_post"
+
+    user_account ||--o{ bookmark : "saves"
+    post ||--o{ bookmark : "bookmarked"
+    brief ||--o{ bookmark : "bookmarked"
+    product ||--o{ bookmark : "bookmarked"
+
+    user_account ||--o{ tracked_keyword : "tracks"
+    user_account ||--o{ notification : "receives"
+    tracked_keyword ||--o{ notification : "triggers"
+    post ||--o{ notification : "about"
+
+    pipeline_cycle {
+        bigint id PK
+        timestamptz started_at
+        timestamptz completed_at
+        text status "running | completed | failed | partial"
+        integer post_count
+        integer cluster_count
+        integer brief_count
+        text error_log
+        timestamptz created_at
+        timestamptz updated_at
+    }
+
+    post {
+        bigint id PK
+        bigint cycle_id FK
+        timestamptz published_at
+        timestamptz archived_at "soft delete >90d"
+        timestamptz created_at
+        timestamptz updated_at
+        vector embedding "1536-dim"
+        integer engagement_score
+        text source "enum: reddit, product_hunt, play_store, app_store, github"
+        text source_id "unique external ID"
+        text tag "enum: complaint, need, feature_request, ..."
+        text title
+        text body
+        text source_url
+        jsonb source_metadata "platform-specific fields"
+    }
+
+    need_cluster {
+        bigint id PK
+        bigint cycle_id FK
+        timestamptz created_at
+        timestamptz updated_at
+        vector centroid "1536-dim"
+        numeric rank_score "volume x intensity x gap"
+        numeric avg_intensity
+        numeric competitive_gap
+        integer post_count
+        text title
+        text description
+        text trend_direction "growing | stable | declining"
+    }
+
+    cluster_post {
+        bigint id PK
+        bigint cluster_id FK
+        bigint post_id FK
+        numeric similarity_score
+        timestamptz created_at
+    }
+
+    brief {
+        bigint id PK
+        bigint cycle_id FK
+        bigint cluster_id FK
+        timestamptz created_at
+        timestamptz updated_at
+        numeric opportunity_score
+        integer volume
+        numeric intensity
+        text title
+        text summary "visible to free users"
+        text problem_detail "pro only"
+        text trend_direction
+        text opportunity_signal
+        jsonb alternatives "competitor products + shortcomings"
+    }
+
+    brief_source {
+        bigint id PK
+        bigint brief_id FK
+        bigint post_id FK
+        smallint display_order
+        text excerpt
+        timestamptz created_at
+    }
+
+    product {
+        bigint id PK
+        timestamptz first_seen_at
+        timestamptz last_seen_at
+        timestamptz created_at
+        timestamptz updated_at
+        numeric trending_score
+        integer complaint_count
+        integer need_count
+        text name
+        text slug "unique"
+        text description
+        text sentiment_summary
+        jsonb platforms "source enums where found"
+        jsonb platform_metadata "per-platform metrics"
+    }
+
+    product_post {
+        bigint id PK
+        bigint product_id FK
+        bigint post_id FK
+        timestamptz created_at
+    }
+
+    user_account {
+        bigint id PK
+        timestamptz created_at
+        timestamptz updated_at
+        text google_id "unique"
+        text email "unique"
+        text display_name
+        text tier "enum: free, pro"
+        text stripe_customer_id
+        text stripe_subscription_id
+    }
+
+    bookmark {
+        bigint id PK
+        bigint user_id FK
+        bigint post_id FK "nullable"
+        bigint brief_id FK "nullable"
+        bigint product_id FK "nullable"
+        timestamptz created_at
+    }
+
+    tracked_keyword {
+        bigint id PK
+        bigint user_id FK
+        timestamptz created_at
+        timestamptz updated_at
+        text keyword
+        text keyword_type "keyword | domain"
+        boolean is_active
+    }
+
+    notification {
+        bigint id PK
+        bigint user_id FK
+        bigint post_id FK "nullable"
+        bigint keyword_id FK "nullable"
+        timestamptz created_at
+        text title
+        text message
+        boolean is_read
+    }
+
+    trending_keyword {
+        bigint id PK
+        bigint cycle_id FK
+        timestamptz created_at
+        numeric trend_score
+        integer mention_count
+        text keyword
+        text source "enum: reddit, product_hunt, play_store, app_store, github"
+    }

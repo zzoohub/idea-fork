@@ -51,6 +51,8 @@ The primary use case is a builder browsing during a short break -- morning coffe
 / (Feed) ................ Primary entry point, no auth required
 /briefs ................. AI Brief card list
 /briefs/:id ............. Full AI Brief detail
+/products ............... Trending/new products with complaint data
+/products/:id ........... Product detail (complaints, sentiment, briefs)
 /needs/:id .............. Deep Dive detail view
 /bookmarks .............. Saved items (auth required)
 /tracking ............... Keyword/domain monitoring (Pro required)
@@ -65,11 +67,11 @@ The primary use case is a builder browsing during a short break -- morning coffe
 
 ```
 +------------------------------------------------------------------+
-| [logo] idea-fork          Feed    Briefs    [user/login]         |
+| [logo] idea-fork     Feed    Briefs    Products    [user/login]  |
 +------------------------------------------------------------------+
 ```
 
-- **Two primary destinations only:** Feed and Briefs. This is intentional. Hick's Law -- fewer options, faster decisions. These are the two content types that serve all three personas.
+- **Three primary destinations:** Feed, Briefs, and Products. Three items remain within Hick's Law comfort zone (decision time is negligible for 2-4 options). Each serves a distinct job: Feed = discover problems, Briefs = evaluate opportunities, Products = scout the market.
 - **Bookmarks, Tracking, Account** live under the user avatar menu (secondary nav). They are engagement/retention features, not discovery features. Elevating them into primary nav adds noise for the 95% of pageviews that are content browsing.
 - **Pricing** is not in the nav. It surfaces contextually at paywall moments (see Section 6: Progressive Disclosure).
 
@@ -79,11 +81,11 @@ The primary use case is a builder browsing during a short break -- morning coffe
 +----------------------------------+
 | [logo]              [user/login] |
 +----------------------------------+
-| Feed    Briefs                   |
+| Feed   Briefs   Products         |
 +----------------------------------+
 ```
 
-- On mobile, the two primary tabs sit directly below the header. No hamburger menu for primary navigation -- hamburger menus reduce discoverability by 50%+ (Nielsen Norman Group research).
+- On mobile, the three primary tabs sit directly below the header. No hamburger menu for primary navigation -- hamburger menus reduce discoverability by 50%+ (Nielsen Norman Group research). Three tabs fit comfortably on mobile width.
 - User menu becomes a slide-out drawer triggered by the avatar/login button.
 
 ### 1.3 Content Hierarchy
@@ -92,9 +94,9 @@ The site has three content depths, each progressively more detailed:
 
 | Depth | Content | Access |
 |-------|---------|--------|
-| **Surface** | Feed cards, Brief cards | Free, no auth |
-| **Mid** | Brief summaries, Need previews | Free, no auth |
-| **Deep** | Full briefs, Deep dive analytics, Source clusters | Free (limited) / Pro |
+| **Surface** | Feed cards, Brief cards, Product cards | Free, no auth |
+| **Mid** | Brief summaries, Need previews, Product metrics | Free, no auth |
+| **Deep** | Full briefs, Deep dive analytics, Source clusters, Product complaint breakdown | Free (limited) / Pro |
 
 This maps directly to the conversion funnel: attract at surface, engage at mid, convert at deep.
 
@@ -192,7 +194,7 @@ ENTRY: /briefs (from nav) or brief link (shared URL)
 
 **Key design decisions:**
 
-- Brief cards are visually distinct from feed cards. Feed cards = platform-native styling (Reddit purple, PH orange, etc.). Brief cards = idea-fork's own visual language (neutral, analytical). This prevents confusion between raw signal and synthesized analysis. (Cognitive: Distinctiveness principle)
+- Brief cards are visually distinct from feed cards. Feed cards = platform-native styling (Reddit orange, PH brown, GitHub dark, etc.). Brief cards = idea-fork's own visual language (neutral, analytical). This prevents confusion between raw signal and synthesized analysis. (Cognitive: Distinctiveness principle)
 - The free preview shows enough to prove value (the problem summary is genuinely useful) but withholds the actionable details (specific source links, competitive analysis). This is the conversion lever. (Principle P3 -- earn attention first)
 
 ### 2.3 Deep Dive Flow (P0)
@@ -223,7 +225,49 @@ ENTRY: "Deep Dive" button on feed card OR link from within a brief
            Upgrade for unlimited access."
 ```
 
-### 2.4 Registration and Upgrade Flow (P0)
+### 2.4 Product Discovery Flow (P1)
+
+```
+ENTRY: /products (from nav) or product link (shared URL)
+  |
+  v
+[Product card list, sorted by trending score]
+  |
+  +---> Each card shows:
+  |     - Product name + platform icon(s)
+  |     - Category / description (1 line)
+  |     - Engagement metrics (stars, upvotes, downloads)
+  |     - Complaint count badge (e.g., "38 complaints")
+  |     - Sentiment indicator (negative/mixed/positive)
+  |
+  +---> [Optional] Toggle sort: "Trending" / "New"
+  |
+  +---> Clicks a product card
+          |
+          v
+        /products/:id
+          |
+          +---> [Pro] Full product detail:
+          |     - Product overview (name, description, platforms, metrics)
+          |     - Complaint/need breakdown (grouped by theme)
+          |     - Sentiment summary + trend
+          |     - Related AI briefs (links to /briefs/:id)
+          |     - Source link to product's original page
+          |
+          +---> [Free] Partial product detail:
+                - Product overview (full, visible)
+                - Complaint count + top theme (visible)
+                - Full breakdown blurred
+                - "Upgrade to see full complaint analysis" CTA
+```
+
+**Key design decisions:**
+
+- Product cards use a **distinct visual language** from feed cards (no platform-colored left border) and from brief cards (includes engagement metrics prominently). This creates three clear content types: raw signals (feed), synthesized opportunities (briefs), market landscape (products). (Distinctiveness principle)
+- **Complaint count is the differentiator** on product cards. Every other "trending products" list shows popularity metrics. idea-fork uniquely shows "popular AND criticized" -- this is the value proposition. The complaint count badge uses a warm/alert color to draw attention. (Pre-attentive processing)
+- **Sort toggle ("Trending" / "New")** is a simple two-option segmented control, not a dropdown. Two options = no Hick's Law cost. (Hick's Law)
+
+### 2.5 Registration and Upgrade Flow (P0)
 
 ```
 TRIGGER: User hits a gated feature:
@@ -267,7 +311,7 @@ TRIGGER: User hits a gated feature:
 - After auth/upgrade, the user returns to exactly where they were. No redirect to a dashboard or welcome page. (Principle P5 -- respect the 5-minute session)
 - Feature comparison in the upgrade modal is max 3 bullet points. Not a full pricing table. (Hick's Law -- minimize decision complexity at the moment of conversion)
 
-### 2.5 Bookmark Flow (P1)
+### 2.6 Bookmark Flow (P1)
 
 ```
 User sees a feed card or brief card
@@ -289,7 +333,7 @@ User sees a feed card or brief card
         Swipe-to-remove (mobile) or hover-reveal X (desktop)
 ```
 
-### 2.6 Tracking Setup Flow (P1)
+### 2.7 Tracking Setup Flow (P1)
 
 ```
 User menu --> "Tracking" --> /tracking
@@ -348,9 +392,9 @@ User menu --> "Tracking" --> /tracking
 |  |                                              |  | #deploy  |  |
 |  | +------------------------------------------+ |  | #AI      |  |
 |  | | [playstore icon]  Google Play            | |  |          |  |
-|  | | "Can't export my data. Stuck in this app | |  | App Store|  |
-|  | |  with no way out."                       | |  | #sync    |  |
-|  | | [need]  38 helpful votes                 | |  | #backup  |  |
+|  | | "Can't export my data. Stuck in this app | |  | GitHub   |  |
+|  | |  with no way out."                       | |  | #cli     |  |
+|  | | [need]  38 helpful votes                 | |  | #devtool |  |
 |  | | [Deep Dive]                    5h ago    | |  +----------+ |
 |  | +------------------------------------------+ |               |
 |  |                                              |               |
@@ -360,6 +404,14 @@ User menu --> "Tracking" --> /tracking
 |  | |  just to see the product"                | |               |
 |  | | [complaint]  23 upvotes  12 comments     | |               |
 |  | | [Deep Dive]                    8h ago    | |               |
+|  | +------------------------------------------+ |               |
+|  |                                              |               |
+|  | +------------------------------------------+ |               |
+|  | | [github icon]  GitHub Trending           | |               |
+|  | | "localstack/localstack - A fully          | |               |
+|  | |  functional local cloud stack"           | |               |
+|  | | [trending]  +1,240 stars/week  Python    | |               |
+|  | |                                12h ago   | |               |
 |  | +------------------------------------------+ |               |
 |  |                                              |               |
 |  |  [loading more...]                           |               |
@@ -401,6 +453,13 @@ User menu --> "Tracking" --> /tracking
 | | "Can't export my data..."   ||
 | | [need]  38 helpful votes    ||
 | | [Deep Dive]          5h ago ||
+| +------------------------------+|
+|                                  |
+| +------------------------------+|
+| | [github]  GitHub Trending   ||
+| | "localstack/localstack"     ||
+| | [trending] +1,240★/wk  Py  ||
+| |                     12h ago ||
 | +------------------------------+|
 |                                  |
 +----------------------------------+
@@ -519,7 +578,119 @@ User menu --> "Tracking" --> /tracking
 - **"AI-generated brief" label is always visible.** Transparency builds trust. (Authority bias, expectation setting)
 - **Back link ("< Back to Briefs")** not a browser-back-dependent pattern. Explicit affordance. (Error prevention -- users on shared URLs need a clear path)
 
-### 3.4 Deep Dive (`/needs/:id`)
+### 3.4 Products (`/products`)
+
+**Desktop:**
+
+```
++------------------------------------------------------------------+
+| [logo] idea-fork     Feed    Briefs    Products    [avatar/login] |
++------------------------------------------------------------------+
+|                                                                  |
+|  Products                                                        |
+|  Trending products paired with user complaints                   |
+|                                                                  |
+|  [Trending]  [New]               <-- segmented sort control      |
+|                                                                  |
+|  +--------------------------------------------+                  |
+|  | [ph][github] Notion Calendar               |  38 complaints   |
+|  | "Team calendar with smart scheduling"      |  Sentiment: Mixed|
+|  | PH: 1.2K upvotes  GH: +840 stars/week     |                  |
+|  | Top issue: "Google Calendar sync broken"   |                  |
+|  +--------------------------------------------+                  |
+|                                                                  |
+|  +--------------------------------------------+                  |
+|  | [github][playstore] LocalStack             |  22 complaints   |
+|  | "A fully functional local cloud stack"     |  Sentiment: Neg  |
+|  | GH: +1,240 stars/week  PS: 4.1K downloads  |                  |
+|  | Top issue: "Lambda emulation incomplete"   |                  |
+|  +--------------------------------------------+                  |
+|                                                                  |
+|  +--------------------------------------------+                  |
+|  | [playstore][appstore] Invoice Ninja        |  61 complaints   |
+|  | "Free invoicing for freelancers"           |  Sentiment: Neg  |
+|  | PS: 12K downloads  AS: 8K downloads        |                  |
+|  | Top issue: "Recurring billing broken"      |                  |
+|  +--------------------------------------------+                  |
+|                                                                  |
++------------------------------------------------------------------+
+```
+
+**Layout rationale:**
+
+- **Single column of product cards, max 720px width.** Same rationale as briefs: products require reading, not rapid scanning. Consistent layout across briefs and products. (Consistency principle)
+- **Complaint count badge is right-aligned and prominent.** This is the differentiator. Users can instantly see which trending products have the most user pain. (Pre-attentive processing -- number magnitude)
+- **"Top issue" line on each card** shows one representative complaint. This is the hook -- it proves the complaint data exists and is specific. (Principle P3 -- earn attention before asking)
+- **Platform multi-badge** (e.g., [ph][github]) shows which platforms this product was found on. Multiple platform presence signals broader market relevance.
+- **Segmented control ("Trending" / "New")** is minimal and positioned above cards. Two options only -- no cognitive cost. (Hick's Law)
+
+### 3.5 Product Detail (`/products/:id`)
+
+**Desktop:**
+
+```
++------------------------------------------------------------------+
+| [logo] idea-fork     Feed    Briefs    Products    [avatar/login] |
++------------------------------------------------------------------+
+|                                                                  |
+|  < Back to Products                              [Bookmark]      |
+|                                                                  |
+|  Notion Calendar                                                 |
+|  [product-hunt] [github]                                         |
+|                                                                  |
+|  +------------------------------------------------------------+ |
+|  | OVERVIEW                                                    | |
+|  |                                                             | |
+|  | "Team calendar with smart scheduling and availability"      | |
+|  | Launched: Feb 10, 2026                                      | |
+|  | PH: 1.2K upvotes, 89 comments                              | |
+|  | GitHub: 2.4K stars (+840/week), 312 forks                   | |
+|  | [Visit on Product Hunt -->]  [Visit on GitHub -->]          | |
+|  +------------------------------------------------------------+ |
+|                                                                  |
+|  +------------------------------------------------------------+ |
+|  | COMPLAINT BREAKDOWN                              38 total   | |
+|  |                                                             | |
+|  | Google Calendar sync (14 posts)                             | |
+|  |   "Calendar sync drops every few hours..."  [reddit] -->    | |
+|  |   "Lost all my events after sync..."        [playstore]--> | |
+|  |                                                             | |
+|  | Pricing concerns (11 posts)                                 | |
+|  |   "Pro plan is $8/mo for a calendar app?"   [reddit] -->   | |
+|  |   "Too expensive vs free alternatives"      [appstore]-->  | |
+|  |                                                             | |
+|  | Missing features (8 posts)                                  | |
+|  |   "No recurring event support"              [reddit] -->   | |
+|  |                                                             | |
+|  | Performance issues (5 posts)                                | |
+|  |   "App takes 5 seconds to load"             [playstore]--> | |
+|  +------------------------------------------------------------+ |
+|                                                                  |
+|  +------------------------------------------------------------+ |
+|  | SENTIMENT SUMMARY                                           | |
+|  |                                                             | |
+|  | Overall: Mixed (2.8 / 5)    Trend: Worsening v             | |
+|  | [=========sparkline chart over last 4 weeks========]        | |
+|  +------------------------------------------------------------+ |
+|                                                                  |
+|  +------------------------------------------------------------+ |
+|  | RELATED BRIEFS                                              | |
+|  |                                                             | |
+|  | [Invoicing Pain Points for Freelancers]  Score: 8.2 -->    | |
+|  | [Calendar Sync Reliability Issues]       Score: 7.1 -->    | |
+|  +------------------------------------------------------------+ |
+|                                                                  |
++------------------------------------------------------------------+
+```
+
+**Layout rationale:**
+
+- **Stacked sections, same pattern as brief detail.** Users learn one page structure and apply it everywhere. (Consistency, recognition over recall)
+- **Complaint breakdown grouped by theme, not by platform.** Theme grouping is more actionable ("sync is the biggest issue") than platform grouping ("Reddit has 20 posts"). Platform is shown per-post as a secondary badge. (Principle P2 -- one job: assess product weaknesses)
+- **Related briefs** connect product complaints back to the opportunity analysis. This creates a cross-linking loop: feed → product → brief → need. (Network effect within the product)
+- **Source links on every complaint** maintain the "source is sacred" principle. (Principle P4)
+
+### 3.6 Deep Dive (`/needs/:id`)
 
 ```
 +------------------------------------------------------------------+
@@ -561,7 +732,7 @@ User menu --> "Tracking" --> /tracking
 +------------------------------------------------------------------+
 ```
 
-### 3.5 Bookmarks (`/bookmarks`)
+### 3.7 Bookmarks (`/bookmarks`)
 
 ```
 +------------------------------------------------------------------+
@@ -592,7 +763,7 @@ User menu --> "Tracking" --> /tracking
 - **Reuses card components from feed and briefs.** No new visual language to learn. (Consistency principle; Cognitive: Recognition over recall)
 - **Empty state includes a clear call to action.** Never leave the user at a dead end. (Error prevention, progressive disclosure)
 
-### 3.6 Tracking (`/tracking`)
+### 3.8 Tracking (`/tracking`)
 
 ```
 +------------------------------------------------------------------+
@@ -622,7 +793,7 @@ User menu --> "Tracking" --> /tracking
 +------------------------------------------------------------------+
 ```
 
-### 3.7 Account (`/account`)
+### 3.9 Account (`/account`)
 
 ```
 +------------------------------------------------------------------+
@@ -682,7 +853,7 @@ The card is the atomic unit of idea-fork. Three card variants:
 +----------------------------------------------+
 ```
 
-- Platform-specific left-border color: Reddit (#FF5700), Product Hunt (#DA552F), Play Store (#01875F), App Store (#0D84FF)
+- Platform-specific left-border color: Reddit (#FF5700), Product Hunt (#DA552F), Play Store (#01875F), App Store (#0D84FF), GitHub (#24292F)
 - Entire card is clickable --> opens source in new tab
 - "Deep Dive" link has its own click target (does not conflict with card click via `event.stopPropagation()`)
 - Tag badge: colored pill (complaint = red-toned, need = blue-toned, feature-request = green-toned)
@@ -703,6 +874,28 @@ The card is the atomic unit of idea-fork. Three card variants:
 - No platform-specific border. Uses idea-fork's neutral card style.
 - Opportunity score: horizontal bar + numeric value.
 - Entire card is clickable --> opens /briefs/:id.
+
+**Product Card:**
+
+```
++----------------------------------------------+
+| [platform icons]  Product Name    [bookmark] |
+|                                              |
+| "Short description, 1 line..."               |
+|                                              |
+| [metrics: stars/upvotes/downloads]           |
+| Top issue: "Representative complaint..."     |
+|                                              |
+| [complaint count badge]      [sentiment ind] |
++----------------------------------------------+
+```
+
+- No platform-specific left border (unlike feed cards). Uses a neutral card style similar to brief cards but with a distinct layout emphasizing metrics.
+- Complaint count badge: warm/alert color (e.g., `#DC2626` background) positioned prominently. This is the card's unique value signal.
+- Platform multi-badge: small icons (e.g., [PH][GH]) showing which platforms the product was found on.
+- "Top issue" line: one representative complaint excerpt, truncated at 1 line. Proves the complaint data exists.
+- Entire card is clickable --> opens /products/:id.
+- Sentiment indicator: colored dot (red = negative, yellow = mixed, green = positive) with text label.
 
 **Tracked Match Card (on /tracking):**
 
@@ -762,6 +955,8 @@ Every list/collection screen has a designed empty state:
 | Feed (no results for filter) | "No posts match this filter. Try removing filters or check back after the next update." | [Clear filters] |
 | Feed (first cycle pending) | "The first batch of needs is being processed. Check back in a few hours." | None |
 | Briefs (no briefs yet) | "Briefs are generated each cycle. Check back soon." | [Browse feed] |
+| Products (no products yet) | "Product data is being processed. Check back after the next update." | [Browse feed] |
+| Product detail not found (404) | "This product is no longer tracked." | [Browse products] |
 | Bookmarks (none saved) | "No bookmarks yet. Browse the feed and save items you want to revisit." | [Browse feed] |
 | Tracking keywords (none added) | "Add keywords to monitor emerging needs in your domain." | [+ Add keyword] |
 | Tracking matches (no new) | "No new matches since your last visit. Your tracked keywords are active." | None |
@@ -772,6 +967,8 @@ Every list/collection screen has a designed empty state:
 - Feed: show 5 skeleton cards (animated pulse) while loading.
 - Briefs: show 3 skeleton brief cards.
 - Deep Dive: show skeleton for header + chart placeholder + 3 skeleton source post rows.
+- Products: show 3 skeleton product cards.
+- Product detail: show skeleton for each section block (same pattern as brief detail).
 - Brief detail: show skeleton for each section block.
 - Never show a blank white page. Skeleton states set expectations and reduce perceived load time. (Cognitive: Perceived performance -- skeleton screens reduce perceived wait time by up to 50% vs. spinners)
 
@@ -901,8 +1098,8 @@ UPGRADE: Value already demonstrated
 
 | Stage | What Is Visible | What Is Hidden | Trigger to Reveal Next Stage |
 |-------|----------------|----------------|------------------------------|
-| **Anonymous visitor** | Full feed, tag filters, brief titles + summaries, trending keywords | Full briefs, deep dive (>3/day), bookmarks, tracking, notifications | Attempts gated action |
-| **Free registered user** | Same as above + bookmarks (save/view) | Full briefs, deep dive (>3/day), tracking, notifications, weekly digest | Clicks upgrade CTA or hits Pro-only feature |
+| **Anonymous visitor** | Full feed, tag filters, brief titles + summaries, trending keywords, product list with basic metrics | Full briefs, full product detail, deep dive (>3/day), bookmarks, tracking, notifications | Attempts gated action |
+| **Free registered user** | Same as above + bookmarks (save/view) | Full briefs, full product detail, deep dive (>3/day), tracking, notifications, weekly digest | Clicks upgrade CTA or hits Pro-only feature |
 | **Pro user** | Everything | Nothing | -- |
 
 ### 6.3 Paywall Design
@@ -969,6 +1166,7 @@ UPGRADE: Value already demonstrated
 | Full brief | Click brief detail as free/anon user | Inline upgrade block below visible summary | "Upgrade to see full analysis" |
 | Bookmark (anon) | Click bookmark icon when not logged in | Modal | "Sign in to save bookmarks" |
 | Bookmark (free) | Already works for free tier | N/A | N/A |
+| Product detail | Click product detail as free/anon user | Inline upgrade block below visible overview | "Upgrade to see full complaint analysis" |
 | Tracking | Navigate to /tracking as free user | Full-page upgrade prompt | "Track keywords and get notified. Upgrade to Pro." |
 | Notification bell | Visible in nav for all users; clicking as free shows upgrade prompt | Popover | "Get notified about new matches. Pro feature." |
 
@@ -1031,7 +1229,18 @@ These are explicit anti-patterns. Do not implement any of these, regardless of c
 | **Trending keyword click (desktop)** | Filters feed to posts containing that keyword | Keyword pill highlights in trending panel. Feed content updates. "Showing results for: [keyword]" banner appears above feed with [X clear] action to reset. |
 | **Pull to refresh (mobile, P2)** | Re-fetches latest feed data | Native pull-to-refresh indicator. Feed updates in place. |
 
-### 8.2 Brief Interactions
+### 8.2 Product Interactions
+
+| Interaction | Behavior | User Feedback |
+|------------|----------|---------------|
+| **Product card click** | Navigates to /products/:id via client-side routing | Standard page transition. |
+| **Sort toggle click** | Switches between "Trending" and "New" sort. Client-side re-sort. | Active segment highlights. Product list re-renders with smooth crossfade. |
+| **Source link click (within product detail)** | Opens product page on source platform in new tab | External link icon visible. |
+| **Complaint link click (within product detail)** | Opens original post in new tab OR navigates to /needs/:id | Depends on context: source link = new tab, need link = client-side nav. |
+| **Related brief click** | Navigates to /briefs/:id | Standard page transition. |
+| **Bookmark click** | Toggles bookmark state (optimistic UI) | Same pattern as brief bookmark. Toast confirmation. |
+
+### 8.3 Brief Interactions
 
 | Interaction | Behavior | User Feedback |
 |------------|----------|---------------|
@@ -1041,7 +1250,7 @@ These are explicit anti-patterns. Do not implement any of these, regardless of c
 | **Bookmark click** | Toggles bookmark state (optimistic UI) | Icon fills (bookmarked) or unfills (unbookmarked). Toast confirmation: "Saved to bookmarks" or "Removed from bookmarks" with undo action. |
 | **Related need click** | Navigates to /needs/:id | Standard page transition. |
 
-### 8.3 Paywall Interactions
+### 8.4 Paywall Interactions
 
 | Interaction | Behavior | User Feedback |
 |------------|----------|---------------|
@@ -1052,16 +1261,17 @@ These are explicit anti-patterns. Do not implement any of these, regardless of c
 | **Failed payment** | Stripe redirects back with error param | Error banner: "Payment couldn't be processed. You haven't been charged. Try again or contact support." [Try again] button. |
 | **Dismiss paywall modal** | Modal closes | No penalty. No follow-up popup. No nag banner. User returns to browsing. |
 
-### 8.4 Scroll Position Preservation
+### 8.5 Scroll Position Preservation
 
 - **Feed to Deep Dive and back:** When a user navigates from the feed to /needs/:id and then presses the browser back button or clicks "< Back", the feed scroll position is restored. Implemented via Next.js scroll restoration or manual scroll position storage in session state.
 - **Brief list to Brief detail and back:** Same behavior.
 - **Feed to external source and back:** When a user clicks a card (opens source in new tab) and then returns to the idea-fork tab, their scroll position is naturally preserved (same tab, same page).
 - **This is critical for the 5-minute session pattern** (Principle P5). Users should never lose their place in the feed.
 
-### 8.5 URL and Sharing Behavior
+### 8.6 URL and Sharing Behavior
 
 - **Every brief has a unique, shareable URL:** `/briefs/:id`. When shared, the recipient sees the same brief (with appropriate free/Pro gating).
+- **Every product has a unique, shareable URL:** `/products/:id`. When shared, the recipient sees the product overview (with free/Pro gating on complaint detail).
 - **Every deep dive has a unique, shareable URL:** `/needs/:id`. Same gating rules apply.
 - **Feed filter state is NOT in the URL.** Filters are ephemeral client-side state. Sharing `/` always shows the default feed. This keeps URLs clean and prevents confusion. (If filter-sharing becomes a user request, it can be added as query params later.)
 - **OpenGraph meta tags** on brief and need pages for rich social sharing previews (title, description, image placeholder).
@@ -1076,6 +1286,7 @@ These are explicit anti-patterns. Do not implement any of these, regardless of c
 |-------|-------------------|-----------------|
 | **Feed fails to load** | "Couldn't load the feed. Check your connection and try again." | [Retry] button re-fetches feed data. |
 | **Brief not found (404)** | "This brief is no longer available. It may have been from a previous cycle." | [Browse latest briefs] link to /briefs. |
+| **Product not found (404)** | "This product is no longer tracked. Browse trending products to find current market signals." | [Browse products] link to /products. |
 | **Deep dive not found (404)** | "This need is no longer tracked. Browse the feed to find current needs." | [Browse feed] link to /. |
 | **Auth fails (OAuth error)** | "Sign-in failed. Please try again. If the problem persists, try a different browser." | [Try again] button re-triggers OAuth flow. |
 | **Stripe checkout fails** | "Payment couldn't be processed. You haven't been charged." | [Try again] button. [Contact support] link. |
@@ -1145,7 +1356,13 @@ Tracking setup (keyword added)
 | `briefs.card.click` | `brief_id`, `card_position`, `opportunity_score` | Brief engagement, score correlation |
 | `briefs.detail.view` | `brief_id`, `user_tier` (free/pro/anon) | Brief detail adoption by tier |
 | `briefs.source.click` | `brief_id`, `source_platform`, `link_position` | Source evidence value |
-| `deepdive.view` | `need_id`, `referrer` (feed/brief/direct), `user_tier` | Deep dive adoption and entry points |
+| `products.view` | `sort_mode` (trending/new), `source` (nav/direct/referral) | Products page adoption |
+| `products.card.click` | `product_id`, `card_position`, `complaint_count` | Product engagement |
+| `products.detail.view` | `product_id`, `user_tier`, `referrer` (nav/direct/brief) | Product detail adoption by tier |
+| `products.source.click` | `product_id`, `source_platform` | Source link usage |
+| `products.complaint.click` | `product_id`, `complaint_theme`, `link_type` (source/need) | Complaint data value |
+| `products.sort.change` | `sort_mode` (trending/new) | Sort preference |
+| `deepdive.view` | `need_id`, `referrer` (feed/brief/product/direct), `user_tier` | Deep dive adoption and entry points |
 | `deepdive.limit.hit` | `user_id` (if auth'd), `session_deepdive_count` | Conversion trigger frequency |
 | `paywall.shown` | `type` (deepdive/brief/bookmark/tracking), `user_tier` | Conversion funnel |
 | `paywall.dismissed` | `type`, `user_tier` | Drop-off analysis |
@@ -1208,6 +1425,11 @@ Every major design decision mapped to its justifying principle:
 | Stacked sections in brief detail, not tabs | Visibility of system status -- all content visible, scannable in 60-90s | Layout |
 | Single column for briefs page (max 720px) | Optimal line length for reading (50-75 chars) | Typography |
 | Brief cards show opportunity score as bar + number | Pre-attentive processing -- bar length is processed before conscious attention | Visual |
+| Product cards show complaint count as primary differentiator | Pre-attentive processing -- number magnitude draws attention to unique value | Visual |
+| Product cards use neutral styling (distinct from feed and brief cards) | Distinctiveness -- three content types are visually separated | Visual |
+| Products page has two-option sort toggle (Trending/New) | Hick's Law -- two options = zero decision cost | Interaction |
+| Product detail groups complaints by theme, not platform | Actionability -- "sync is broken" is more useful than "Reddit has 20 posts" | Layout |
+| Three primary nav tabs (Feed, Briefs, Products) | Hick's Law still satisfied (3 options negligible); each tab = distinct job | Navigation |
 | No dark patterns in cancellation or billing | Trust product -- Principle P4 extends to business ethics | Trust |
 
 ---
@@ -1231,7 +1453,7 @@ Core deliverables:
 - [ ] Semantic HTML structure (nav, main, article)
 - [ ] Page title and basic meta tags
 
-### Phase 2: Briefs + Deep Dive (aligns with PRD Milestone M2)
+### Phase 2: Briefs + Deep Dive + Products (aligns with PRD Milestone M2)
 
 Core deliverables:
 - [ ] Brief card component (title, summary, post count, platform icons, opportunity score)
@@ -1240,11 +1462,15 @@ Core deliverables:
 - [ ] Deep dive page (/needs/:id) with frequency, intensity, source posts, related clusters
 - [ ] "Deep Dive" link on feed cards (with event.stopPropagation)
 - [ ] Related clusters and related briefs cross-linking
+- [ ] Product card component (name, platform icons, metrics, complaint count, sentiment, top issue)
+- [ ] Product list page (/products) with "Trending" / "New" segmented sort
+- [ ] Product detail page (/products/:id) with 4 sections (overview, complaints, sentiment, related briefs)
+- [ ] Product → brief and product → need cross-linking
 - [ ] Free/Pro content gating UI (blurred sections + inline upgrade prompt) -- enforcement is placeholder until auth exists
-- [ ] Back navigation links ("< Back to Briefs", "< Back")
-- [ ] Skeleton loading for brief detail and deep dive pages
-- [ ] Empty states for briefs page
-- [ ] OpenGraph meta tags for brief and need pages (shareable URLs)
+- [ ] Back navigation links ("< Back to Briefs", "< Back to Products", "< Back")
+- [ ] Skeleton loading for brief detail, deep dive, product detail pages
+- [ ] Empty states for briefs and products pages
+- [ ] OpenGraph meta tags for brief, need, and product pages (shareable URLs)
 - [ ] Cycle navigation on /briefs (previous/next cycle)
 
 ### Phase 3: Auth + Pro (aligns with PRD Milestone M3)

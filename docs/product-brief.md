@@ -87,6 +87,7 @@ Nothing is hidden in the feed. The default view prioritizes `complaint`, `need`,
 | Reddit | All posts from target subreddits (r/SaaS, r/selfhosted, r/Entrepreneur, r/smallbusiness, r/nocode, r/productivity, r/webdev, r/devops, r/ecommerce, r/freelance, etc.) | Upvotes, comment count, awards | Free (API) | 1 |
 | Product Hunt | All comments per product | Upvotes, comment count | Free (API) | 1 |
 | Play Store | 1-3 star reviews from SaaS-related categories (Productivity, Business, Tools), apps with 1K+ downloads | Review helpfulness votes, repeat complaint frequency | Free (scraping) | 1 |
+| GitHub Trending | Daily/weekly trending repos via `/trending` scraping or API star-tracking (`created:>DATE sort:stars`) | Star growth rate (daily/weekly delta), fork count | Free (API) | 1 |
 | App Store | 1-3 star reviews, same categories as Play Store | Review helpfulness votes, repeat complaint frequency | Free (scraping) | 2+ |
 
 LLM cost estimate: ~2,000 posts/cycle × Haiku-tier model = **~$1-2/cycle** for tagging + brief generation.

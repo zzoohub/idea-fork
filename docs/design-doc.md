@@ -37,6 +37,10 @@ This system needs to exist now because Haiku-tier LLM costs (~$1-2/cycle) make t
   │ App     │────────────▶│                                 │◀──────▶│ Stripe   │
   │ Store   │             │                                 │        └──────────┘
   └─────────┘             │                                 │
+  ┌─────────┐  API+scrape │                                 │
+  │ GitHub  │────────────▶│                                 │
+  │Trending │             │                                 │
+  └─────────┘             │                                 │
                           │                                 │        ┌──────────┐
                           │                                 │───────▶│ PostHog  │
                           │                                 │        └──────────┘
@@ -49,7 +53,8 @@ This system needs to exist now because Haiku-tier LLM costs (~$1-2/cycle) make t
 
 **Actors:**
 - **Browsers (users):** Indie hackers, founders, PMs browsing the feed and briefs. No login required for read-only access.
-- **Reddit API, Product Hunt API:** Structured data sources fetched via official APIs.
+- **Reddit API, Product Hunt API, GitHub API:** Structured data sources fetched via official APIs.
+- **GitHub Trending page:** Scraped for daily/weekly trending repos (no official trending API).
 - **Play Store, App Store:** Scraped sources (HTML parsing).
 - **LLM API (Haiku-tier):** Tags posts, generates embeddings, generates brief text.
 - **Google OAuth:** Social login provider.
@@ -132,6 +137,7 @@ The pipeline is a linear script: fetch → transform → store. It does not need
 │  │  (SSR via OpenNext on Cloudflare Workers)  │                  │
 │  │  - Feed page (/)                           │                  │
 │  │  - Briefs page (/briefs, /briefs/:id)     │                  │
+│  │  - Products page (/products, /products/:id)│                 │
 │  │  - Deep dive (/needs/:id)                 │                  │
 │  │  - Auth, account, bookmarks, tracking     │                  │
 │  └────────────────────┬──────────────────────┘                  │
@@ -162,6 +168,8 @@ The pipeline is a linear script: fetch → transform → store. It does not need
 │                        │  - posts          │                       │
 │                        │  - briefs         │                       │
 │                        │  - need_clusters  │                       │
+│                        │  - products       │                       │
+│                        │  - product_posts  │                       │
 │                        │  - users          │                       │
 │                        │  - bookmarks      │                       │
 │                        │  - tracked_keywords│                      │
@@ -181,7 +189,7 @@ The pipeline is a linear script: fetch → transform → store. It does not need
 |-----------|-----------|----------------|---------------|
 | **Frontend** | Next.js 15 (App Router) on Cloudflare Workers via OpenNext | SSR pages, client-side interactivity, PostHog event emission | HTTPS to FastAPI backend |
 | **Backend API** | Python 3.12, FastAPI, SQLAlchemy 2.0 async | REST API for all frontend data needs, auth, payment webhooks | HTTPS from frontend; TCP to Neon |
-| **Pipeline Job** | Python 3.12, scheduled Cloud Run Job | Fetch → tag → embed → cluster → brief generation | TCP to Neon; HTTPS to Reddit/PH/LLM APIs |
+| **Pipeline Job** | Python 3.12, scheduled Cloud Run Job | Fetch → tag → embed → cluster → brief generation | TCP to Neon; HTTPS to Reddit/PH/GitHub/LLM APIs |
 | **Database** | Neon PostgreSQL (with pgvector) | Primary data store for all application state | TCP from API and pipeline |
 | **Scheduler** | GCP Cloud Scheduler | Triggers pipeline on a cron schedule | HTTP trigger to Cloud Run Job |
 
@@ -195,7 +203,8 @@ The pipeline is a linear script: fetch → transform → store. It does not need
 | `feed` | Query posts by tag/engagement/keyword, paginate, return feed data | Yes — primary page |
 | `briefs` | Query briefs by cycle, return brief detail with source evidence | Yes — second-most-visited page |
 | `needs` | Query need clusters, return deep dive data (frequency, intensity, sources) | Yes — conversion trigger page |
-| `bookmarks` | CRUD bookmarks for posts and briefs per user | No |
+| `products` | Query product entities, return product detail with complaint breakdown and related briefs | Yes — differentiator page |
+| `bookmarks` | CRUD bookmarks for posts, briefs, and products per user | No |
 | `tracking` | CRUD tracked keywords, query matches | No |
 | `payments` | Stripe checkout session creation, webhook handler for subscription events | Yes — revenue |
 | `users` | User profile, subscription status | No |
@@ -204,15 +213,16 @@ The pipeline is a linear script: fetch → transform → store. It does not need
 
 | Stage | Input | Output | LLM Cost |
 |-------|-------|--------|----------|
-| 1. Fetch | Source APIs/scraping targets | Raw posts (~2,000) | $0 |
+| 1. Fetch | Source APIs/scraping targets (Reddit, PH, Play Store, App Store, GitHub) | Raw posts (~2,000) | $0 |
 | 2. Tag | Raw posts | Tagged posts (complaint/need/feature-request/discussion/self-promo/other) | ~$0.50 (Haiku, ~2K posts) |
 | 3. Embed | Tagged posts | Post embeddings (vector per post) | ~$0.05 (text-embedding-3-small) |
 | 4. Store | Tagged + embedded posts | Rows in `posts` table | $0 |
 | 5. Cluster | Post embeddings (new + recent) | ~50 need clusters | $0 (algorithmic) |
 | 6. Rank | Need clusters | Ranked clusters by volume × intensity × gap | $0 |
 | 7. Brief | Top ~10 clusters | AI-generated briefs with source evidence | ~$0.50 (Haiku, ~10 briefs) |
+| 8. Product resolve | Tagged posts + PH/GitHub/Store metadata | Product entities with aggregated complaints and metrics | ~$0.10 (Haiku, entity resolution for ambiguous matches) |
 
-Total estimated LLM cost per cycle: **~$1-2**
+Total estimated LLM cost per cycle: **~$1.50-2.50**
 
 ---
 
@@ -223,7 +233,7 @@ Total estimated LLM cost per cycle: **~$1-2**
 **Flow 1: Pipeline cycle (batch, every 6-24h)**
 
 ```
-Reddit/PH/PlayStore/AppStore
+Reddit/PH/PlayStore/AppStore/GitHub
         │
         ▼
   [1. Fetch raw posts] ──▶ In-memory post list
@@ -246,6 +256,13 @@ Reddit/PH/PlayStore/AppStore
         ▼
   [7. Generate briefs] ──▶ LLM generates brief for top ~10 clusters
                             ──▶ `briefs` table (summary, sources, metrics, opportunity)
+        │
+        ▼
+  [8. Resolve products] ──▶ Group posts by product entity (PH product, GitHub repo,
+                             Play/App Store app). Cross-platform entity resolution
+                             (match "Notion" on Reddit to Notion on PH).
+                             ──▶ `products` table (name, description, platforms, metrics)
+                             ──▶ `product_posts` table (product_id → post_id mapping)
 ```
 
 **Consistency:** Strong consistency within each pipeline stage (sequential writes to Neon). The pipeline writes complete cycle data atomically — all posts for a cycle are tagged and stored before clustering begins. The web API reads committed data only.
@@ -289,7 +306,8 @@ Browser ◀──redirect back with success param──────────�
 - **What:** All application data — posts, briefs, clusters, users, bookmarks, tracked keywords, pipeline cycle metadata, post embeddings (pgvector).
 - **Why relational:** The data model is relational — posts belong to clusters, clusters produce briefs, users have bookmarks, users track keywords. Relationships, joins, and transactions are core operations. PostgreSQL with pgvector handles both relational queries and vector similarity search, avoiding a separate vector database.
 - **Consistency:** Strong consistency. All reads and writes go to the primary instance.
-- **Retention:** Posts older than 90 days are archived (soft-deleted, excluded from feed queries but retained for brief source evidence). Briefs are retained indefinitely. Pipeline cycle metadata retained for 1 year.
+- **Tables:** `posts` (tagged posts with embeddings), `briefs` (AI-generated briefs), `need_clusters` (clustered needs), `products` (resolved product entities with aggregated metrics), `product_posts` (many-to-many: product → posts referencing it), `users`, `bookmarks`, `tracked_keywords`, `pipeline_cycles`.
+- **Retention:** Posts older than 90 days are archived (soft-deleted, excluded from feed queries but retained for brief source evidence). Briefs and products are retained indefinitely. Pipeline cycle metadata retained for 1 year.
 
 **Why not a separate vector database (Pinecone, Qdrant, etc.):**
 
@@ -444,7 +462,7 @@ No distributed tracing. There are only two services (frontend → API), and the 
 
 **Pipeline resilience:**
 
-- Each source fetch (Reddit, PH, Play Store, App Store) is independent. If one source fails, the others continue. The pipeline logs the failure and produces a partial cycle (better than no cycle).
+- Each source fetch (Reddit, PH, Play Store, App Store, GitHub Trending) is independent. If one source fails, the others continue. The pipeline logs the failure and produces a partial cycle (better than no cycle).
 - LLM API calls include retry with exponential backoff (3 attempts, 1s/2s/4s). If tagging fails for a post after retries, the post is stored without a tag (tagged as `other`).
 - The pipeline is idempotent by cycle ID. Re-running a failed cycle replaces partial data with complete data (upsert semantics on `cycle_id + source_post_id`).
 
@@ -460,8 +478,9 @@ No distributed tracing. There are only two services (frontend → API), and the 
 | Frontend → API | 10s | Feed/brief queries should complete in <200ms; 10s accommodates cold starts |
 | API → Neon | 5s | Database queries should complete in <100ms |
 | Pipeline → LLM API (per post) | 30s | LLM responses can vary; 30s is generous |
-| Pipeline → Reddit/PH API | 15s | External APIs, includes rate-limit retry waits |
+| Pipeline → Reddit/PH/GitHub API | 15s | External APIs, includes rate-limit retry waits |
 | Pipeline → Play/App Store scrape | 30s | Scraping can be slow depending on page load |
+| Pipeline → GitHub `/trending` scrape | 15s | Supplementary to API; single page fetch + parse |
 | Pipeline total | 30 min | Cloud Run Job timeout; the full cycle should complete in 10-20 min |
 
 ### 6.4 Security
@@ -525,6 +544,7 @@ No distributed tracing. There are only two services (frontend → API), and the 
 | **Product Hunt API** | Product comments | GraphQL | Rate limit, downtime | Skip PH for this cycle |
 | **Play Store** | App reviews (1-3 stars) | HTTP scraping (google-play-scraper) | HTML structure changes, blocking | Skip Play Store; monitor for scraper breakage |
 | **App Store** | App reviews (1-3 stars) | HTTP scraping (app-store-scraper) | HTML structure changes, blocking | Skip App Store; monitor for scraper breakage |
+| **GitHub API + Trending** | Trending repos (name, description, stars, forks, language, star growth rate) | REST API (authenticated, 5K req/hr) + `/trending` page scraping | API rate limit (429), trending page HTML changes | API for star tracking is stable; scraping fallback for trending page; skip GitHub for this cycle if both fail |
 | **Anthropic API (Haiku)** | Post tagging, brief generation | REST | Rate limit, downtime, model deprecation | Retry with backoff; if persistent, delay cycle and alert |
 | **OpenAI API (embeddings)** | Post embedding vectors | REST | Rate limit, downtime | Retry with backoff; fallback to Anthropic voyage if OpenAI is unavailable |
 | **Google OAuth** | User authentication | OAuth2 | Downtime (rare) | Login fails gracefully; existing sessions continue working |
@@ -545,7 +565,7 @@ Not applicable — greenfield project, no existing system to migrate from.
 | Phase | Deliverable | Infra Required |
 |-------|------------|---------------|
 | **M1 — Pipeline** | End-to-end pipeline running on schedule | Neon, Cloud Run Job, Cloud Scheduler, LLM API, source APIs |
-| **M2 — Feed + Briefs** | Web app serving feed and briefs | + Cloudflare Workers (frontend), Cloud Run Service (API) |
+| **M2 — Feed + Briefs + Products** | Web app serving feed, briefs, and products | + Cloudflare Workers (frontend), Cloud Run Service (API) |
 | **M3 — Auth + Pro** | Google OAuth, Stripe payments, tier gating | + Google OAuth, Stripe integration |
 | **M4 — Engagement** | Bookmarks, tracking, notifications, email digest | + Resend |
 | **M5 — Launch** | PostHog instrumentation, performance tuning | + PostHog |
@@ -563,6 +583,7 @@ Each phase is independently deployable and usable. M1 can run without a web app 
 | Reddit API policy change blocks data collection | High — Reddit is the highest-volume source | Low (current terms allow read access) | Diversify to more sources early; cache historical data; monitor TOS changes quarterly |
 | LLM tagging accuracy below 80% | Medium — feed quality degrades, user trust drops | Medium | Nothing is hidden (only mis-prioritized); iteratively improve prompts; run weekly accuracy spot-checks on 50 random posts |
 | Play/App Store scraper breaks due to HTML changes | Medium — lose two data sources | Medium | Use maintained open-source scraping libraries; pin versions; set up alerts on scraper failures |
+| GitHub `/trending` page structure changes | Low — lose trending discovery (API star tracking still works) | Low | Primary method is GitHub REST API for star-count tracking; `/trending` scraping is supplementary; skip if broken |
 | Clustering produces noisy or overlapping groups | Medium — briefs feel generic or redundant | Medium | Tune HDBSCAN min_cluster_size; experiment with LLM-based dedup pass on clusters; manually review first 5 cycles |
 | Neon cold start adds latency to first API request | Low — mitigated by Cloud Run min instances and Neon autoscaling | Low | Enable Neon autoscaling (auto-suspend after 5 min idle, wake in <1s); Cloud Run min instances = 1 keeps API warm |
 | OpenNext on Cloudflare Workers has compatibility issues with Next.js 15 | Medium — deployment blocker | Medium | Test early in M2; fallback to Vercel if OpenNext is unreliable |
@@ -576,8 +597,9 @@ Each phase is independently deployable and usable. M1 can run without a web app 
 | 2 | What clustering algorithm? | (a) HDBSCAN (density-based, no need to specify k), (b) KMeans (fast, requires k), (c) LLM-based grouping (highest quality, highest cost) | Run HDBSCAN vs KMeans on sample data; evaluate cluster quality manually | zzoo |
 | 3 | Pipeline frequency? | (a) Every 6h, (b) Every 12h, (c) Daily | Balance between data freshness and LLM cost ($1-2/cycle × 4 cycles/day = $4-8/day at 6h) | zzoo |
 | 4 | OpenNext stability for Next.js 15? | (a) Use OpenNext on Cloudflare, (b) Fall back to Vercel | Test OpenNext with a Next.js 15 skeleton app on Cloudflare Workers during M2 | zzoo |
-| 5 | Legal review of source platform TOS? | (a) Reddit API TOS compliant, (b) Needs legal review, (c) Switch to RSS feeds | Review Reddit API TOS (especially post-2024 pricing changes), Play Store scraping legality | zzoo |
+| 5 | Legal review of source platform TOS? | (a) Reddit API TOS compliant, (b) Needs legal review, (c) Switch to RSS feeds | Review Reddit API TOS (especially post-2024 pricing changes), Play Store scraping legality, GitHub API TOS (rate limits, scraping `/trending` page) | zzoo |
 | 6 | Anonymous deep-dive rate limit mechanism? | (a) Signed cookie (simple, bypassable), (b) IP-based (more robust, CDN complication), (c) Fingerprint-based | Cookie is simplest and matches the UX strategy (rate limit is a nudge, not a hard wall) | zzoo |
+| 7 | Product entity resolution strategy? | (a) Exact name matching across platforms (simple, misses abbreviations), (b) LLM-assisted matching (handles "FreshBooks" vs "freshbooks" vs "Fresh Books"), (c) Hybrid: exact match first, LLM for unmatched | Benchmark accuracy on sample of 200 posts mentioning products — measure false positive/negative rates | zzoo |
 
 ---
 

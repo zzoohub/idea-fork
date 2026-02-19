@@ -72,6 +72,8 @@ Each step is slow, unrepeatable, and disconnected from the next. The result: mos
 | UC8 | Bookmark interesting feed items or briefs for later review | Sarah, James | P1 |
 | UC9 | Register keywords or domains to track and get notified when new relevant needs surface | Sarah, James | P1 |
 | UC10 | Receive a weekly digest email summarizing new needs in tracked areas | Sarah, James | P1 |
+| UC11 | Browse trending/newly launched products and see aggregated user complaints about each | All | P1 |
+| UC12 | Deep-dive into a specific product to assess its weaknesses and the opportunity gap | Alex, Sarah | P1 |
 
 ---
 
@@ -87,7 +89,9 @@ idea-fork is a "Product Hunt for problems" — a website where builders browse r
 
 3. **Deep Dive (value)** — Click a need from the feed or brief to see a detail view: frequency over time, sentiment intensity, all original source posts, and related need clusters.
 
-4. **Tracking (retention)** — Register keywords or domains to monitor. Get notified when new relevant needs surface. Weekly digest email with personalized updates.
+4. **Products (differentiation)** — A `/products` page showing trending and newly launched products from Product Hunt, GitHub, Play Store, and App Store — each paired with aggregated user complaints and needs. Not a simple popularity chart: the unique value is "what's hot AND what's broken about it." Click a product to see its full complaint profile, competitive weaknesses, and related AI briefs.
+
+5. **Tracking (retention)** — Register keywords or domains to monitor. Get notified when new relevant needs surface. Weekly digest email with personalized updates.
 
 **Key value propositions:**
 
@@ -123,6 +127,7 @@ Fetch posts from:
 - Product Hunt: Comments per product
 - Play Store: 1-3 star reviews from SaaS-related categories (Productivity, Business, Tools) for apps with 1K+ downloads
 - App Store: 1-3 star reviews, same categories as Play Store
+- GitHub Trending: Daily/weekly trending repositories via `/trending` page scraping or GitHub API (`created:>DATE sort:stars` query). Captures repo name, description, language, star count, star growth rate, fork count
 
 **[P0] LLM tagging**
 Each fetched post is tagged by an LLM (Haiku-tier) with a category: `complaint`, `need`, `feature-request`, `discussion`, `self-promo`, `other`. Store the tag alongside the post.
@@ -132,12 +137,16 @@ Rank posts within the feed using platform-native engagement signals:
 - Reddit: upvotes, comment count
 - Product Hunt: upvotes, comment count
 - Play Store / App Store: review helpfulness votes, repeat complaint frequency
+- GitHub: star growth rate (daily/weekly delta), fork count
 
 **[P0] Need clustering**
 Cluster similar needs across new + recent posts using embedding similarity or LLM-based grouping. Example: ~800 tagged posts → ~50 clusters.
 
 **[P0] Cluster ranking**
 Rank clusters by business viability: volume (post count) x intensity (sentiment strength) x competitive gap (are existing solutions mentioned as inadequate?).
+
+**[P1] Product entity resolution**
+Group posts and reviews by the product they reference. Match mentions across platforms (e.g., "Notion" on Reddit + Product Hunt + Play Store = one product entity). For each product entity, aggregate: total post/review count, complaint count, platform sources, engagement metrics, and sentiment summary. This enables the Products page.
 
 **[P0] AI brief generation**
 For the top ~10 ranked clusters per cycle, generate a mini product brief containing:
@@ -153,7 +162,7 @@ For the top ~10 ranked clusters per cycle, generate a mini product brief contain
 A single scrollable feed displaying tagged posts from all sources, sorted by tag relevance + engagement score. Default view prioritizes `complaint`, `need`, and `feature-request` tags at the top.
 
 **[P0] Platform-native card styling**
-Each feed card inherits the visual language of its source platform (Reddit, Product Hunt, Play Store, App Store) so users instantly recognize the source. Each card shows: post title/excerpt, source platform, tag badge, engagement metrics, and timestamp.
+Each feed card inherits the visual language of its source platform (Reddit, Product Hunt, Play Store, App Store, GitHub) so users instantly recognize the source. Each card shows: post title/excerpt, source platform, tag badge, engagement metrics, and timestamp.
 
 **[P0] Source link-through**
 Every feed card links to the original post on the source platform. Click/tap to open in a new tab.
@@ -165,7 +174,7 @@ Users can filter the feed by tag type. Default: `complaint`, `need`, `feature-re
 Feed loads incrementally as the user scrolls. Initial load shows the most recent cycle's results.
 
 **[P1] Trending keywords side panel**
-A right-side panel showing ranked trending keywords with platform tabs (Reddit, Product Hunt, Play Store, App Store). Clicking a keyword filters the main feed to posts containing that keyword.
+A right-side panel showing ranked trending keywords with platform tabs (Reddit, Product Hunt, Play Store, App Store, GitHub). Clicking a keyword filters the main feed to posts containing that keyword.
 
 **[P1] Feed cycle indicator**
 Show when the feed was last updated (e.g., "Updated 3 hours ago") so users understand the refresh cadence.
@@ -203,7 +212,38 @@ From a need detail view, link to any AI brief that includes this need cluster.
 **[P0] Free / Pro deep dive access**
 Free users get 3 deep dives per day. Pro users get unlimited.
 
-### 5.5 Authentication & User Accounts
+### 5.5 Products
+
+**[P1] Products page (`/products`)**
+A dedicated page displaying trending and newly launched products aggregated from all data sources. Each product card shows: product name, platform source, category, engagement metrics (upvotes, stars, downloads), complaint/need count, and a sentiment summary. The differentiator is pairing product popularity with user dissatisfaction data.
+
+**[P1] Product data aggregation**
+The pipeline groups posts and reviews by product entity. Entity resolution matches posts mentioning the same product across platforms (e.g., "Notion" on Reddit, Product Hunt, and Play Store). Each product accumulates:
+- Product Hunt: upvotes, comment count, launch date
+- GitHub: star count, star growth rate (daily/weekly delta), fork count, language
+- Play Store / App Store: rating, download count, review count, low-star review count
+
+**[P1] Product trending score**
+Rank products by a composite trending score based on: recent engagement growth rate (not absolute size), recency of launch or major update, and volume of associated complaints/needs. Products with both high engagement AND high complaint volume rank highest (biggest opportunity signal).
+
+**[P1] Product detail view (`/products/:id`)**
+Click a product card to see:
+- Product overview: name, description, platform(s), launch date, key metrics
+- Complaint/need breakdown: aggregated user complaints and needs about this product, grouped by theme
+- Sentiment summary: overall sentiment, top complaint themes, intensity
+- Related AI briefs: briefs that reference complaints about this product
+- Source link: direct link to the product's page on its source platform
+
+**[P1] Product card platform sources**
+Each product card shows which platforms it was found on (multi-platform badge). Products appearing on multiple platforms with complaints on each rank higher in the trending list.
+
+**[P1] Products sorted by trending score and recency**
+Default sort: trending score (composite of engagement growth + complaint volume). Secondary sort: most recently launched/updated first. Users can toggle between "Trending" and "New" sort modes.
+
+**[P1] Free / Pro product access**
+Free users see the product list with basic metrics. Pro users see the full product detail view including complaint breakdown, sentiment analysis, and related briefs.
+
+### 5.6 Authentication & User Accounts
 
 **[P0] Google OAuth login**
 Users can sign up and log in via Google. No login required to browse the feed or view brief titles.
@@ -214,7 +254,7 @@ Alternative login method for users who prefer not to use Google.
 **[P0] User profile**
 Minimal profile: display name, email, account tier (Free/Pro), created date.
 
-### 5.6 Bookmarks
+### 5.7 Bookmarks
 
 **[P1] Bookmark feed items**
 Logged-in users can bookmark any feed card. Bookmarked items appear in a `/bookmarks` page.
@@ -225,7 +265,7 @@ Logged-in users can bookmark AI briefs for later review.
 **[P1] Bookmarks page (`/bookmarks`)**
 A dedicated page listing all bookmarked items (feed posts and briefs), sorted by bookmark date.
 
-### 5.7 Tracking & Notifications
+### 5.8 Tracking & Notifications
 
 **[P1] Keyword tracking**
 Logged-in Pro users can register keywords (e.g., "invoicing", "onboarding") to track. When new posts matching tracked keywords appear in the feed, the user is notified.
@@ -239,7 +279,7 @@ A notification center showing new matches for tracked keywords/domains since the
 **[P1] Weekly digest email**
 Pro users receive a weekly email summarizing: new needs matching their tracked keywords/domains, new AI briefs relevant to their interests, and overall trending topics.
 
-### 5.8 Pro Tier & Payments
+### 5.9 Pro Tier & Payments
 
 **[P0] Free tier**
 Full feed access. AI brief titles + summaries only. 3 deep dives/day. No bookmarks, tracking, or notifications.
@@ -250,7 +290,7 @@ Full AI briefs. Unlimited deep dives. Bookmarks. Keyword/domain tracking. In-app
 **[P0] Stripe integration**
 Payment processing via Stripe. Monthly subscription. Users can upgrade, downgrade, and cancel from their account settings.
 
-### 5.9 General
+### 5.10 General
 
 **[P0] Responsive design**
 Works on desktop and mobile browsers. Feed is the primary mobile experience.
@@ -321,7 +361,21 @@ Pro user navigates to /tracking (via nav or account settings)
   → Weekly digest email sent on Monday with matches + relevant new briefs
 ```
 
-### 6.6 Bookmarking
+### 6.6 Product discovery
+
+```
+User navigates to /products (via nav)
+  → Sees trending product cards (name, platform, metrics, complaint count)
+  → [Optional] Toggles between "Trending" and "New" sort
+  → Clicks a product card
+    → Free user: sees product overview + complaint count summary, detail blurred
+    → Pro user: sees full product detail (complaint breakdown, sentiment, related briefs)
+  → Clicks source link → opens product page on source platform in new tab
+  → Clicks related brief → navigates to /briefs/:id
+  → Clicks a specific complaint → navigates to /needs/:id
+```
+
+### 6.7 Bookmarking
 
 ```
 Logged-in user browses feed or briefs
@@ -337,9 +391,10 @@ Logged-in user browses feed or briefs
 ### In scope
 
 - Data pipeline: fetch → tag → rank → store → cluster → generate briefs (all sources)
-- Data sources: Reddit (API), Product Hunt (API), Play Store (scraping), App Store (scraping)
+- Data sources: Reddit (API), Product Hunt (API), Play Store (scraping), App Store (scraping), GitHub Trending (API + scraping)
 - Unified feed with tag filtering, platform-native cards, source link-through, trending keywords
 - AI Briefs page with detail view, cycle history
+- Products page with trending/new products paired with aggregated complaints, product detail view
 - Deep dive need detail view with frequency, intensity, sources, related clusters
 - Google OAuth + email/password authentication
 - User accounts with Free / Pro tiers
@@ -376,14 +431,14 @@ Logged-in user browses feed or briefs
 | ~2,000 posts/cycle is sufficient volume to generate meaningful clusters | Pipeline dry run on real data |
 | AI-generated briefs are useful enough to act on | Generate 10 sample briefs, get feedback from 5 target users |
 | Users will discover the site through organic channels (Product Hunt launch, Twitter, Indie Hackers) | Landing page pre-signup + launch experiment |
-| Public data from Reddit/Product Hunt/Play Store/App Store can be legally collected under current API terms | Legal review per platform |
+| Public data from Reddit/Product Hunt/Play Store/App Store/GitHub can be legally collected under current API terms | Legal review per platform |
 | $9/mo price point is viable for target users | Landing page price testing |
 
 ### Constraints
 
 - **Solo developer:** zzoo handles PM, design, and full-stack development
 - **Budget:** Minimize infrastructure costs; LLM costs ~$1-2/cycle for tagging + brief generation
-- **Legal:** Must comply with Reddit API TOS (post-2024 pricing changes), Product Hunt API terms, Play Store and App Store scraping policies, GDPR
+- **Legal:** Must comply with Reddit API TOS (post-2024 pricing changes), Product Hunt API terms, Play Store and App Store scraping policies, GitHub API TOS (rate limits: 5,000 req/hr authenticated), GDPR
 - **No real-time:** Pipeline is batch-based; feed freshness depends on cycle frequency
 
 ### Dependencies
@@ -393,6 +448,7 @@ Logged-in user browses feed or briefs
 | Reddit API availability and rate limits | Medium — Reddit has changed API pricing before | Monitor TOS, implement rate limiting, cache aggressively |
 | Product Hunt API access | Low — public API available | Standard API integration |
 | Play Store / App Store scraping stability | Medium — scraping targets can change HTML structure | Use established scraping libraries, monitor for breakage |
+| GitHub API / Trending page | Low — API is stable; `/trending` page has no official API but structure is stable | Use GitHub REST API for star tracking; fall back to scraping `/trending` |
 | LLM API (Haiku-tier) availability and pricing | Low — multiple providers available | Abstract LLM calls behind a provider interface |
 | Stripe API for payments | Low — stable, well-documented | Standard integration |
 | Google OAuth | Low — stable | Standard OAuth 2.0 flow |
@@ -420,6 +476,8 @@ Logged-in user browses feed or briefs
 | AI Brief titles + summaries | Yes | Yes |
 | Full AI Brief detail | No | Yes |
 | Deep dives | 3/day | Unlimited |
+| Products list (basic metrics) | Yes | Yes |
+| Full product detail (complaints, sentiment, related briefs) | No | Yes |
 | Bookmarks | No | Yes |
 | Keyword/domain tracking | No | Yes |
 | In-app notifications | No | Yes |
@@ -432,7 +490,7 @@ Logged-in user browses feed or briefs
 | Milestone | Deliverable |
 |-----------|-------------|
 | **M1 — Pipeline** | Data fetching from all sources → LLM tagging → clustering → brief generation running end-to-end |
-| **M2 — Feed + Briefs** | Feed UI + Briefs UI + deep dive deployed, pipeline running on schedule |
+| **M2 — Feed + Briefs + Products** | Feed UI + Briefs UI + Products UI + deep dive deployed, pipeline running on schedule |
 | **M3 — Auth + Pro** | Google OAuth, user accounts, Stripe payments, free/pro gating |
 | **M4 — Engagement** | Bookmarks, keyword/domain tracking, in-app notifications, weekly digest email |
 | **M5 — Launch** | Product Hunt launch, analytics instrumented, initial user feedback cycle |
