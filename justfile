@@ -33,11 +33,11 @@ web-lint:
 
 # Run vitest
 web-test *args:
-    cd web && bun vitest run {{args}}
+    cd web && bun vitest run {{ args }}
 
 # Run vitest in watch mode
 web-test-watch *args:
-    cd web && bun vitest {{args}}
+    cd web && bun vitest {{ args }}
 
 # Run vitest with coverage
 web-test-cov:
@@ -49,7 +49,7 @@ web-typecheck:
 
 # Add a shadcn/ui component (e.g. just web-ui button)
 web-ui component:
-    cd web && bunx shadcn@latest add {{component}}
+    cd web && bunx shadcn@latest add {{ component }}
 
 # ─── Quality ──────────────────────────────────────────────────────────────────
 

@@ -53,3 +53,7 @@ See docs/structure-web.md. Feature-Sliced Design (FSD) with Next.js App Router.
 - `src/views/` = FSD "pages" layer (renamed to avoid Next.js `pages/` directory conflict)
 
 ### Conventions
+
+- **i18n**: All pages and components should be internationalized using the `next-intl` library (korean/english).
+- **responsive**: All pages and components should be responsive and adapt to different screen sizes.
+- **dark-mode**: All pages and components should support dark mode.
