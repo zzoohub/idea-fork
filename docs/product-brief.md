@@ -51,7 +51,6 @@ The feed gives users the **raw material**. Briefs give users the **"so what."** 
 
 - **End-to-end:** No other tool takes users from raw complaints to synthesized product briefs
 - **Zero friction:** No login required to browse — open the site, see the latest needs
-- **Feed-first:** Lightweight and scrollable, not a complex analytics dashboard
 - **AI with receipts:** Every brief claim links back to real posts — no unsupported AI opinions
 
 ### Non-Goals
