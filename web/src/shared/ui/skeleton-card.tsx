@@ -1,10 +1,33 @@
 import { Skeleton } from "@/shared/ui/skeleton";
 
 interface SkeletonCardProps {
-  variant?: "feed" | "brief";
+  variant?: "feed" | "brief" | "product";
 }
 
 export function SkeletonCard({ variant = "feed" }: SkeletonCardProps) {
+  if (variant === "product") {
+    return (
+      <div className="rounded-lg border p-4 space-y-3" role="status" aria-busy="true">
+        <div className="flex items-start justify-between gap-2">
+          <Skeleton className="h-5 w-1/2" />
+          <Skeleton className="h-5 w-16 rounded-full" />
+        </div>
+        <Skeleton className="h-4 w-full" />
+        <Skeleton className="h-4 w-3/4" />
+        <div className="flex items-center gap-2 pt-1">
+          <Skeleton className="h-4 w-4 rounded-full" />
+          <Skeleton className="h-4 w-4 rounded-full" />
+          <Skeleton className="h-4 w-4 rounded-full" />
+        </div>
+        <div className="flex items-center justify-between pt-2">
+          <Skeleton className="h-3 w-28" />
+          <Skeleton className="h-3 w-40" />
+        </div>
+        <span className="sr-only">Loading product card…</span>
+      </div>
+    );
+  }
+
   if (variant === "brief") {
     return (
       <div className="rounded-lg border p-4 space-y-3" role="status" aria-busy="true">

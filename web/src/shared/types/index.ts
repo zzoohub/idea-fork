@@ -136,3 +136,37 @@ export interface TrendingKeyword {
   keyword: string;
   platform: Platform;
 }
+
+export type SentimentLevel = "negative" | "mixed" | "positive";
+
+export type ProductSortMode = "trending" | "new";
+
+export interface ComplaintTheme {
+  theme: string;
+  postCount: number;
+  posts: SourcePost[];
+}
+
+export interface Product {
+  id: string;
+  name: string;
+  description: string;
+  platforms: Platform[];
+  category: string;
+  engagementMetrics: Partial<
+    Record<Platform, { mentions: number; avgSentiment: number }>
+  >;
+  complaintCount: number;
+  sentimentLevel: SentimentLevel;
+  topIssue: string;
+  launchDate: string;
+  sourceUrls: Partial<Record<Platform, string>>;
+  isBookmarked: boolean;
+}
+
+export interface ProductDetail extends Product {
+  complaintBreakdown: ComplaintTheme[];
+  sentimentTrend: TrendDirection;
+  sparklineData: number[];
+  relatedBriefs: RelatedNeed[];
+}

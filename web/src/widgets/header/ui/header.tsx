@@ -31,6 +31,7 @@ import { Avatar, AvatarFallback } from "@/shared/ui/avatar";
 const navItems = [
   { href: "/", label: "Feed" },
   { href: "/briefs", label: "Briefs" },
+  { href: "/products", label: "Products" },
 ];
 
 export function Header() {

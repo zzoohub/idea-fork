@@ -8,6 +8,8 @@ import type {
   User,
   Cycle,
   TrendingKeyword,
+  Product,
+  ProductDetail,
 } from "@/shared/types";
 
 // Helper to create ISO timestamps relative to now
@@ -1035,3 +1037,409 @@ export const mockUser: User = {
   weeklyDigest: true,
   nextBillingDate: "2026-03-15",
 };
+
+export const mockProducts: Product[] = [
+  {
+    id: "product-1",
+    name: "FreshBooks",
+    description:
+      "Cloud accounting and invoicing software for small businesses and freelancers. Recently tripled pricing on legacy plans.",
+    platforms: ["reddit", "producthunt", "appstore"],
+    category: "Invoicing",
+    engagementMetrics: {
+      reddit: { mentions: 142, avgSentiment: 2.1 },
+      producthunt: { mentions: 38, avgSentiment: 3.4 },
+      appstore: { mentions: 67, avgSentiment: 2.5 },
+    },
+    complaintCount: 247,
+    sentimentLevel: "negative",
+    topIssue: "Pricing tripled overnight",
+    launchDate: "2024-09-15",
+    sourceUrls: {
+      reddit: "https://reddit.com/r/Entrepreneur/example6",
+      producthunt: "https://producthunt.com/posts/freshbooks",
+      appstore: "https://apps.apple.com/app/freshbooks",
+    },
+    isBookmarked: false,
+  },
+  {
+    id: "product-2",
+    name: "Notion Calendar",
+    description:
+      "Calendar app integrated with Notion workspace. Syncs tasks, databases, and events across devices.",
+    platforms: ["producthunt", "appstore", "playstore"],
+    category: "Productivity",
+    engagementMetrics: {
+      producthunt: { mentions: 89, avgSentiment: 3.8 },
+      appstore: { mentions: 54, avgSentiment: 3.2 },
+      playstore: { mentions: 41, avgSentiment: 2.9 },
+    },
+    complaintCount: 184,
+    sentimentLevel: "mixed",
+    topIssue: "Sync reliability issues",
+    launchDate: "2025-11-20",
+    sourceUrls: {
+      producthunt: "https://producthunt.com/posts/notion-calendar",
+      appstore: "https://apps.apple.com/app/notion-calendar",
+      playstore: "https://play.google.com/store/apps/notion-calendar",
+    },
+    isBookmarked: true,
+  },
+  {
+    id: "product-3",
+    name: "Linear",
+    description:
+      "Streamlined issue tracking and project management for software teams. Known for speed and keyboard-first UX.",
+    platforms: ["producthunt", "reddit", "github"],
+    category: "Project Management",
+    engagementMetrics: {
+      producthunt: { mentions: 112, avgSentiment: 4.2 },
+      reddit: { mentions: 98, avgSentiment: 4.0 },
+      github: { mentions: 45, avgSentiment: 4.1 },
+    },
+    complaintCount: 73,
+    sentimentLevel: "positive",
+    topIssue: "Missing custom fields",
+    launchDate: "2026-01-10",
+    sourceUrls: {
+      producthunt: "https://producthunt.com/posts/linear",
+      reddit: "https://reddit.com/r/SaaS/linear",
+      github: "https://github.com/linear",
+    },
+    isBookmarked: false,
+  },
+  {
+    id: "product-4",
+    name: "Canny",
+    description:
+      "Customer feedback management platform for tracking feature requests and prioritizing roadmaps.",
+    platforms: ["producthunt", "reddit"],
+    category: "Feedback",
+    engagementMetrics: {
+      producthunt: { mentions: 56, avgSentiment: 3.3 },
+      reddit: { mentions: 78, avgSentiment: 3.0 },
+    },
+    complaintCount: 134,
+    sentimentLevel: "mixed",
+    topIssue: "Too complex for small teams",
+    launchDate: "2025-06-18",
+    sourceUrls: {
+      producthunt: "https://producthunt.com/posts/canny",
+      reddit: "https://reddit.com/r/SaaS/canny",
+    },
+    isBookmarked: false,
+  },
+  {
+    id: "product-5",
+    name: "Vercel",
+    description:
+      "Frontend cloud platform for deploying web applications. Optimized for Next.js with edge functions and analytics.",
+    platforms: ["github", "producthunt", "reddit"],
+    category: "Deployment",
+    engagementMetrics: {
+      github: { mentions: 234, avgSentiment: 4.0 },
+      producthunt: { mentions: 67, avgSentiment: 4.1 },
+      reddit: { mentions: 189, avgSentiment: 3.8 },
+    },
+    complaintCount: 91,
+    sentimentLevel: "positive",
+    topIssue: "Framework lock-in",
+    launchDate: "2026-02-01",
+    sourceUrls: {
+      github: "https://github.com/vercel",
+      producthunt: "https://producthunt.com/posts/vercel",
+      reddit: "https://reddit.com/r/webdev/vercel",
+    },
+    isBookmarked: false,
+  },
+  {
+    id: "product-6",
+    name: "Intercom",
+    description:
+      "Customer messaging platform with live chat, bots, and help desk. Widely used but increasingly expensive.",
+    platforms: ["reddit", "producthunt"],
+    category: "Customer Support",
+    engagementMetrics: {
+      reddit: { mentions: 167, avgSentiment: 2.3 },
+      producthunt: { mentions: 43, avgSentiment: 2.8 },
+    },
+    complaintCount: 210,
+    sentimentLevel: "negative",
+    topIssue: "Prohibitively expensive for startups",
+    launchDate: "2025-03-22",
+    sourceUrls: {
+      reddit: "https://reddit.com/r/startups/intercom",
+      producthunt: "https://producthunt.com/posts/intercom",
+    },
+    isBookmarked: false,
+  },
+  {
+    id: "product-7",
+    name: "Typeform",
+    description:
+      "Conversational form builder with beautiful UI. Popular for surveys, quizzes, and lead generation.",
+    platforms: ["producthunt", "reddit", "playstore"],
+    category: "Forms",
+    engagementMetrics: {
+      producthunt: { mentions: 45, avgSentiment: 3.5 },
+      reddit: { mentions: 112, avgSentiment: 3.1 },
+      playstore: { mentions: 29, avgSentiment: 3.0 },
+    },
+    complaintCount: 156,
+    sentimentLevel: "mixed",
+    topIssue: "Conditional logic limitations",
+    launchDate: "2025-08-10",
+    sourceUrls: {
+      producthunt: "https://producthunt.com/posts/typeform",
+      reddit: "https://reddit.com/r/webdev/typeform",
+      playstore: "https://play.google.com/store/apps/typeform",
+    },
+    isBookmarked: false,
+  },
+  {
+    id: "product-8",
+    name: "Plausible Analytics",
+    description:
+      "Lightweight, privacy-friendly web analytics. Open-source alternative to Google Analytics without cookies.",
+    platforms: ["github", "producthunt"],
+    category: "Analytics",
+    engagementMetrics: {
+      github: { mentions: 312, avgSentiment: 4.3 },
+      producthunt: { mentions: 89, avgSentiment: 4.1 },
+    },
+    complaintCount: 48,
+    sentimentLevel: "positive",
+    topIssue: "Missing real-time dashboard",
+    launchDate: "2026-01-28",
+    sourceUrls: {
+      github: "https://github.com/plausible/analytics",
+      producthunt: "https://producthunt.com/posts/plausible",
+    },
+    isBookmarked: false,
+  },
+];
+
+export const mockProductDetails: ProductDetail[] = [
+  {
+    ...mockProducts[0],
+    complaintBreakdown: [
+      {
+        theme: "Price increases on existing plans",
+        postCount: 89,
+        posts: [
+          {
+            id: "pp-1",
+            platform: "reddit",
+            excerpt:
+              "Switched from FreshBooks because the pricing tripled. Was paying $15/mo, now they want $45 for the same features.",
+            platformSubSource: "r/Entrepreneur",
+            sourceUrl: "https://reddit.com/r/Entrepreneur/example6",
+            upvotes: 67,
+            createdAt: daysAgo(1),
+          },
+          {
+            id: "pp-2",
+            platform: "reddit",
+            excerpt:
+              "FreshBooks just sent me an email that my plan is going up 200%. No new features, just higher prices. Classic bait-and-switch.",
+            platformSubSource: "r/freelance",
+            sourceUrl: "https://reddit.com/r/freelance/freshbooks-pricing",
+            upvotes: 134,
+            createdAt: daysAgo(3),
+          },
+          {
+            id: "pp-3",
+            platform: "appstore",
+            excerpt:
+              "1 star. They tripled the price and removed features from the cheaper tier. Uninstalling.",
+            platformSubSource: "App Store",
+            sourceUrl: "https://apps.apple.com/app/freshbooks-review1",
+            helpfulVotes: 42,
+            createdAt: daysAgo(5),
+          },
+        ],
+      },
+      {
+        theme: "Missing recurring invoice features",
+        postCount: 67,
+        posts: [
+          {
+            id: "pp-4",
+            platform: "appstore",
+            excerpt:
+              "Terrible app. Can't even set recurring invoices. I have retainer clients and have to manually create the same invoice every month.",
+            platformSubSource: "App Store",
+            sourceUrl: "https://apps.apple.com/app/example5",
+            helpfulVotes: 15,
+            createdAt: daysAgo(1),
+          },
+          {
+            id: "pp-5",
+            platform: "reddit",
+            excerpt:
+              "FreshBooks recurring invoices are broken. Half the time they don't send, and there's no retry mechanism.",
+            platformSubSource: "r/SaaS",
+            sourceUrl: "https://reddit.com/r/SaaS/freshbooks-recurring",
+            upvotes: 45,
+            createdAt: daysAgo(4),
+          },
+        ],
+      },
+      {
+        theme: "Bloated UI for simple tasks",
+        postCount: 91,
+        posts: [
+          {
+            id: "pp-6",
+            platform: "reddit",
+            excerpt:
+              "Why is every invoicing tool so bloated? I just want to send an invoice and get paid. 10 clicks for something that should take 2.",
+            platformSubSource: "r/SaaS",
+            sourceUrl: "https://reddit.com/r/SaaS/example1",
+            upvotes: 142,
+            createdAt: hoursAgo(2),
+          },
+          {
+            id: "pp-7",
+            platform: "producthunt",
+            excerpt:
+              "FreshBooks used to be simple. Now the dashboard has 20 menu items and I still can't find the 'send invoice' button quickly.",
+            platformSubSource: "Product Hunt",
+            sourceUrl: "https://producthunt.com/posts/freshbooks-review",
+            upvotes: 23,
+            createdAt: daysAgo(2),
+          },
+        ],
+      },
+    ],
+    sentimentTrend: "declining",
+    sparklineData: [45, 52, 48, 61, 78, 89, 95, 102],
+    relatedBriefs: [
+      { id: "brief-1", title: "Invoicing Pain Points for Freelancers", postCount: 83 },
+    ],
+  },
+  {
+    ...mockProducts[1],
+    complaintBreakdown: [
+      {
+        theme: "Cross-device sync failures",
+        postCount: 78,
+        posts: [
+          {
+            id: "pp-8",
+            platform: "appstore",
+            excerpt:
+              "Syncing between devices is completely broken. I add events on my phone and they don't show up on iPad for hours.",
+            platformSubSource: "App Store",
+            sourceUrl: "https://apps.apple.com/app/notion-cal-review1",
+            helpfulVotes: 29,
+            createdAt: daysAgo(2),
+          },
+          {
+            id: "pp-9",
+            platform: "playstore",
+            excerpt:
+              "Calendar events created on desktop don't appear on Android until I force-close and reopen the app.",
+            platformSubSource: "Google Play",
+            sourceUrl: "https://play.google.com/store/apps/notion-cal-review1",
+            helpfulVotes: 34,
+            createdAt: daysAgo(3),
+          },
+        ],
+      },
+      {
+        theme: "Notification reliability",
+        postCount: 56,
+        posts: [
+          {
+            id: "pp-10",
+            platform: "playstore",
+            excerpt:
+              "Notifications are completely unreliable. I miss important meetings because the app just doesn't send reminders.",
+            platformSubSource: "Google Play",
+            sourceUrl: "https://play.google.com/store/apps/notion-cal-review2",
+            helpfulVotes: 33,
+            createdAt: hoursAgo(16),
+          },
+          {
+            id: "pp-11",
+            platform: "producthunt",
+            excerpt:
+              "Love the Notion integration but the calendar notifications are a dealbreaker. Missed 3 meetings this week.",
+            platformSubSource: "Product Hunt",
+            sourceUrl: "https://producthunt.com/posts/notion-calendar-review",
+            upvotes: 19,
+            createdAt: daysAgo(1),
+          },
+        ],
+      },
+    ],
+    sentimentTrend: "stable",
+    sparklineData: [32, 28, 35, 30, 38, 34, 36, 40],
+    relatedBriefs: [
+      { id: "brief-6", title: "Cross-Device Sync Reliability Issues", postCount: 38 },
+    ],
+  },
+  {
+    ...mockProducts[2],
+    complaintBreakdown: [
+      {
+        theme: "Custom field limitations",
+        postCount: 38,
+        posts: [
+          {
+            id: "pp-12",
+            platform: "reddit",
+            excerpt:
+              "Linear is amazing for speed but the lack of custom fields is a dealbreaker for our team. We need to track priority, effort, and business value.",
+            platformSubSource: "r/SaaS",
+            sourceUrl: "https://reddit.com/r/SaaS/linear-custom-fields",
+            upvotes: 56,
+            createdAt: daysAgo(2),
+          },
+          {
+            id: "pp-13",
+            platform: "github",
+            excerpt:
+              "Feature request: Custom fields on issues. Currently using labels as a workaround but it's messy.",
+            platformSubSource: "GitHub Trending",
+            sourceUrl: "https://github.com/linear/linear/issues/custom-fields",
+            upvotes: 89,
+            createdAt: daysAgo(5),
+          },
+        ],
+      },
+      {
+        theme: "Enterprise workflow gaps",
+        postCount: 35,
+        posts: [
+          {
+            id: "pp-14",
+            platform: "producthunt",
+            excerpt:
+              "Linear is perfect for small teams but starts to break down at 50+ engineers. Missing role-based permissions and audit logs.",
+            platformSubSource: "Product Hunt",
+            sourceUrl: "https://producthunt.com/posts/linear-enterprise",
+            upvotes: 34,
+            createdAt: daysAgo(3),
+          },
+          {
+            id: "pp-15",
+            platform: "reddit",
+            excerpt:
+              "We love Linear but had to switch back to Jira because Linear doesn't support our compliance requirements.",
+            platformSubSource: "r/startups",
+            sourceUrl: "https://reddit.com/r/startups/linear-enterprise",
+            upvotes: 41,
+            createdAt: daysAgo(7),
+          },
+        ],
+      },
+    ],
+    sentimentTrend: "growing",
+    sparklineData: [15, 18, 14, 20, 22, 19, 25, 28],
+    relatedBriefs: [
+      { id: "brief-4", title: "Lightweight Customer Feedback Collection", postCount: 47 },
+    ],
+  },
+];
