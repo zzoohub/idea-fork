@@ -3,8 +3,7 @@
 **Status:** Draft
 **Author:** zzoo
 **Date:** 2026-02-19
-**PRD Reference:** [docs/prd.md](./prd.md)
-**UX Strategy Reference:** [docs/ux-strategy.md](./ux-strategy.md)
+**PRD Reference:** [PRD](./prd.md) | [Product Brief](./product-brief.md) | [UX Strategy](./ux-strategy.md)
 
 ---
 
@@ -12,56 +11,63 @@
 
 ### 1.1 Problem Statement
 
-Builders waste 5+ hours/week manually browsing Reddit, app store reviews, and forums to find user pain points worth building for. idea-fork runs a periodic batch pipeline that fetches posts from four platforms (Reddit, Product Hunt, Play Store, App Store), tags them with an LLM, clusters similar needs, and generates AI product briefs — then serves the results as a feed-style website where builders browse ranked complaints and read opportunity assessments. No existing tool covers the full path from raw complaint discovery to actionable business opportunity.
+Builders spend hours manually browsing Reddit, app stores, and forums to find user pain points worth building for. idea-fork automates this: a periodic pipeline fetches posts from multiple platforms, LLM-tags them, clusters similar needs, and generates AI product briefs. The web app surfaces these as a feed and briefs page — "Product Hunt for problems."
+
+This system needs to exist now because Haiku-tier LLM costs (~$1-2/cycle) make the full pipeline economically viable for the first time, and no existing tool (Gummysearch, SparkToro, Exploding Topics) bridges the gap from raw complaints to actionable business opportunities.
 
 ### 1.2 System Context Diagram
 
 ```
-                                    ┌─────────────────┐
-                                    │   idea-fork      │
-                                    │   (this system)  │
-                                    └────────┬────────┘
-                                             │
-                    ┌────────────────────────┼────────────────────────┐
-                    │                        │                        │
-              ┌─────▼──────┐          ┌──────▼──────┐         ┌──────▼──────┐
-              │  Pipeline   │          │  Web App    │         │  Database   │
-              │  (Python)   │          │  (Next.js)  │         │  (Neon PG)  │
-              └─────┬──────┘          └──────┬──────┘         └─────────────┘
-                    │                        │
-        ┌───────────┼───────────┐    ┌───────┼────────┐
-        │           │           │    │       │        │
-   ┌────▼───┐ ┌────▼───┐ ┌────▼──┐ │  ┌────▼──┐ ┌──▼────┐
-   │ Reddit │ │Product │ │Play/  │ │  │Stripe │ │Google │
-   │  API   │ │Hunt API│ │App    │ │  │  API  │ │OAuth  │
-   └────────┘ └────────┘ │Store  │ │  └───────┘ └───────┘
-                         │Scrape │ │
-                         └───────┘ │
-                              ┌────▼───┐  ┌────────┐  ┌────────┐
-                              │ LLM    │  │PostHog │  │ Resend │
-                              │(Claude)│  │        │  │(email) │
-                              └────────┘  └────────┘  └────────┘
+                          ┌─────────────────────────────────┐
+                          │          idea-fork               │
+                          │                                  │
+  ┌─────────┐   fetch     │  ┌──────────┐   ┌────────────┐  │        ┌──────────┐
+  │ Reddit  │────────────▶│  │ Pipeline │──▶│ PostgreSQL │◀─┤◀──────▶│ Browsers │
+  │ API     │             │  │  (batch) │   │  (Neon)    │  │  API   │ (users)  │
+  └─────────┘             │  └────┬─────┘   └────────────┘  │        └──────────┘
+  ┌─────────┐   fetch     │       │              ▲          │
+  │ Product │────────────▶│       │              │          │
+  │ Hunt API│             │       ▼              │          │
+  └─────────┘             │  ┌──────────┐   ┌────────┐     │        ┌──────────┐
+  ┌─────────┐   scrape    │  │ LLM API  │   │  Web   │     │        │ Google   │
+  │ Play    │────────────▶│  │(tagging, │   │  App   │─────┤◀──────▶│ OAuth    │
+  │ Store   │             │  │ briefs)  │   │(Next.js│     │        └──────────┘
+  └─────────┘             │  └──────────┘   └────────┘     │
+  ┌─────────┐   scrape    │                                 │        ┌──────────┐
+  │ App     │────────────▶│                                 │◀──────▶│ Stripe   │
+  │ Store   │             │                                 │        └──────────┘
+  └─────────┘             │                                 │
+                          │                                 │        ┌──────────┐
+                          │                                 │───────▶│ PostHog  │
+                          │                                 │        └──────────┘
+                          │                                 │
+                          │                                 │        ┌──────────┐
+                          │                                 │───────▶│ Resend   │
+                          │                                 │        │ (email)  │
+                          └─────────────────────────────────┘        └──────────┘
 ```
 
 **Actors:**
-- **Anonymous visitors** — Browse feed and brief summaries, no auth
-- **Free registered users** — Bookmarks, 3 deep dives/day
-- **Pro subscribers ($9/mo)** — Full briefs, unlimited deep dives, tracking, notifications, digest email
-
-**Data flows:**
-- **Inbound (pipeline):** Posts from 4 platforms → LLM tagging → clustering → brief generation → stored in Neon
-- **Outbound (web):** Neon → server-rendered pages → browser. PostHog events from browser. Stripe webhooks. Resend digest emails.
+- **Browsers (users):** Indie hackers, founders, PMs browsing the feed and briefs. No login required for read-only access.
+- **Reddit API, Product Hunt API:** Structured data sources fetched via official APIs.
+- **Play Store, App Store:** Scraped sources (HTML parsing).
+- **LLM API (Haiku-tier):** Tags posts, generates embeddings, generates brief text.
+- **Google OAuth:** Social login provider.
+- **Stripe:** Payment processing for Pro subscriptions.
+- **PostHog:** Analytics (client-side and server-side event tracking).
+- **Resend:** Outbound email delivery for weekly digest.
 
 ### 1.3 Assumptions
 
-| Assumption | If Wrong |
-|---|---|
-| ~2,000 posts per pipeline cycle is manageable volume | May need to shard pipeline or increase cycle frequency |
-| Haiku-tier LLM ($1-2/cycle) handles tagging + clustering + briefs within budget | Need prompt optimization or cheaper model |
-| Reddit API remains accessible at current terms | Largest data source disappears; must lean on other 3 sources |
-| Solo developer for foreseeable future | Architecture would need to evolve toward team-scale patterns |
-| Global audience, English-only content | No i18n, no regional data isolation |
-| Feed freshness at 6-24h intervals is acceptable (not real-time) | Would need streaming architecture — fundamentally different system |
+| # | Assumption | If Wrong... |
+|---|-----------|-------------|
+| 1 | ~2,000 posts/cycle is sufficient volume for meaningful clusters | Pipeline may need higher frequency or more subreddits |
+| 2 | Haiku-tier LLM can tag posts with >80% accuracy | May need fine-tuning or a more capable model, increasing cost |
+| 3 | Embedding similarity (pgvector) is sufficient for need clustering | May need LLM-based grouping, increasing pipeline cost and latency |
+| 4 | Feed page can serve <2s TTFB with SSR from edge | May need aggressive caching or static generation fallback |
+| 5 | Reddit API remains accessible at current free tier | May need to purchase API access or rely on other sources |
+| 6 | Single pipeline run completes within 30 minutes | May need to parallelize source fetching or split into stages |
+| 7 | Solo developer can operate this system without dedicated ops | Architecture must minimize operational surface area |
 
 ---
 
@@ -69,23 +75,22 @@ Builders waste 5+ hours/week manually browsing Reddit, app store reviews, and fo
 
 ### 2.1 Goals
 
-- Feed page loads in <2s on standard connection (server-rendered, no client-side data fetch for initial render)
-- Pipeline completes a full cycle (fetch → tag → cluster → briefs) within 30 minutes for ~2,000 posts
-- LLM costs stay under $2 per pipeline cycle at Haiku-tier pricing
-- Infrastructure cost under $50/month at <1,000 DAU (scale-to-zero where possible)
-- SEO-indexable: feed and brief pages server-rendered with unique URLs and OpenGraph meta
-- Zero-downtime deployments for the web app
-- All source data traceable to original posts (every brief and feed card links to source)
+- Serve the feed page with <2s TTFB on first load, SSR for SEO indexability
+- Run the full pipeline (fetch → tag → cluster → brief) within 30 minutes per cycle
+- Handle 1,000 daily active users within 3 months with no infrastructure changes
+- Keep total infrastructure cost under $50/month at 1K DAU (excluding LLM costs)
+- Zero-downtime deployments for both frontend and backend
+- Pipeline failures are isolated — a failed cycle does not take down the web app
 
 ### 2.2 Non-Goals
 
-- **Real-time feed updates.** The pipeline is batch. No WebSockets, no SSE, no polling for new data.
-- **Multi-region deployment.** Single region (us-east) is sufficient for a global English-speaking audience. CDN handles static asset distribution.
-- **Microservices.** Two deployable units (web app + pipeline) is the ceiling. No service mesh, no API gateway, no inter-service communication protocol.
-- **Custom ML models.** We use off-the-shelf LLM APIs for tagging/clustering/briefs. No training, no fine-tuning, no model hosting.
-- **Native mobile app.** Responsive web only. No React Native, no push notifications.
-- **Team features.** No organizations, no shared workspaces, no RBAC beyond free/pro.
-- **API access.** No public API for third-party integrations.
+- **Real-time data.** The feed updates on a fixed schedule (every 6-24h). No WebSocket, no SSE, no live updates.
+- **Multi-region deployment.** Single region (us-east) is sufficient for a global English-speaking audience. CDN handles edge delivery.
+- **Native mobile app.** Responsive web only.
+- **Team/org accounts.** Single-user accounts only.
+- **API access for third parties.** The web app is the only consumer.
+- **Complex analytics dashboard.** The product is a feed and briefs, not a BI tool.
+- **Self-hosted LLM.** Use managed LLM APIs. Revisit only if costs become prohibitive at scale.
 
 ---
 
@@ -93,115 +98,121 @@ Builders waste 5+ hours/week manually browsing Reddit, app store reviews, and fo
 
 ### 3.1 Architecture Style
 
-**System Architecture: Two-unit hybrid (request-response web + batch pipeline)**
+**System Architecture: Single-service API + scheduled batch pipeline (hybrid request-response + batch)**
 
-The system has two distinct runtime modes:
+The web-facing API is request-response: browser makes HTTP requests, API reads from the database, returns JSON or SSR HTML. The pipeline is a scheduled batch job that runs independently on a timer. These are two separate deployment units sharing a single database.
 
-1. **Web app** — Request-response. User requests a page, server queries the database, returns rendered HTML. Standard Next.js SSR pattern.
-2. **Pipeline** — Batch job triggered on a schedule. Fetches external data, processes it through LLM calls, writes results to the database. No user interaction during execution.
+This is not event-driven. There is no inter-service communication, no message broker needed, no pub/sub. The pipeline writes to the database; the API reads from it. The database is the integration point.
 
-These two units share a database but have no runtime communication. The pipeline writes, the web app reads. The database is the integration point.
-
-**Rationale:** This is the simplest architecture that satisfies the requirements. The web app and pipeline have completely different runtime characteristics (interactive vs. batch), different scaling needs (scale by concurrent users vs. scale by data volume), and different language requirements (TypeScript for SSR vs. Python for LLM orchestration). Separating them avoids compromising either. A single monolith would force Python for SSR (awkward) or TypeScript for LLM pipelines (less ecosystem support). Microservices would add operational overhead that a solo developer cannot justify.
+**Rationale:** This is a solo-developer project serving <10K users. The pipeline runs every 6-24h and has no real-time requirements. Adding a message broker (Pub/Sub, Redis queues) would increase operational complexity with zero user-facing benefit. The batch model matches the product's "periodic cycle" concept exactly.
 
 **Alternatives considered:**
-- *Single Next.js monolith with API routes calling LLMs:* Rejected. Long-running pipeline jobs (10-30 min) don't fit the request-response model of API routes or serverless functions. Timeout limits on Cloudflare Workers (30s) and Vercel (60s) make this impractical.
-- *Three services (frontend + API + pipeline):* Rejected. The web API layer is thin CRUD reads — Next.js API routes handle this without a separate backend service. Adding a third deployable unit increases ops burden without proportional benefit.
+- *Event-driven pipeline (Pub/Sub between stages):* Each pipeline stage publishes an event for the next stage. Rejected because the pipeline is sequential (fetch → tag → cluster → brief), there is no fan-out to multiple consumers, and the added infrastructure (Pub/Sub, dead-letter handling, retry logic) is not justified for a single-consumer sequential pipeline.
+- *Task queue (Celery/ARQ):* Separate workers consume tasks from a Redis queue. Rejected because there is only one pipeline job running at a time, making a task queue an over-abstraction. A single Cloud Run Job is simpler.
 
-**Code Structure: Layered (both units)**
+**Code Structure: Layered architecture**
 
-Both the Next.js app and the Python pipeline use layered architecture internally. The domain logic is straightforward: the web app is mostly database reads with paywall enforcement, and the pipeline is a linear sequence of steps. Hexagonal architecture's port/adapter indirection adds boilerplate without payoff here — the web app won't swap its database, and the pipeline's external integrations (Reddit API, LLM API) are tightly coupled to their APIs by nature.
+The backend API is CRUD-dominant: read posts, read briefs, read user profile, write bookmarks, write tracking keywords. The "business logic" (tagging, clustering, brief generation) lives entirely in the pipeline, not the API. The API layer is thin — routes → service functions → database queries. Hexagonal would add port/adapter boilerplate without payoff for this read-heavy, integration-light API.
 
-**Rationale:** Solo developer, speed of delivery is priority. Layered is the fastest to scaffold, easiest to navigate, and sufficient for the complexity level. If business logic grows (e.g., complex ranking algorithms, custom clustering), specific modules can be refactored toward hexagonal without rewriting the whole app.
+The pipeline is a linear script: fetch → transform → store. It does not need the testability benefits of hexagonal architecture because its correctness is validated by output quality (brief accuracy, cluster coherence), not unit test coverage of business rules.
+
+**Rationale:** Match architecture complexity to problem complexity. A layered structure is the fastest to build, easiest to understand, and sufficient for a CRUD API. If the API grows complex business rules later (e.g., recommendation algorithms, personalization), introduce hexagonal for those specific modules.
+
+**Alternatives considered:**
+- *Hexagonal (ports & adapters):* Rejected for the API because the domain logic is thin. The primary complexity is in the pipeline, which is a batch script — not a long-lived service where adapter swapping matters.
+- *Clean architecture:* Even more boilerplate than hexagonal. Rejected for the same reasons, amplified.
 
 ### 3.2 Container Diagram
 
 ```
-┌──────────────────────────────────────────────────────────────┐
-│                    Cloudflare (Edge)                          │
-│                                                              │
-│  ┌────────────────────────────────────────────────────────┐  │
-│  │          Next.js App (Cloudflare Workers)              │  │
-│  │                                                        │  │
-│  │  ┌──────────────┐  ┌──────────────┐  ┌─────────────┐  │  │
-│  │  │ SSR Pages    │  │ API Routes   │  │ Middleware   │  │  │
-│  │  │ /, /briefs,  │  │ /api/auth,   │  │ (auth check, │  │  │
-│  │  │ /needs/:id   │  │ /api/stripe, │  │  rate limit) │  │  │
-│  │  │              │  │ /api/bookmark│  │              │  │  │
-│  │  └──────┬───────┘  └──────┬───────┘  └──────────────┘  │  │
-│  │         │                 │                             │  │
-│  └─────────┼─────────────────┼─────────────────────────────┘  │
-│            │                 │                                │
-└────────────┼─────────────────┼────────────────────────────────┘
-             │                 │
-             │    ┌────────────▼──────────────┐
-             │    │       Neon PostgreSQL      │
-             │    │       (us-east-1)          │
-             ├───▶│                            │◀──────┐
-             │    │  posts, clusters, briefs,  │       │
-             │    │  users, subscriptions,     │       │
-             │    │  bookmarks, tracking       │       │
-             │    └───────────────────────────┘       │
-             │                                        │
-┌────────────┼────────────────────────────────────────┼────────┐
-│            │         GCP (us-east4)                  │        │
-│  ┌─────────▼──────────────────────────────────┐     │        │
-│  │      Pipeline Worker (Cloud Run Job)        │     │        │
-│  │                                             │     │        │
-│  │  ┌──────────┐ ┌──────────┐ ┌────────────┐  │     │        │
-│  │  │ Fetchers │ │ LLM      │ │ Clustering │  │─────┘        │
-│  │  │ (Reddit, │ │ Tagger   │ │ + Brief    │  │              │
-│  │  │  PH, App │ │          │ │ Generator  │  │              │
-│  │  │  Stores) │ │          │ │            │  │              │
-│  │  └──────────┘ └──────────┘ └────────────┘  │              │
-│  └────────────────────────────────────────────┘              │
-│                                                              │
-│  ┌────────────────────────────────────────────┐              │
-│  │      Cloud Scheduler (cron trigger)         │              │
-│  │      "0 */6 * * *" (every 6 hours)          │              │
-│  └────────────────────────────────────────────┘              │
-│                                                              │
-└──────────────────────────────────────────────────────────────┘
-
-External Services:
-  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐
-  │ Stripe   │  │ Google   │  │ PostHog  │  │ Resend   │
-  │ (payment)│  │ OAuth    │  │(analytics│  │ (email)  │
-  └──────────┘  └──────────┘  └──────────┘  └──────────┘
+┌─────────────────────────────────────────────────────────────────┐
+│                     Cloudflare (Edge)                            │
+│  ┌───────────────────────────────────────────┐                  │
+│  │         Next.js Frontend                   │                  │
+│  │  (SSR via OpenNext on Cloudflare Workers)  │                  │
+│  │  - Feed page (/)                           │                  │
+│  │  - Briefs page (/briefs, /briefs/:id)     │                  │
+│  │  - Deep dive (/needs/:id)                 │                  │
+│  │  - Auth, account, bookmarks, tracking     │                  │
+│  └────────────────────┬──────────────────────┘                  │
+│                       │ HTTPS (fetch)                            │
+└───────────────────────┼─────────────────────────────────────────┘
+                        │
+                        ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                     GCP (us-east4)                               │
+│                                                                  │
+│  ┌────────────────────────────┐   ┌──────────────────────────┐  │
+│  │    FastAPI Backend          │   │   Pipeline Job            │  │
+│  │    (Cloud Run Service)      │   │   (Cloud Run Job)         │  │
+│  │                             │   │                           │  │
+│  │  - REST API for frontend    │   │  - Fetch sources          │  │
+│  │  - Auth (JWT issuance)      │   │  - LLM tagging            │  │
+│  │  - Feed/brief queries       │   │  - Embedding generation   │  │
+│  │  - Bookmark/tracking CRUD   │   │  - Clustering (pgvector)  │  │
+│  │  - Stripe webhook handler   │   │  - Brief generation       │  │
+│  │  - Deep dive access gating  │   │  - Triggered by Cloud     │  │
+│  │                             │   │    Scheduler (cron)       │  │
+│  └──────────┬─────────────────┘   └──────────┬────────────────┘  │
+│             │                                 │                   │
+│             │          ┌──────────────────┐   │                   │
+│             └─────────▶│   Neon PostgreSQL │◀──┘                   │
+│                        │   (+ pgvector)    │                       │
+│                        │                   │                       │
+│                        │  - posts          │                       │
+│                        │  - briefs         │                       │
+│                        │  - need_clusters  │                       │
+│                        │  - users          │                       │
+│                        │  - bookmarks      │                       │
+│                        │  - tracked_keywords│                      │
+│                        │  - pipeline_cycles │                      │
+│                        └──────────────────┘                       │
+│                                                                   │
+│  ┌──────────────────────────┐                                     │
+│  │   Cloud Scheduler         │                                     │
+│  │   (cron trigger)          │────triggers────▶ Pipeline Job       │
+│  │   e.g. every 12h          │                                     │
+│  └──────────────────────────┘                                     │
+│                                                                   │
+└───────────────────────────────────────────────────────────────────┘
 ```
 
 | Container | Technology | Responsibility | Communication |
-|---|---|---|---|
-| **Next.js App** | Next.js 15+ on Cloudflare Workers (via OpenNext) | SSR pages, API routes (auth, Stripe webhooks, CRUD), middleware (auth check, rate limiting) | HTTPS to Neon (connection pooling via Neon serverless driver). HTTPS to Stripe, Google OAuth, PostHog. |
-| **Pipeline Worker** | Python 3.12 on GCP Cloud Run Job | Periodic batch: fetch → tag → rank → cluster → generate briefs → write to Neon | HTTPS to Reddit API, Product Hunt API, Play/App Store scrapers, LLM API (Claude Haiku). PostgreSQL wire protocol to Neon. |
-| **Neon PostgreSQL** | Neon Serverless Postgres (us-east-1) | All persistent storage: posts, tags, clusters, briefs, users, subscriptions, bookmarks, tracked keywords, notifications | PostgreSQL wire protocol (with connection pooling). Serverless driver for edge runtime. |
-| **Cloud Scheduler** | GCP Cloud Scheduler | Triggers pipeline on a configurable cron schedule (default: every 6 hours) | HTTPS to Cloud Run Job (triggering execution) |
+|-----------|-----------|----------------|---------------|
+| **Frontend** | Next.js 15 (App Router) on Cloudflare Workers via OpenNext | SSR pages, client-side interactivity, PostHog event emission | HTTPS to FastAPI backend |
+| **Backend API** | Python 3.12, FastAPI, SQLAlchemy 2.0 async | REST API for all frontend data needs, auth, payment webhooks | HTTPS from frontend; TCP to Neon |
+| **Pipeline Job** | Python 3.12, scheduled Cloud Run Job | Fetch → tag → embed → cluster → brief generation | TCP to Neon; HTTPS to Reddit/PH/LLM APIs |
+| **Database** | Neon PostgreSQL (with pgvector) | Primary data store for all application state | TCP from API and pipeline |
+| **Scheduler** | GCP Cloud Scheduler | Triggers pipeline on a cron schedule | HTTP trigger to Cloud Run Job |
 
 ### 3.3 Component Overview
 
-**Next.js App — Internal Components:**
+**Backend API modules:**
 
 | Module | Responsibility | Critical Path? |
-|---|---|---|
-| **Feed** | Feed page SSR, tag filtering (client-side re-sort), infinite scroll pagination, card rendering | Yes — landing page |
-| **Briefs** | Brief list SSR, brief detail SSR, cycle navigation, free/pro content gating (blur + paywall) | Yes — core value |
-| **Deep Dive** | Need detail SSR, frequency/intensity display, source post listing, daily limit enforcement | Yes — conversion trigger |
-| **Auth** | Google OAuth flow (NextAuth.js), session management, JWT access/refresh tokens | Yes — required for any gated feature |
-| **Billing** | Stripe Checkout session creation, webhook handler (subscription lifecycle), pro status checks | Yes — revenue |
-| **Bookmarks** | Bookmark CRUD, bookmarks page | No |
-| **Tracking** | Keyword CRUD, match querying, notification count | No |
-| **Middleware** | Auth verification, pro tier check, deep dive rate limiting, request logging | Yes — enforces all access rules |
+|--------|---------------|---------------|
+| `auth` | Google OAuth callback, JWT issuance/validation, session management | Yes — gates all authenticated features |
+| `feed` | Query posts by tag/engagement/keyword, paginate, return feed data | Yes — primary page |
+| `briefs` | Query briefs by cycle, return brief detail with source evidence | Yes — second-most-visited page |
+| `needs` | Query need clusters, return deep dive data (frequency, intensity, sources) | Yes — conversion trigger page |
+| `bookmarks` | CRUD bookmarks for posts and briefs per user | No |
+| `tracking` | CRUD tracked keywords, query matches | No |
+| `payments` | Stripe checkout session creation, webhook handler for subscription events | Yes — revenue |
+| `users` | User profile, subscription status | No |
 
-**Pipeline Worker — Internal Components:**
+**Pipeline stages (sequential, single job):**
 
-| Module | Responsibility | Critical Path? |
-|---|---|---|
-| **Fetchers** | Platform-specific data fetchers: Reddit API client, Product Hunt API client, Play Store scraper, App Store scraper | Yes — no data = no product |
-| **Tagger** | Sends posts to Haiku-tier LLM with tagging prompt, parses response, stores tag | Yes — feed quality |
-| **Ranker** | Computes engagement score per post using platform-native signals (upvotes, comments, helpfulness votes) | Yes — feed ordering |
-| **Clusterer** | Generates embeddings for tagged posts (complaint/need/feature-request only), clusters via cosine similarity or LLM-based grouping, stores clusters | Yes — brief quality |
-| **Brief Generator** | Selects top ~10 clusters, sends to LLM with brief-generation prompt (problem summary, source evidence, alternatives, opportunity signal), stores briefs | Yes — core value |
-| **Orchestrator** | Runs the full pipeline in sequence: fetch → tag → rank → store → cluster → generate briefs. Handles retries, logging, error reporting. | Yes — coordinates everything |
+| Stage | Input | Output | LLM Cost |
+|-------|-------|--------|----------|
+| 1. Fetch | Source APIs/scraping targets | Raw posts (~2,000) | $0 |
+| 2. Tag | Raw posts | Tagged posts (complaint/need/feature-request/discussion/self-promo/other) | ~$0.50 (Haiku, ~2K posts) |
+| 3. Embed | Tagged posts | Post embeddings (vector per post) | ~$0.05 (text-embedding-3-small) |
+| 4. Store | Tagged + embedded posts | Rows in `posts` table | $0 |
+| 5. Cluster | Post embeddings (new + recent) | ~50 need clusters | $0 (algorithmic) |
+| 6. Rank | Need clusters | Ranked clusters by volume × intensity × gap | $0 |
+| 7. Brief | Top ~10 clusters | AI-generated briefs with source evidence | ~$0.50 (Haiku, ~10 briefs) |
+
+Total estimated LLM cost per cycle: **~$1-2**
 
 ---
 
@@ -209,144 +220,96 @@ External Services:
 
 ### 4.1 Data Flow
 
-**Flow 1: Pipeline cycle (write path)**
+**Flow 1: Pipeline cycle (batch, every 6-24h)**
 
 ```
-Cloud Scheduler triggers Pipeline Worker
-  │
-  ▼
-Fetch ~2,000 posts from 4 platforms
-  │
-  ▼
-Deduplicate (by source_url)
-  │
-  ▼
-LLM tags each post → complaint|need|feature-request|discussion|self-promo|other
-  │
-  ▼
-Compute engagement score per post (platform-specific formula)
-  │
-  ▼
-Store posts + tags + scores to `posts` table
-  │
-  ▼
-Generate embeddings for complaint/need/feature-request posts
-  │
-  ▼
-Cluster posts (new + recent from last N cycles) → ~50 clusters
-  │
-  ▼
-Rank clusters by: volume × intensity × competitive gap
-  │
-  ▼
-Store clusters + post-cluster mappings to `clusters` / `cluster_posts` tables
-  │
-  ▼
-Generate AI briefs for top ~10 clusters
-  │
-  ▼
-Store briefs to `briefs` table with cluster references
-  │
-  ▼
-Update `pipeline_cycles` table with metadata (timestamp, post count, cluster count, brief count)
+Reddit/PH/PlayStore/AppStore
+        │
+        ▼
+  [1. Fetch raw posts] ──▶ In-memory post list
+        │
+        ▼
+  [2. LLM tags each post] ──▶ Tagged post list (with category)
+        │
+        ▼
+  [3. Embed each post] ──▶ Post + embedding vector (1536-dim)
+        │
+        ▼
+  [4. Store in Neon] ──▶ `posts` table (with tag, embedding, engagement metrics)
+        │                  `pipeline_cycles` table (cycle metadata)
+        ▼
+  [5. Cluster] ──▶ Run HDBSCAN on embeddings (new + last 30 days of posts)
+        │           ──▶ `need_clusters` table (cluster centers, member post IDs)
+        ▼
+  [6. Rank clusters] ──▶ Score = volume × intensity × competitive_gap
+        │                  Update `need_clusters.rank_score`
+        ▼
+  [7. Generate briefs] ──▶ LLM generates brief for top ~10 clusters
+                            ──▶ `briefs` table (summary, sources, metrics, opportunity)
 ```
 
-**Consistency guarantee:** Pipeline writes are transactional per stage. If tagging completes but clustering fails, tagged posts are persisted and the next cycle can resume from clustering. Each stage is idempotent — rerunning with the same input produces the same output.
+**Consistency:** Strong consistency within each pipeline stage (sequential writes to Neon). The pipeline writes complete cycle data atomically — all posts for a cycle are tagged and stored before clustering begins. The web API reads committed data only.
 
-**Flow 2: Feed page load (read path)**
-
-```
-User requests / (feed page)
-  │
-  ▼
-Next.js SSR → Middleware checks auth (optional, for personalization)
-  │
-  ▼
-Server component queries Neon:
-  SELECT posts with tags, engagement scores, platform metadata
-  FROM posts
-  WHERE cycle_id = latest AND tag IN ('complaint','need','feature-request')
-  ORDER BY tag_priority, engagement_score DESC
-  LIMIT 20
-  │
-  ▼
-Render HTML with platform-styled cards, tag badges, metrics
-  │
-  ▼
-Return server-rendered page (cached at edge for anonymous users)
-  │
-  ▼
-Client hydrates → infinite scroll fetches next batches via API route
-```
-
-**Consistency guarantee:** Strong consistency. The web app reads from the primary Neon instance. No read replicas, no eventual consistency. Acceptable because read load is modest (<1,000 DAU target) and Neon handles this without issues.
-
-**Flow 3: Upgrade to Pro (write path)**
+**Flow 2: User browses feed (request-response)**
 
 ```
-User clicks "Upgrade to Pro" → redirect to Stripe Checkout
-  │
-  ▼
-Stripe Checkout completes → Stripe sends webhook to /api/stripe/webhook
-  │
-  ▼
-Webhook handler verifies signature, extracts subscription data
-  │
-  ▼
-UPDATE users SET tier = 'pro', stripe_subscription_id = ?, stripe_customer_id = ?
-  │
-  ▼
-Return 200 to Stripe
-  │
-  ▼
-User redirected back to original page with ?upgrade=success query param
-  │
-  ▼
-Page reads user.tier from session → paywall elements removed
+Browser ──GET /api/feed?tag=complaint&cursor=X──▶ FastAPI
+                                                     │
+                                                     ▼
+                                               Query `posts` table
+                                               (WHERE tag IN (...),
+                                                ORDER BY engagement_score DESC,
+                                                LIMIT 20, cursor-based)
+                                                     │
+                                                     ▼
+                                               Return JSON ──▶ Browser renders
+```
+
+**Consistency:** Strong — reads from primary Neon instance. No read replicas, no eventual consistency concerns.
+
+**Flow 3: User upgrades to Pro**
+
+```
+Browser ──POST /api/payments/checkout──▶ FastAPI ──creates checkout session──▶ Stripe
+                                                                                │
+Browser ◀──redirect to Stripe hosted checkout──────────────────────────────────┘
+                                                                                │
+Stripe ──webhook (checkout.session.completed)──▶ FastAPI                        │
+                                                    │                           │
+                                               Update `users.tier = 'pro'`     │
+                                               Store Stripe customer/sub ID     │
+                                                    │                           │
+Browser ◀──redirect back with success param─────────────────────────────────────┘
 ```
 
 ### 4.2 Storage Strategy
 
-**Single database: Neon PostgreSQL**
+**Neon PostgreSQL (primary store):**
 
-Everything lives in one Postgres database. This is deliberate. The data model is relational (posts belong to clusters, clusters belong to cycles, briefs reference clusters, bookmarks reference posts/briefs, users have subscriptions). A single relational database avoids the complexity of cross-store joins, distributed transactions, and data synchronization.
+- **What:** All application data — posts, briefs, clusters, users, bookmarks, tracked keywords, pipeline cycle metadata, post embeddings (pgvector).
+- **Why relational:** The data model is relational — posts belong to clusters, clusters produce briefs, users have bookmarks, users track keywords. Relationships, joins, and transactions are core operations. PostgreSQL with pgvector handles both relational queries and vector similarity search, avoiding a separate vector database.
+- **Consistency:** Strong consistency. All reads and writes go to the primary instance.
+- **Retention:** Posts older than 90 days are archived (soft-deleted, excluded from feed queries but retained for brief source evidence). Briefs are retained indefinitely. Pipeline cycle metadata retained for 1 year.
 
-| Data Category | Storage | Why Postgres | Retention |
-|---|---|---|---|
-| **Posts** (fetched content, tags, scores) | Neon PG | Relational — posts have tags, belong to cycles, referenced by clusters and bookmarks | Keep last 90 days of posts. Older posts archived (soft-delete, excluded from queries). |
-| **Clusters** (grouped needs, rankings) | Neon PG | Relational — clusters belong to cycles, contain multiple posts, referenced by briefs | Keep all clusters. They are small (50/cycle × 4 cycles/day = 200/day). |
-| **Briefs** (AI-generated) | Neon PG | Relational — briefs reference clusters and posts, have cycle metadata | Keep all briefs permanently. Core content of the product. |
-| **Users** (profile, tier, Stripe IDs) | Neon PG | Relational — standard user table | Permanent |
-| **Subscriptions** (Stripe subscription state) | Neon PG | Denormalized from Stripe webhooks. Single source of truth for tier checks. | Permanent |
-| **Bookmarks** | Neon PG | Join table — user × (post or brief) | Permanent per user |
-| **Tracked keywords** | Neon PG | Simple key-value per user | Permanent per user |
-| **Notifications** (keyword match flags) | Neon PG | Computed during pipeline cycle — "these posts match user X's keywords" | Keep last 30 days |
-| **Pipeline cycle metadata** | Neon PG | Cycle ID, timestamp, counts, status | Permanent (small, useful for debugging) |
-| **Embeddings** (for clustering) | Neon PG with pgvector | Vector similarity search for clustering. pgvector extension on Neon. | Keep latest cycle + 2 previous (rolling window for cluster stability) |
+**Why not a separate vector database (Pinecone, Qdrant, etc.):**
 
-**Why not separate stores:**
-- *Redis for caching:* Not needed at <1,000 DAU. Neon handles the read load. Postgres connection pooling via Neon's serverless driver is sufficient. If latency becomes an issue, add edge caching at the CDN level first (zero additional infra).
-- *Elasticsearch for search:* No full-text search requirement. Tag filtering is a simple WHERE clause. Trending keywords are precomputed by the pipeline.
-- *S3/R2 for files:* No file uploads. All content is text. Briefs are stored as structured JSON in Postgres.
+pgvector on Neon supports HNSW indexes for approximate nearest-neighbor search. At ~2K posts/cycle and ~60K posts over 30 days, the vector index is small enough for pgvector to handle efficiently. A separate vector database adds another service to manage, another connection to configure, and another point of failure — not justified at this scale. Revisit if post volume exceeds 500K or similarity search latency exceeds 100ms.
 
 ### 4.3 Caching Strategy
 
-**Edge caching (Cloudflare CDN) — not application-level caching.**
+**No dedicated cache layer (no Redis) in v1.**
 
-| What | Cache Where | TTL | Invalidation |
-|---|---|---|---|
-| Feed page (anonymous) | Cloudflare edge (stale-while-revalidate) | 5 minutes | Pipeline cycle completion triggers cache purge via Cloudflare API |
-| Brief list page (anonymous) | Cloudflare edge | 5 minutes | Same trigger |
-| Brief detail page | Cloudflare edge | 1 hour (content doesn't change between cycles) | Pipeline cycle purge |
-| Static assets (JS, CSS, images) | Cloudflare edge | 1 year (content-hashed filenames) | Immutable |
-| API responses (authenticated) | No edge cache | N/A | N/A — authenticated responses are per-user |
+The primary read queries (feed, briefs) are served directly from Neon. At 1K DAU with typical read patterns (~5 feed page views per session, ~20 posts per page), the query load is ~100K queries/day or ~1.2 QPS average, ~10 QPS peak. Neon handles this trivially.
 
-**Rationale:** Edge caching handles the performance requirement (<2s load) without adding a Redis or Memcached layer. The content is batch-produced — it changes at most every 6 hours. Between cycles, the same data is served to every anonymous user. This is a perfect fit for CDN caching.
+Caching is applied at the edge instead:
 
-**No application-level caching (no Redis) because:**
-- Data changes at most 4 times/day (pipeline cycles). CDN cache covers this.
-- Authenticated read paths (bookmarks, tracking matches) are low-volume and per-user — not cacheable.
-- Adding Redis means another piece of infrastructure to monitor, pay for, and maintain. Not justified at this scale.
+- **Cloudflare CDN:** Cache SSR pages for public (unauthenticated) content with short TTLs (5-10 minutes). The feed data changes only every 6-24h (pipeline cycle frequency), so aggressive caching is safe.
+- **Next.js ISR (Incremental Static Regeneration):** Revalidate feed and briefs pages on a timer matching the pipeline cycle frequency. Serves stale-while-revalidate for near-instant page loads.
+- **HTTP Cache-Control headers:** API responses for public feed/brief data include `Cache-Control: public, max-age=300, s-maxage=600` (5min browser, 10min CDN).
+
+**Why no Redis:**
+
+Adding Redis (GCP Memorystore) introduces a $30-50/month minimum cost, a new service to monitor, and cache invalidation complexity. The access pattern (batch writes every 6-24h, read-heavy with stable data) is well-served by CDN caching + Neon's connection pooling. Redis becomes justified if: (a) authenticated users need personalized feeds that can't be CDN-cached, or (b) the deep dive rate-limit counter needs sub-ms latency. For (b), the counter can live in the database with a simple upsert.
 
 ---
 
@@ -354,48 +317,58 @@ Everything lives in one Postgres database. This is deliberate. The data model is
 
 ### 5.1 Compute Platform
 
-| Unit | Platform | Rationale |
-|---|---|---|
-| **Next.js App** | Cloudflare Workers (via OpenNext) | Edge SSR for best TTFB globally. Predictable pricing. CDN built-in. Scale-to-zero for cost efficiency. |
-| **Pipeline Worker** | GCP Cloud Run Job | Container-based, runs to completion, auto-terminates (no idle cost). Supports long-running executions (up to 24h). Python runtime with full library access (unlike Workers' V8 constraint). |
-| **Cron Trigger** | GCP Cloud Scheduler | Triggers Cloud Run Job on schedule. Simpler than building cron into the pipeline itself. |
+| Component | Platform | Rationale |
+|-----------|----------|-----------|
+| **Frontend** | Cloudflare Workers (via OpenNext) | Edge SSR for global low-latency TTFB. Predictable pricing. The PRD requires <2s initial load and SEO-friendly rendering — edge SSR delivers both. |
+| **Backend API** | GCP Cloud Run (service) | Container-based, auto-scaling, supports Python + FastAPI. Generous free tier. Cold starts acceptable (Python API cold start ~2-3s, warmed by min-instances=1). |
+| **Pipeline Job** | GCP Cloud Run (job) | Same container image as API but run as a job with a 30-minute timeout. No need for a separate worker infrastructure. Cloud Run Jobs support scheduled execution via Cloud Scheduler. |
+| **Database** | Neon (us-east-1) | Scale-to-zero pricing (critical for solopreneur cost management). Serverless branching for dev/staging. pgvector extension for embeddings. |
+| **Scheduler** | GCP Cloud Scheduler | Native integration with Cloud Run Jobs. Cron expression configurable (e.g., `0 */12 * * *` for every 12h). |
 
-**Alternatives considered:**
-- *Vercel for Next.js:* Better DX for rapid prototyping, but cost grows unpredictably with traffic. Cloudflare's pricing is more predictable for a solo developer. Migration path exists if DX friction is too high early on — start with Vercel, migrate to Cloudflare when traffic justifies it.
-- *Cloudflare Workers for pipeline:* Rejected. V8 runtime can't run Python data science libraries (pandas, scikit-learn for clustering). 30-second CPU time limit is insufficient for a pipeline that runs 10-30 minutes.
-- *GCP Cloud Run (always-on) for pipeline:* Rejected. The pipeline runs for ~20 minutes every 6 hours. Paying for 24/7 compute is wasteful. Cloud Run Jobs run to completion and shut down.
+**Why GCP Cloud Run over Cloudflare Workers for backend:**
 
-**Cold start considerations:**
-- Cloudflare Workers: Near-zero cold starts (<5ms). Not a concern.
-- Cloud Run Job: Cold start is ~5-10 seconds for a Python container. Acceptable — the pipeline runs for minutes, so a few seconds of startup is negligible.
+The backend uses Python with heavy dependencies (FastAPI, SQLAlchemy, httpx, scikit-learn for clustering, anthropic SDK). Cloudflare Workers are limited to V8 runtime (JavaScript/WASM). Python workers on Cloudflare require WASM compilation, which is experimental and doesn't support the full Python ecosystem. Cloud Run runs any Docker container natively.
+
+**Why Cloudflare for frontend, GCP for backend (mixed ecosystem):**
+
+This violates the "platform cohesion principle" but is justified: Cloudflare Workers provide the best edge SSR price/performance ratio for Next.js, while GCP Cloud Run is the only practical option for a Python backend with heavy ML/AI dependencies. The cross-cloud network hop (Cloudflare edge → GCP us-east4) adds ~10-20ms latency, acceptable given the product has no real-time requirements.
 
 **Scaling model:**
-- Next.js on Workers: Auto-scales at the edge per-request. No configuration needed.
-- Pipeline on Cloud Run Job: Single instance per execution. No concurrent scaling needed — the pipeline is a single sequential batch. If data volume grows beyond what one instance can process in 30 minutes, the pipeline can be parallelized by platform (one job per source) using Cloud Run Job parallelism.
+
+- Frontend: Auto-scaled by Cloudflare globally. No configuration needed.
+- Backend API: Cloud Run auto-scales 0→N instances. Min instances = 1 (avoids cold starts for first request). Max instances = 10 (sufficient for 10K+ concurrent requests).
+- Pipeline: Runs as a single instance per execution. No concurrent pipeline runs.
 
 ### 5.2 Deployment Strategy
 
-**Next.js App:**
-- Git push to `main` → GitHub Actions → Build Next.js → Deploy to Cloudflare Workers via Wrangler CLI
-- Cloudflare handles zero-downtime deployment (new version is deployed atomically, old version drains)
-- Rollback: `wrangler rollback` to previous version
+```
+PR merge to main
+      │
+      ▼
+GitHub Actions CI
+      │
+      ├──▶ [Frontend] Build Next.js → deploy to Cloudflare Workers (wrangler)
+      │
+      ├──▶ [Backend] Build Docker image → push to GCP Artifact Registry
+      │        → deploy to Cloud Run (new revision, traffic shift 100%)
+      │
+      └──▶ [Pipeline] Same Docker image as backend
+             → Cloud Run Job uses latest image automatically
+```
 
-**Pipeline Worker:**
-- Git push to `main` → GitHub Actions → Build Docker image → Push to GCP Artifact Registry → Update Cloud Run Job
-- Cloud Run Job runs the new image on next scheduled trigger
-- Rollback: Update Cloud Run Job to point to previous image tag
-
-**No blue-green or canary needed.** The web app is stateless and deploys atomically on Workers. The pipeline is a batch job — if it fails, the previous cycle's data is still served. Users see stale-but-valid data until the next successful cycle.
+- **Frontend:** Deployed via `wrangler deploy`. Cloudflare Workers deployments are atomic and instant. Rollback = redeploy previous version.
+- **Backend:** Cloud Run revision-based deployment. New revisions receive 100% traffic immediately (no canary — at this scale, canary adds complexity without meaningful risk reduction). Rollback = route traffic to previous revision via `gcloud run services update-traffic`.
+- **Database migrations:** Run as a pre-deploy step in CI. Alembic migrations executed against Neon before deploying the new backend revision. Migrations must be backwards-compatible (new code can run against old schema during rollout).
 
 ### 5.3 Environment Topology
 
-| Environment | Purpose | Differences from Production |
-|---|---|---|
-| **Local** | Development | SQLite or local Postgres. Pipeline runs against sample data (no real API calls). Next.js dev server. |
-| **Preview** | PR review | Cloudflare Workers preview deployment (auto-deployed per PR). Neon branch database (zero-cost fork of production schema, no production data). Pipeline not deployed in preview — feed shows seed data. |
-| **Production** | Live | Cloudflare Workers production. Neon main branch. Cloud Run Job on cron schedule. Real API keys. |
+| Environment | Frontend | Backend | Database | Purpose |
+|------------|---------|---------|----------|---------|
+| **Local dev** | `next dev` (localhost:3000) | `uvicorn` (localhost:8000) | Neon branch (dev) | Development |
+| **Preview** | Cloudflare Workers preview URL (per-PR) | Cloud Run revision (tagged, no traffic) | Neon branch (per-PR) | PR review |
+| **Production** | Cloudflare Workers (custom domain) | Cloud Run service (latest revision) | Neon main branch | Live |
 
-**No staging environment.** For a solo developer, preview deployments per PR + Neon branching provides sufficient pre-production validation without the cost and maintenance of a persistent staging environment.
+Neon's branching model eliminates the need for a separate staging database. Each PR gets its own Neon branch, which is a copy-on-write fork of production data. This provides production-realistic testing without cost or data management overhead.
 
 ---
 
@@ -403,259 +376,163 @@ Everything lives in one Postgres database. This is deliberate. The data model is
 
 ### 6.1 Authentication & Authorization
 
-**Authentication flow:**
+**Auth flow:**
 
 ```
-User clicks "Sign in" → Google OAuth 2.0 (via NextAuth.js)
-  │
-  ▼
-Google returns profile (email, name, avatar)
-  │
-  ▼
-NextAuth.js creates or updates user record in Neon
-  │
-  ▼
-Issues session:
-  - Access token: JWT, 15-minute expiry, stored in httpOnly secure cookie
-  - Refresh token: 30-day expiry, stored in httpOnly secure cookie
-  - Session contains: user_id, email, tier (free|pro)
-  │
-  ▼
-Middleware reads session cookie on every request
-  - Valid session → attach user context to request
-  - Expired access token → auto-refresh from refresh token
-  - No session → anonymous user (full feed access, limited features)
+Browser ──"Login with Google"──▶ Google OAuth2 consent screen
+                                        │
+                                        ▼
+Browser ◀──redirect with auth code──── Google
+        │
+        ▼
+Browser ──POST /api/auth/google {code}──▶ FastAPI
+                                             │
+                                        Exchange code for Google tokens
+                                        Get user profile (email, name)
+                                        Upsert user in database
+                                        Issue JWT access + refresh tokens
+                                             │
+                                             ▼
+Browser ◀── { access_token, user } ─────── FastAPI
+            Set refresh_token as httpOnly cookie
 ```
 
-**Authorization model: Tier-based (not RBAC)**
+**Token lifecycle:**
+- **Access token:** 15 minutes, stored in memory (JavaScript variable), sent as `Authorization: Bearer` header.
+- **Refresh token:** 30 days, stored as `httpOnly`, `Secure`, `SameSite=Lax` cookie. Rotated on each refresh (old token invalidated).
+- **Refresh endpoint:** `POST /api/auth/refresh` — validates refresh cookie, issues new access + refresh tokens.
 
-There are only two tiers: `free` and `pro`. Authorization checks are simple boolean conditions in middleware/route handlers:
+**Authorization model:** Simple tier-based access control (not full RBAC).
 
-| Resource | Anonymous | Free | Pro |
-|---|---|---|---|
-| Feed (read) | Yes | Yes | Yes |
-| Brief titles/summaries | Yes | Yes | Yes |
-| Brief full detail | No | No | Yes |
-| Deep dive (3/day) | Yes | Yes (counted) | Yes (unlimited) |
-| Bookmarks | No | Yes | Yes |
-| Tracking | No | No | Yes |
-| Notifications | No | No | Yes |
+| Tier | Permissions |
+|------|------------|
+| Anonymous | Read feed, read brief titles/summaries, 3 deep dives/day (session-tracked via cookie) |
+| Free (registered) | Same as anonymous + bookmarks |
+| Pro | Everything — full briefs, unlimited deep dives, tracking, notifications |
 
-**Deep dive rate limiting:** Stored in a `deep_dive_counts` table keyed by user_id (or anonymous session fingerprint) + date. Checked in middleware before rendering the deep dive page. Resets daily at midnight UTC.
+**Enforcement:** Middleware in FastAPI. A `get_current_user` dependency extracts the JWT, resolves the user, and injects the user object (or `None` for anonymous) into route handlers. Tier checks happen in route handlers or service functions, not middleware (to keep middleware simple).
 
-**Where auth is enforced:** Next.js middleware. Every request passes through a middleware chain that:
-1. Parses the session cookie (if present)
-2. Attaches user context (or anonymous context) to the request
-3. For protected routes, checks tier and feature access
-4. For rate-limited features, checks and increments counters
-
-Auth is never enforced in the database (no row-level security). The middleware is the single enforcement point.
+**Deep dive rate limit for anonymous users:** Tracked via a signed, httpOnly cookie containing a counter and date. Not tamper-proof against determined users (clearing cookies resets the counter), but sufficient for honest gating. Database-backed rate limiting adds per-request overhead for a feature that is primarily a conversion nudge, not a hard security boundary.
 
 ### 6.2 Observability
 
 **Logging:**
-
-| Component | What is Logged | Where |
-|---|---|---|
-| Next.js App | Request logs (method, path, status, latency, user_id), auth events (login, logout, token refresh), Stripe webhook events, errors with stack traces | Cloudflare Workers Logpush → aggregation (Cloudflare dashboard or pipe to external) |
-| Pipeline Worker | Stage start/end with timing (fetch: 45s, tag: 120s, cluster: 90s, briefs: 60s), post counts per source, LLM call durations and costs, errors with full context | GCP Cloud Logging (built into Cloud Run) |
-
-Structured JSON logs in both components. Log levels: `error` (things that need attention), `warn` (unexpected but handled), `info` (pipeline stage transitions, auth events).
+- Structured JSON to stdout (Cloud Run captures stdout → Cloud Logging automatically).
+- Log fields: `timestamp`, `level`, `request_id` (UUID, generated per request), `user_id` (if authenticated), `message`, `extra`.
+- Log levels: `ERROR` for failures requiring attention, `WARNING` for degraded behavior, `INFO` for request lifecycle and pipeline stage completion.
+- Pipeline logging: Each stage logs start/end with counts (e.g., "Tagged 1,847 of 2,012 posts, 165 failed").
 
 **Metrics:**
+- **PostHog (user-facing):** All events from PRD Section 5.9 and UX Strategy Section 10.2 — feed views, card clicks, brief views, paywall events, auth events, upgrade events.
+- **Cloud Run built-in (infra):** Request count, latency (p50/p95/p99), error rate, instance count, CPU/memory utilization. No custom Prometheus setup needed — Cloud Run exports these to Cloud Monitoring automatically.
+- **Pipeline-specific:** Cycle duration, posts fetched per source, tagging success rate, cluster count, briefs generated. Logged as structured events, queryable in Cloud Logging.
 
-| Metric | Source | Alert Threshold |
-|---|---|---|
-| Pipeline cycle duration | Pipeline logs | >45 minutes (warn), >60 minutes (error) |
-| Pipeline stage failure count | Pipeline logs | Any failure (error) |
-| Posts fetched per source per cycle | Pipeline logs | <100 from any source (warn — may indicate API issue) |
-| LLM cost per cycle | Pipeline logs (token counts × pricing) | >$5 per cycle (error) |
-| Feed page p95 latency | Cloudflare analytics | >2s (warn), >4s (error) |
-| Stripe webhook failures | API route logs | Any 5xx response (error) |
-| Auth error rate | Middleware logs | >5% of auth attempts in 15 min (error) |
+**Alerting:**
+- Cloud Run error rate > 5% over 5 minutes → Notify via Cloud Monitoring alert (email or PagerDuty).
+- Pipeline job failure → Cloud Scheduler + Cloud Run Job failure notification (built-in).
+- Stripe webhook processing failure → Log as ERROR, alert on error count > 0 in 1 hour.
 
-**Tracing:** Not needed. The system has two independent units with no inter-service calls. Pipeline stages are traced via structured logs (start/end timestamps per stage). Web requests are simple (SSR or API route → single DB query → response).
-
-**Alerting:** Pipeline failures and Stripe webhook errors alert immediately (Sentry). Performance degradation alerts via Cloudflare analytics (email). PostHog for business metrics (non-alerting, dashboard only).
+No distributed tracing. There are only two services (frontend → API), and the pipeline is a single job. Request IDs in logs provide sufficient correlation.
 
 ### 6.3 Error Handling & Resilience
 
+**API error handling:**
+
+- All API errors return structured JSON: `{ "error": { "code": "string", "message": "string" } }`.
+- HTTP status codes follow REST conventions: 400 for validation errors, 401 for auth failures, 403 for tier violations, 404 for not found, 429 for rate limits, 500 for unexpected errors.
+- Unhandled exceptions are caught by FastAPI's exception handler, logged with stack trace, and returned as 500 with a generic message (no stack trace in response).
+
 **Pipeline resilience:**
 
-| Failure | Handling | Retry? |
-|---|---|---|
-| Reddit API rate limited (429) | Exponential backoff: 1s, 2s, 4s, 8s, 16s. Max 5 retries. | Yes |
-| Product Hunt API error | Same retry policy as Reddit | Yes |
-| Play/App Store scraping failure (HTML changed) | Log error, skip source for this cycle, alert via Sentry | No (requires code fix) |
-| LLM API error (500, timeout) | Retry 3 times with 2s backoff. If still failing, skip remaining untagged posts — they'll be picked up next cycle. | Yes (limited) |
-| LLM returns unparseable response | Log the response, mark post as `tag: other`, continue | No |
-| Database write failure | Retry 3 times. If persistent, abort cycle and alert. Previous cycle's data remains valid. | Yes (limited) |
+- Each source fetch (Reddit, PH, Play Store, App Store) is independent. If one source fails, the others continue. The pipeline logs the failure and produces a partial cycle (better than no cycle).
+- LLM API calls include retry with exponential backoff (3 attempts, 1s/2s/4s). If tagging fails for a post after retries, the post is stored without a tag (tagged as `other`).
+- The pipeline is idempotent by cycle ID. Re-running a failed cycle replaces partial data with complete data (upsert semantics on `cycle_id + source_post_id`).
 
-**Key principle:** The pipeline is designed to produce partial results rather than no results. If Reddit fails but the other 3 sources succeed, the cycle completes with data from 3 sources. The feed always has something to show.
+**Frontend resilience:**
 
-**Web app resilience:**
+- API errors are caught at the fetch layer. Failed feed loads show an inline error with a retry button (per UX Strategy Section 9.1).
+- Stale content is acceptable — if the API is down, the CDN serves the last cached version of public pages.
 
-| Failure | Handling |
-|---|---|
-| Database query fails | Return 500 error page with "Something went wrong" message and retry button. Edge-cached pages continue to serve stale content for anonymous users. |
-| Stripe webhook delivery fails | Stripe retries automatically (up to 3 days). Webhook handler is idempotent — processing the same event twice is safe. |
-| Google OAuth provider down | Show error on auth modal: "Sign-in failed. Please try again." No fallback to email/password in v1. |
+**Timeouts:**
 
-**Timeout budgets:**
-
-| Operation | Timeout |
-|---|---|
-| SSR database query | 5 seconds |
-| API route database query | 5 seconds |
-| LLM API call (tagging, single post) | 30 seconds |
-| LLM API call (brief generation, single cluster) | 60 seconds |
-| External API fetch (per source) | 30 seconds per request, 5 minutes total per source |
-| Stripe Checkout session creation | 10 seconds |
+| Call | Timeout | Rationale |
+|------|---------|-----------|
+| Frontend → API | 10s | Feed/brief queries should complete in <200ms; 10s accommodates cold starts |
+| API → Neon | 5s | Database queries should complete in <100ms |
+| Pipeline → LLM API (per post) | 30s | LLM responses can vary; 30s is generous |
+| Pipeline → Reddit/PH API | 15s | External APIs, includes rate-limit retry waits |
+| Pipeline → Play/App Store scrape | 30s | Scraping can be slow depending on page load |
+| Pipeline total | 30 min | Cloud Run Job timeout; the full cycle should complete in 10-20 min |
 
 ### 6.4 Security
 
-**Transport:**
-- All traffic over HTTPS (TLS 1.3). Cloudflare terminates TLS at the edge.
-- Neon connections use TLS by default (enforced by Neon).
+**Transport:** TLS 1.3 everywhere. Cloudflare terminates TLS for the frontend. Cloud Run terminates TLS for the API. Neon connections use TLS by default.
 
-**Data at rest:**
-- Neon encrypts data at rest (AES-256). No additional encryption needed.
-- No PII beyond email address and display name (from Google OAuth). No passwords stored (OAuth only in v1).
+**Data at rest:** Neon encrypts data at rest by default (AES-256). No additional application-level encryption needed — the system stores no PCI-regulated data (Stripe handles card details).
 
-**Secret management:**
-- Cloudflare Workers: Secrets stored in Wrangler secrets (encrypted at rest, injected as environment variables at runtime).
-- Cloud Run: Secrets stored in GCP Secret Manager, mounted as environment variables.
-- Secrets include: Neon database URL, Stripe secret key, Stripe webhook signing secret, Google OAuth client secret, LLM API key, Resend API key, PostHog API key.
+**Secrets management:** GCP Secret Manager for all secrets (database connection string, LLM API key, Stripe API keys, Google OAuth client secret, JWT signing key). Secrets are injected as environment variables into Cloud Run at deploy time. Never stored in code or CI configuration.
 
-**Input validation:**
-- All user input (bookmark IDs, keyword strings, query parameters) validated via Zod schemas in API routes.
-- Keyword tracking input: max 50 characters, alphanumeric + spaces + hyphens only, max 20 keywords per user.
-- No user-generated content displayed to other users (no XSS vector from user input). All displayed content comes from the pipeline (which is admin-controlled) or external sources (rendered as text, not HTML).
+**Input validation:** Pydantic models validate all API request bodies. Query parameters validated via FastAPI's built-in type system. No raw SQL — SQLAlchemy ORM prevents SQL injection. Next.js auto-escapes React output, preventing XSS.
 
-**Rate limiting:**
-- Deep dive: 3/day per anonymous session (fingerprint-based) or per user_id. Enforced in middleware.
-- API routes: 60 requests/minute per IP for unauthenticated requests, 120/minute for authenticated. Enforced at Cloudflare level (rate limiting rules).
-- Stripe webhook: Signature verification on every webhook. Reject without valid signature.
+**Rate limiting:** Applied at two layers:
+1. **Cloudflare:** Bot protection and DDoS mitigation (automatic, included in free plan).
+2. **API:** Rate limit authenticated endpoints at 60 requests/minute per user (implemented via a simple in-memory counter per user ID, acceptable at single-instance scale). Increase to Redis-backed rate limiting if scale demands multiple API instances.
 
 **OWASP considerations:**
-- *Injection:* Parameterized queries via Drizzle ORM. No raw SQL.
-- *Broken auth:* httpOnly secure cookies for tokens. No tokens in localStorage. CSRF protection via SameSite cookie attribute.
-- *Sensitive data exposure:* Stripe customer/subscription IDs stored but never exposed to the client. User tier is derived server-side.
-- *SSRF:* Pipeline fetches are to a fixed list of known URLs (Reddit API, Product Hunt API, known App Store/Play Store URLs). No user-controlled URLs.
+
+| Risk | Mitigation |
+|------|-----------|
+| Injection (SQL, NoSQL) | SQLAlchemy ORM, parameterized queries |
+| XSS | React auto-escaping, CSP headers |
+| Broken auth | JWT with short expiry, httpOnly refresh cookies, CSRF protection via SameSite cookies |
+| SSRF | Pipeline fetches from a hardcoded allowlist of source URLs only |
+| Sensitive data exposure | No PII beyond email/name; Stripe handles payments; no logs of tokens |
 
 ### 6.5 Performance & Scalability
 
 **Expected load profile:**
 
-| Metric | Launch (Month 1) | Target (Month 3) | Growth Ceiling (this architecture) |
-|---|---|---|---|
-| DAU | ~100 | ~1,000 | ~10,000 |
-| Peak concurrent users | ~20 | ~200 | ~2,000 |
-| Feed page views/day | ~300 | ~3,000 | ~30,000 |
-| Database queries/sec (peak) | ~5 | ~50 | ~500 |
-| Pipeline cycles/day | 4 | 4 | 4 (can increase frequency) |
-| Posts per cycle | ~2,000 | ~2,000 | ~10,000 (with more sources/subreddits) |
+| Phase | DAU | API QPS (avg) | API QPS (peak) | Database connections |
+|-------|-----|--------------|----------------|---------------------|
+| Launch (month 1) | 100 | 0.5 | 5 | 2-3 |
+| Growth (month 3) | 1,000 | 5 | 50 | 5-10 |
+| Scale (month 12) | 10,000 | 50 | 500 | 20-50 |
 
 **Bottleneck analysis:**
 
-| Bottleneck | Mitigation | When It Matters |
-|---|---|---|
-| **Feed query latency** | Edge cache (CDN) for anonymous users. Database indexes on `cycle_id`, `tag`, `engagement_score`. | Day 1 — affects every user |
-| **LLM API throughput** | Batch tagging (send 10 posts per LLM call where possible). Parallel requests (5 concurrent). | Day 1 — pipeline duration |
-| **Neon connection limits** | Neon serverless driver with connection pooling. Web app uses ~10 connections. Pipeline uses ~5. Well within Neon free/pro tier limits. | >1,000 concurrent users |
-| **Embedding storage** | pgvector with HNSW index. Keep only last 3 cycles of embeddings (~6,000 vectors). | >10,000 posts per cycle |
+1. **Feed query performance:** The feed is the highest-traffic query. It reads from the `posts` table filtered by tag and ordered by engagement score. With proper indexes (tag, engagement_score, created_at) and cursor-based pagination, this query stays fast at any volume. At 500K posts, a filtered query with a B-tree index returns in <10ms.
+
+2. **Pipeline LLM calls:** The pipeline's bottleneck is LLM API calls (~2K posts × 1 call per post). At ~200ms per Haiku call, sequential processing takes ~7 minutes. Parallelizing with `asyncio.gather` (batches of 50 concurrent calls) reduces this to ~1-2 minutes. This is the first optimization to apply if cycle duration exceeds 20 minutes.
+
+3. **Clustering:** HDBSCAN on ~60K embeddings (30 days of posts) with 1536 dimensions. Estimated wall-clock time: 30-60 seconds. This is acceptable. If post volume grows 10x, switch to mini-batch KMeans or reduce the embedding window.
 
 **Scaling triggers:**
-- If feed page p95 latency exceeds 2s despite edge caching → investigate query performance, add database indexes.
-- If pipeline duration exceeds 30 minutes → parallelize fetchers (one Cloud Run Job per source, triggered in parallel by Cloud Scheduler).
-- If Neon connection count approaches limits → switch from serverless driver to connection pooler (PgBouncer via Neon's built-in pooler).
-- If DAU exceeds 10,000 → evaluate Neon read replica for read-heavy queries. This architecture supports ~10K DAU before needing this.
+
+| Trigger | Current | Action |
+|---------|---------|--------|
+| API latency p95 > 500ms | Not expected at 1K DAU | Add read replica or Redis cache for feed queries |
+| Cloud Run instance count consistently > 5 | Growth indicator | Increase max instances, consider Neon connection pooling (pgbouncer) |
+| Pipeline duration > 25 minutes | Approaching timeout | Parallelize source fetching, batch LLM calls more aggressively |
+| Database size > 10GB | ~1 year of data | Implement post archival (soft delete posts older than 90 days from feed queries) |
 
 ---
 
 ## 7. Integration Points
 
-### 7.1 Reddit API
+| Service | What It Provides | Protocol | Failure Mode | Fallback |
+|---------|-----------------|----------|-------------|----------|
+| **Reddit API** | Subreddit posts (title, body, upvotes, comments, URL) | REST (OAuth2) | Rate limit (429), downtime | Skip Reddit for this cycle; other sources continue |
+| **Product Hunt API** | Product comments | GraphQL | Rate limit, downtime | Skip PH for this cycle |
+| **Play Store** | App reviews (1-3 stars) | HTTP scraping (google-play-scraper) | HTML structure changes, blocking | Skip Play Store; monitor for scraper breakage |
+| **App Store** | App reviews (1-3 stars) | HTTP scraping (app-store-scraper) | HTML structure changes, blocking | Skip App Store; monitor for scraper breakage |
+| **Anthropic API (Haiku)** | Post tagging, brief generation | REST | Rate limit, downtime, model deprecation | Retry with backoff; if persistent, delay cycle and alert |
+| **OpenAI API (embeddings)** | Post embedding vectors | REST | Rate limit, downtime | Retry with backoff; fallback to Anthropic voyage if OpenAI is unavailable |
+| **Google OAuth** | User authentication | OAuth2 | Downtime (rare) | Login fails gracefully; existing sessions continue working |
+| **Stripe** | Payment processing, subscription management | REST + webhooks | Webhook delivery delay | Webhook retries (Stripe retries for 72h); subscription status check on login |
+| **Resend** | Weekly digest email delivery | REST | Delivery failure | Log failure; retry once; skip if persistent (email is not critical path) |
+| **PostHog** | Analytics event ingestion | REST (client-side JS SDK) | Ingestion failure | Events are fire-and-forget; no user-facing impact |
 
-| Aspect | Detail |
-|---|---|
-| **Provides** | Posts from 10 target subreddits (title, body, upvotes, comment count, author, permalink, timestamp) |
-| **Protocol** | REST API (OAuth2 app-only auth). JSON responses. |
-| **Rate limit** | 100 requests/minute per OAuth token. Paginated (25-100 posts per request). |
-| **Failure mode** | 429 (rate limited) → retry with backoff. 503 → retry. 403 → check OAuth token expiry, re-authenticate. |
-| **Fallback** | If Reddit is completely down, pipeline continues with other 3 sources. Feed is sparse but functional. |
-| **SLA dependency** | Medium. Reddit is the largest data source (~50% of posts). Extended outage degrades feed quality. |
-
-### 7.2 Product Hunt API
-
-| Aspect | Detail |
-|---|---|
-| **Provides** | Product comments (body, upvotes, created_at, product name, product URL) |
-| **Protocol** | GraphQL API (API key auth). |
-| **Rate limit** | Generous (documented as 500 req/15min for API v2). |
-| **Failure mode** | Standard retry policy. |
-| **Fallback** | Pipeline continues without PH data. |
-| **SLA dependency** | Low. Smaller volume than Reddit (~15% of posts). |
-
-### 7.3 Play Store / App Store Scrapers
-
-| Aspect | Detail |
-|---|---|
-| **Provides** | 1-3 star reviews from SaaS-related categories (review text, star rating, helpfulness votes, app name, timestamp) |
-| **Protocol** | HTTP scraping via established libraries (google-play-scraper, app-store-scraper for Python). |
-| **Rate limit** | Self-imposed: 2 requests/second to avoid blocking. |
-| **Failure mode** | HTML structure change → scraper breaks → Sentry alert → requires code fix. Retry won't help. |
-| **Fallback** | Pipeline continues without affected store's data. |
-| **SLA dependency** | Medium. Scrapers are fragile by nature. Monitor closely. |
-
-### 7.4 LLM API (Claude Haiku)
-
-| Aspect | Detail |
-|---|---|
-| **Provides** | Post tagging (complaint/need/feature-request/discussion/self-promo/other). Brief generation (problem summary, alternatives, opportunity signal). |
-| **Protocol** | REST API (Anthropic Messages API). |
-| **Rate limit** | Per-key rate limits (typically 1000 req/min for Haiku tier). |
-| **Failure mode** | 429 → retry with backoff. 500 → retry. Unparseable response → log, mark as `other`, continue. |
-| **Fallback** | If LLM is completely unavailable, pipeline stores untagged posts and skips brief generation. Next cycle reprocesses untagged posts. |
-| **SLA dependency** | High for briefs (core value), medium for tagging (feed still shows posts, just unranked). |
-| **Cost control** | Track token usage per cycle. Alert if cost exceeds $5/cycle. Use Haiku (cheapest tier) exclusively. |
-
-### 7.5 Stripe
-
-| Aspect | Detail |
-|---|---|
-| **Provides** | Payment processing, subscription management, customer portal |
-| **Protocol** | REST API + webhooks (HTTPS) |
-| **Webhook events consumed** | `checkout.session.completed`, `customer.subscription.updated`, `customer.subscription.deleted`, `invoice.payment_failed` |
-| **Failure mode** | Webhook delivery failure → Stripe retries for up to 3 days. Handler is idempotent. Checkout API failure → user sees error, can retry. |
-| **SLA dependency** | High for upgrade flow. Low for ongoing operation (subscription status is cached in local DB). |
-
-### 7.6 Google OAuth
-
-| Aspect | Detail |
-|---|---|
-| **Provides** | User authentication (email, name, avatar) |
-| **Protocol** | OAuth 2.0 (Authorization Code flow via NextAuth.js) |
-| **Failure mode** | Google down → auth unavailable. Feed and anonymous features still work. |
-| **SLA dependency** | Medium. Only blocks new sign-ups and re-authentication. Existing sessions remain valid (JWT-based). |
-
-### 7.7 Resend (Email)
-
-| Aspect | Detail |
-|---|---|
-| **Provides** | Transactional email delivery (weekly digest) |
-| **Protocol** | REST API |
-| **Failure mode** | API error → retry 3 times with backoff. If persistent, skip digest for this week, alert via Sentry. |
-| **SLA dependency** | Low. Digest email is a retention feature, not core. |
-
-### 7.8 PostHog
-
-| Aspect | Detail |
-|---|---|
-| **Provides** | Analytics event tracking, funnels, user behavior analysis |
-| **Protocol** | Client-side JavaScript SDK (browser → PostHog cloud) |
-| **Failure mode** | PostHog down → analytics events silently dropped. No impact on user experience. |
-| **SLA dependency** | None. Fire-and-forget. |
+**SLA dependencies:** No external service is on the critical path for page loads. The API reads from the database only. All external services (LLM, source APIs, Stripe, Resend) are either pipeline-time dependencies or async webhook dependencies. If Neon is down, the site is down — this is the only hard dependency for user-facing requests (mitigated by Neon's 99.95% SLA).
 
 ---
 
@@ -663,15 +540,17 @@ Structured JSON logs in both components. Log levels: `error` (things that need a
 
 Not applicable — greenfield project, no existing system to migrate from.
 
-**Launch rollout plan:**
+**Phased rollout strategy (from PRD Section 10):**
 
-| Phase | What Ships | Who Can Access |
-|---|---|---|
-| **Alpha** | Pipeline + Feed + Briefs (read-only, no auth) | Developer only (localhost + preview) |
-| **Beta** | + Auth + Pro tier + Stripe + Deep dive | Invite-only (shared URL, no public marketing) |
-| **Launch** | + Bookmarks + Tracking + Digest email + PostHog analytics | Public (Product Hunt launch, Twitter, Indie Hackers) |
+| Phase | Deliverable | Infra Required |
+|-------|------------|---------------|
+| **M1 — Pipeline** | End-to-end pipeline running on schedule | Neon, Cloud Run Job, Cloud Scheduler, LLM API, source APIs |
+| **M2 — Feed + Briefs** | Web app serving feed and briefs | + Cloudflare Workers (frontend), Cloud Run Service (API) |
+| **M3 — Auth + Pro** | Google OAuth, Stripe payments, tier gating | + Google OAuth, Stripe integration |
+| **M4 — Engagement** | Bookmarks, tracking, notifications, email digest | + Resend |
+| **M5 — Launch** | PostHog instrumentation, performance tuning | + PostHog |
 
-Feature flags (via environment variables, not a feature flag service) control which features are visible. No need for LaunchDarkly at this scale — a simple `FEATURE_BOOKMARKS=true` environment variable is sufficient.
+Each phase is independently deployable and usable. M1 can run without a web app (pipeline populates the database). M2 serves a read-only site. M3 adds user accounts. This avoids big-bang launches and allows validation at each step.
 
 ---
 
@@ -680,187 +559,99 @@ Feature flags (via environment variables, not a feature flag service) control wh
 ### 9.1 Technical Risks
 
 | Risk | Impact | Likelihood | Mitigation |
-|---|---|---|---|
-| **Neon serverless driver compatibility with Cloudflare Workers edge runtime** | Web app can't query database from edge | Low (Neon explicitly supports this) | Test early in development. Fallback: use Neon's HTTP API (slower but guaranteed compatible). |
-| **OpenNext maturity for Cloudflare Workers** | Next.js features break on Workers | Medium | Track OpenNext releases. Fallback: deploy to Vercel initially, migrate to Cloudflare later. |
-| **LLM tagging accuracy below usable threshold** | Feed quality degrades, users see irrelevant content | Medium | Test with 1,000 labeled posts before building UI. Iterate prompts. Worst case: feed shows all posts unsorted (still useful, just less curated). |
-| **pgvector clustering quality** | Clusters are noisy, briefs are incoherent | Medium | Compare embedding-based clustering vs. LLM-based grouping on sample data. May need to use LLM for clustering instead of embeddings (higher cost but better quality). |
-| **Reddit API terms change (again)** | Largest data source becomes unavailable or expensive | Low-Medium | Diversify data sources early. Cache historical Reddit data. Monitor API terms proactively. |
-| **Scraper breakage (Play/App Store)** | Reviews from 2 of 4 sources stop flowing | Medium | Use maintained open-source scraper libraries. Set up Sentry alerts on scraper failures. Acceptable degradation — feed still works with 2 sources. |
-| **Cloudflare Workers 128MB memory limit** | SSR of large feed pages fails | Low | Paginate aggressively (20 cards per SSR render). Brief detail pages are small. |
+|------|--------|------------|------------|
+| Reddit API policy change blocks data collection | High — Reddit is the highest-volume source | Low (current terms allow read access) | Diversify to more sources early; cache historical data; monitor TOS changes quarterly |
+| LLM tagging accuracy below 80% | Medium — feed quality degrades, user trust drops | Medium | Nothing is hidden (only mis-prioritized); iteratively improve prompts; run weekly accuracy spot-checks on 50 random posts |
+| Play/App Store scraper breaks due to HTML changes | Medium — lose two data sources | Medium | Use maintained open-source scraping libraries; pin versions; set up alerts on scraper failures |
+| Clustering produces noisy or overlapping groups | Medium — briefs feel generic or redundant | Medium | Tune HDBSCAN min_cluster_size; experiment with LLM-based dedup pass on clusters; manually review first 5 cycles |
+| Neon cold start adds latency to first API request | Low — mitigated by Cloud Run min instances and Neon autoscaling | Low | Enable Neon autoscaling (auto-suspend after 5 min idle, wake in <1s); Cloud Run min instances = 1 keeps API warm |
+| OpenNext on Cloudflare Workers has compatibility issues with Next.js 15 | Medium — deployment blocker | Medium | Test early in M2; fallback to Vercel if OpenNext is unreliable |
+| Pipeline exceeds 30-minute Cloud Run Job timeout | Low — estimated 10-20 min | Low | Parallelize LLM calls; increase timeout to 60 min if needed (Cloud Run supports up to 24h for jobs) |
 
 ### 9.2 Open Questions
 
 | # | Question | Options | Information Needed | Decision Owner |
-|---|---|---|---|---|
-| 1 | **Embedding model for clustering: which model?** | (A) OpenAI `text-embedding-3-small` — cheap, fast, 1536 dims. (B) Anthropic embedding (if/when available). (C) Local model via sentence-transformers in pipeline container. | Cost per cycle for ~2,000 embeddings. Quality comparison on sample data. | zzoo |
-| 2 | **Clustering algorithm: embedding similarity vs. LLM-based grouping?** | (A) Cosine similarity + DBSCAN/HDBSCAN on embeddings — fast, cheap, automated. (B) LLM-based: send batches of posts to LLM, ask it to group them — slower, more expensive, potentially higher quality. (C) Hybrid: embed for rough clusters, then LLM to refine/merge. | Quality comparison on 500 sample posts. Cost difference. | zzoo |
-| 3 | **Anonymous deep dive rate limiting: how to identify anonymous users?** | (A) IP-based — simple but shared IPs cause false limits. (B) Browser fingerprint (cookie-based session) — more accurate but cookies can be cleared. (C) Combination of IP + cookie. | Acceptable false-positive rate. How aggressively to enforce for anonymous users. | zzoo |
-| 4 | **Start with Vercel (simpler DX) or Cloudflare Workers (cheaper at scale)?** | (A) Vercel for MVP, migrate to Cloudflare if the product succeeds. (B) Cloudflare from day one to avoid migration. | How much friction does OpenNext add vs. native Vercel? Is the migration path smooth? | zzoo |
-| 5 | **Pipeline scheduling: fixed interval or adaptive?** | (A) Fixed every 6 hours — simple, predictable. (B) Adaptive based on new post volume — more efficient but more complex. | Whether post volume is consistent enough that fixed scheduling doesn't waste cycles. | zzoo — start with fixed, revisit after 2 weeks of data. |
+|---|---------|---------|-------------------|---------------|
+| 1 | What embedding model to use? | (a) OpenAI text-embedding-3-small ($0.02/1M tokens, 1536 dim), (b) Anthropic Voyage ($0.01/1M tokens), (c) Open-source model via HuggingFace | Benchmark embedding quality on a sample of ~100 Reddit posts — measure cluster coherence | zzoo |
+| 2 | What clustering algorithm? | (a) HDBSCAN (density-based, no need to specify k), (b) KMeans (fast, requires k), (c) LLM-based grouping (highest quality, highest cost) | Run HDBSCAN vs KMeans on sample data; evaluate cluster quality manually | zzoo |
+| 3 | Pipeline frequency? | (a) Every 6h, (b) Every 12h, (c) Daily | Balance between data freshness and LLM cost ($1-2/cycle × 4 cycles/day = $4-8/day at 6h) | zzoo |
+| 4 | OpenNext stability for Next.js 15? | (a) Use OpenNext on Cloudflare, (b) Fall back to Vercel | Test OpenNext with a Next.js 15 skeleton app on Cloudflare Workers during M2 | zzoo |
+| 5 | Legal review of source platform TOS? | (a) Reddit API TOS compliant, (b) Needs legal review, (c) Switch to RSS feeds | Review Reddit API TOS (especially post-2024 pricing changes), Play Store scraping legality | zzoo |
+| 6 | Anonymous deep-dive rate limit mechanism? | (a) Signed cookie (simple, bypassable), (b) IP-based (more robust, CDN complication), (c) Fingerprint-based | Cookie is simplest and matches the UX strategy (rate limit is a nudge, not a hard wall) | zzoo |
 
 ---
 
 ## 10. Architecture Decision Records (ADRs)
 
-### ADR-1: Next.js for Web Application
+### ADR-1: Python (FastAPI) for Backend
 
 - **Status:** Accepted
-- **Context:** The web app needs server-side rendering for SEO (feed and brief pages indexable), fast initial load (<2s), and a responsive UI with client-side interactivity (tag filtering, infinite scroll, paywall modals). The UX strategy specifies shadcn/ui + Tailwind CSS.
-- **Decision:** Next.js 15+ (App Router) as the full-stack web framework. Server components for SSR pages, API routes for CRUD operations, middleware for auth/rate-limiting.
+- **Context:** The backend serves a REST API and runs an AI pipeline with heavy LLM integration (Anthropic SDK, embedding generation, HDBSCAN clustering). Language choice is a one-way door.
+- **Decision:** Python 3.12 with FastAPI.
 - **Alternatives Considered:**
-  - *Remix:* Good SSR, but smaller ecosystem. shadcn/ui is designed for Next.js. Cloudflare Workers support for Remix is mature, but the component library ecosystem tilts toward Next.js. Rejected for ecosystem fit.
-  - *Astro + API backend:* Astro is excellent for content sites but lacks the client-side interactivity patterns needed (infinite scroll, optimistic UI for bookmarks, client-side tag filtering). Would need a separate API backend anyway. Rejected for requiring more moving parts.
-  - *SvelteKit:* Strong SSR and performance, but team familiarity and component library ecosystem favor React/Next.js. Rejected for ecosystem size.
-- **Consequences:**
-  - Positive: Large ecosystem, shadcn/ui compatibility, excellent SSR, API routes eliminate need for separate backend, strong Cloudflare Workers support (via OpenNext).
-  - Negative: App Router has a learning curve. OpenNext adds a compatibility layer (potential bugs). Bundle size is larger than Svelte/Astro equivalents (mitigated by SSR — initial HTML is server-rendered).
+  - *Rust (Axum):* Superior performance and type safety. Rejected because the pipeline requires Python-only libraries (anthropic SDK, scikit-learn, google-play-scraper). Writing the pipeline in Python and the API in Rust means two codebases, two deployment pipelines, two dependency trees — unacceptable for a solo developer.
+  - *TypeScript (Node.js/Hono):* Could share language with the frontend. Rejected because the ML/AI ecosystem (clustering, embeddings, scraping libraries) is significantly stronger in Python.
+- **Consequences:** (+) Fast iteration, rich AI/ML ecosystem, single language for API + pipeline. (-) Higher memory usage and slower cold starts than Rust. Acceptable because the API is not latency-critical (CDN-cached public content) and the pipeline runs as a background job.
 
-### ADR-2: Two-Unit System (Next.js Web + Python Pipeline)
+### ADR-2: Single-Service API + Batch Pipeline (Not Microservices, Not Event-Driven)
 
 - **Status:** Accepted
-- **Context:** The system has two fundamentally different workloads: (1) a user-facing web application serving pre-computed content, and (2) a batch data pipeline that fetches, tags, clusters, and generates content using LLM APIs. These workloads differ in runtime (interactive vs. long-running batch), language needs (TypeScript for SSR vs. Python for LLM/ML), and scaling (per-request vs. per-cycle).
-- **Decision:** Two independently deployable units sharing a Postgres database. No runtime communication between them — the database is the integration point.
+- **Context:** The system has two workloads: a web API (request-response) and a data pipeline (batch). These could be structured as separate microservices with event-driven communication, or as a single codebase with two runtime modes.
+- **Decision:** Monorepo with a single Python codebase. The API and pipeline share models, utilities, and the database connection layer. Deployed as two Cloud Run targets (service for API, job for pipeline).
 - **Alternatives Considered:**
-  - *Single Next.js monolith:* Pipeline as Next.js API routes or cron jobs. Rejected — pipeline runs 10-30 minutes, exceeding serverless timeout limits (30s on Workers, 60s on Vercel). Would also force TypeScript for LLM orchestration where Python ecosystem is stronger.
-  - *Three-unit system (frontend + API + pipeline):* Rejected — the API layer is thin CRUD reads that Next.js API routes handle perfectly. A third deployable unit adds operational overhead without payoff for a solo developer.
-  - *Shared runtime (Python for both web + pipeline):* Rejected — Python SSR frameworks (Django, FastAPI + Jinja) are inferior to Next.js for the interactive, SEO-friendly frontend this product needs. Would sacrifice frontend DX and component ecosystem (shadcn/ui, Radix).
-- **Consequences:**
-  - Positive: Each unit uses the optimal language for its workload. Independent deployment and scaling. Pipeline failures don't affect the web app (previous cycle's data serves). Simple mental model.
-  - Negative: Two codebases to maintain (TypeScript + Python). Database schema shared across codebases requires coordination. No type sharing between units.
+  - *Microservices + Pub/Sub:* Separate API service, separate pipeline service, communicating via GCP Pub/Sub. Rejected because there are only two components, they are not independently scalable (the pipeline runs once every 12h), and Pub/Sub adds $10-20/month and operational complexity for zero benefit.
+  - *Event-driven pipeline (stage-by-stage):* Each pipeline stage is a separate Cloud Function triggered by Pub/Sub. Rejected because the pipeline is sequential — there is no fan-out, no concurrent consumers, no benefit from event-driven decomposition.
+- **Consequences:** (+) One codebase, one deployment pipeline, shared code (models, DB layer), minimal operational surface. (-) API and pipeline are coupled at the code level (shared schema changes require deploying both). Acceptable because they share the same database schema by design.
 
-### ADR-3: Layered Architecture (Both Units)
+### ADR-3: Layered Code Structure (Not Hexagonal)
 
 - **Status:** Accepted
-- **Context:** Need to choose internal code organization for both the Next.js app and Python pipeline. The web app is mostly database reads with access control. The pipeline is a linear sequence of processing stages.
-- **Decision:** Layered architecture for both units. Next.js: pages → API routes → data access (Drizzle ORM). Python: orchestrator → stage modules → data access (SQLAlchemy or psycopg3).
+- **Context:** Internal code organization for the backend.
+- **Decision:** Layered architecture — routes → services → repositories (data access). No ports/adapters abstraction.
 - **Alternatives Considered:**
-  - *Hexagonal (ports & adapters):* Provides infrastructure abstraction. Rejected — the web app won't swap its database or auth provider. The pipeline's external integrations (Reddit API, LLM API) are tightly coupled to specific APIs. Hexagonal's port/adapter indirection adds boilerplate without a realistic swap scenario.
-  - *Clean architecture:* Strictest separation. Rejected — overkill for the domain complexity level. There are no complex business rules — the web app enforces access tiers and serves data. The pipeline runs a fixed sequence of stages.
-- **Consequences:**
-  - Positive: Minimal boilerplate, fast to scaffold, easy for a solo developer to navigate. Natural fit for Next.js App Router conventions (pages → server components → data fetching).
-  - Negative: Layers can leak (data access concerns bleeding into pages). If domain logic grows significantly (e.g., complex ranking algorithms, personalization), specific modules may need refactoring toward hexagonal boundaries. This is acceptable as a future concern.
+  - *Hexagonal (ports & adapters):* Domain logic isolated from infrastructure via interfaces. Rejected because the API has minimal domain logic — it is primarily read queries with tier-based access checks. The pipeline is a linear script, not a long-lived service. The testability benefit of hexagonal (mocking adapters) is not needed when integration tests against a Neon branch provide better coverage.
+  - *Clean architecture:* Even more layers. Rejected for the same reasons as hexagonal, amplified.
+- **Consequences:** (+) Less boilerplate, faster development, easier for a solo developer to navigate. (-) If the API grows complex business rules (e.g., personalized feed ranking, recommendation engine), the lack of domain isolation will make refactoring harder. Mitigated by introducing hexagonal for specific complex modules when needed, not across the entire codebase.
 
-### ADR-4: Neon PostgreSQL (Single Database)
+### ADR-4: Neon PostgreSQL (Not Supabase, Not Cloud SQL)
 
 - **Status:** Accepted
-- **Context:** Need persistent storage for posts, clusters, briefs, users, subscriptions, bookmarks, tracked keywords, embeddings, and pipeline metadata. Data is relational (posts belong to clusters, clusters to cycles, etc.). Budget-sensitive solo developer.
-- **Decision:** Single Neon PostgreSQL database with pgvector extension for embeddings. Both the web app and pipeline connect to the same database.
+- **Context:** Need a PostgreSQL database that supports pgvector, has low operational overhead, and minimizes cost for a solopreneur.
+- **Decision:** Neon (us-east-1).
 - **Alternatives Considered:**
-  - *Supabase:* Offers bundled Auth, Storage, Realtime. Rejected — idea-fork uses Google OAuth (NextAuth.js), has no file storage needs, and has no real-time features. Supabase's bundles don't save development time here. Neon's serverless model (scale-to-zero) is better for cost control.
-  - *Neon + Redis (caching):* Rejected — data changes at most 4x/day (pipeline cycles). Edge CDN caching handles read performance. Adding Redis increases infrastructure cost and operational surface without measurable benefit at <1,000 DAU.
-  - *Neon + Pinecone/Weaviate (vector store):* Rejected — pgvector on Neon handles the embedding volume (~6,000 vectors for a 3-cycle rolling window). A dedicated vector database adds cost and complexity for a workload that fits comfortably in Postgres.
-  - *Separate read/write databases (CQRS):* Rejected — read/write ratio is modest (not 10:1+), single Neon instance handles both without strain at target scale.
-- **Consequences:**
-  - Positive: Single database = single source of truth, no cross-store synchronization, simple backups, simple schema management. Neon's scale-to-zero keeps costs near $0 when idle. Serverless driver works on Cloudflare Workers edge runtime.
-  - Negative: Single point of failure (mitigated by Neon's managed redundancy). pgvector performance may not scale beyond ~100K vectors (acceptable — rolling window keeps it under 20K). Schema changes require coordinating both codebases.
+  - *Supabase:* Bundled auth, real-time, storage. Rejected because idea-fork uses Google OAuth (not Supabase Auth), has no real-time requirements, and no file storage needs. Supabase's bundled features provide no value here, and its pricing does not scale to zero.
+  - *GCP Cloud SQL:* Full PostgreSQL control. Rejected because it requires always-on instances ($30-50/month minimum), manual backup configuration, and more ops overhead. Neon's scale-to-zero and branching model are superior for a solopreneur's development workflow and cost profile.
+- **Consequences:** (+) Scale-to-zero (pay only for what you use), branching for dev/PR environments, managed pgvector, serverless. (-) Neon does not support all PostgreSQL extensions (e.g., pg_cron). If scheduled database maintenance tasks are needed, they must run from the pipeline or Cloud Scheduler, not from within PostgreSQL. Acceptable.
 
-### ADR-5: Cloudflare Workers for Frontend Hosting
-
-- **Status:** Proposed (see Open Question #4)
-- **Context:** Need edge hosting for Next.js SSR to achieve <2s page loads globally. Two main options: Cloudflare Workers (via OpenNext) or Vercel (native Next.js hosting).
-- **Decision:** Cloudflare Workers via OpenNext as the target platform. However, if OpenNext compatibility issues cause significant friction during early development, start with Vercel and migrate to Cloudflare before traffic grows.
-- **Alternatives Considered:**
-  - *Vercel:* Native Next.js support, best DX, zero configuration. Rejected as primary target because pricing becomes unpredictable at scale ($20/mo base + per-request charges). Acceptable as a temporary starting point.
-  - *GCP Cloud Run for Next.js:* Rejected — Cloud Run is not edge-distributed. SSR would happen in a single region, increasing latency for non-US users. Also requires container management.
-  - *Self-hosted on VPS (e.g., Fly.io, Railway):* Rejected — requires managing Node.js runtime, scaling, SSL, CDN integration. Too much operational overhead for a solo developer.
-- **Consequences:**
-  - Positive: Edge SSR (lowest TTFB globally), predictable pricing, built-in CDN and caching, Cloudflare ecosystem benefits (rate limiting, DDoS protection).
-  - Negative: OpenNext is a compatibility layer — not all Next.js features may work perfectly. Debugging edge runtime issues is harder than Node.js. 128MB memory limit requires attention to SSR payload sizes.
-
-### ADR-6: GCP Cloud Run Job for Pipeline
+### ADR-5: Cloudflare Workers (Frontend) + GCP Cloud Run (Backend)
 
 - **Status:** Accepted
-- **Context:** The pipeline is a batch job running every 6 hours for 10-30 minutes. It needs Python with data science libraries, unrestricted network access to external APIs, and no timeout limits shorter than 30 minutes.
-- **Decision:** GCP Cloud Run Job triggered by GCP Cloud Scheduler.
+- **Context:** The frontend requires edge SSR for <2s TTFB globally and SEO. The backend requires Python container support. No single platform excels at both.
+- **Decision:** Split — Cloudflare Workers for frontend (Next.js via OpenNext), GCP Cloud Run for backend (FastAPI).
 - **Alternatives Considered:**
-  - *Cloudflare Workers:* Rejected — V8 runtime can't run Python. 30-second CPU limit is insufficient.
-  - *GCP Cloud Run (service, always-on):* Rejected — paying for 24/7 compute when the pipeline runs 4x20min = 80 minutes/day. Cloud Run Job runs to completion and terminates.
-  - *GCP Cloud Functions:* Rejected — 9-minute max timeout (gen2) is insufficient for a 20-minute pipeline.
-  - *AWS Lambda / Step Functions:* Rejected — mixing AWS and GCP adds billing complexity and cross-cloud latency for Neon access. GCP cohesion principle.
-  - *GitHub Actions (scheduled workflow):* Tempting for simplicity. Rejected — 6-hour job frequency means lots of billable minutes. Cloud Run Job is cheaper for recurring compute. Also, GitHub Actions has a 6-hour timeout and unreliable scheduling (can be delayed by minutes-to-hours).
-- **Consequences:**
-  - Positive: Pay only for execution time (~80 CPU-minutes/day). No cold start concern (pipeline is long-running). Full Python ecosystem available. GCP ecosystem integration (Cloud Scheduler, Cloud Logging, Secret Manager).
-  - Negative: Requires Docker containerization. GCP account setup and IAM configuration. Slightly more complex deployment than a simple cron job on a VPS.
+  - *Vercel (frontend) + Cloud Run (backend):* Vercel is the simplest Next.js hosting. Rejected as the long-term choice because Vercel's pricing scales aggressively with traffic. Acceptable as a fallback if OpenNext proves unreliable (see Risk in Section 9.1).
+  - *Cloud Run for everything:* Run both frontend and backend on Cloud Run. Rejected because Cloud Run SSR is single-region (no edge), resulting in higher TTFB for non-US users. The PRD requires <2s TTFB; edge SSR ensures this globally.
+  - *Cloudflare for everything:* Run the backend as a Cloudflare Worker. Rejected because Cloudflare Workers use V8 runtime, which doesn't support Python natively (WASM Python is experimental and doesn't support scikit-learn, SQLAlchemy, etc.).
+- **Consequences:** (+) Best-in-class for each workload. (-) Mixed cloud ecosystem increases cognitive load (two dashboards, two CLI tools, two billing accounts). Mitigated by CI/CD automation (GitHub Actions handles both deployments) and clear separation of concerns.
 
-### ADR-7: NextAuth.js for Authentication
+### ADR-6: Next.js 15 (App Router) for Frontend
 
 - **Status:** Accepted
-- **Context:** Need Google OAuth with session management. No email/password in v1. Sessions must work on Cloudflare Workers edge runtime.
-- **Decision:** NextAuth.js (Auth.js v5) with the Drizzle adapter for Neon Postgres session/account storage.
+- **Context:** The frontend needs SSR for SEO, client-side interactivity for infinite scroll and filters, and responsive design. Framework choice is a one-way door.
+- **Decision:** Next.js 15 with App Router.
 - **Alternatives Considered:**
-  - *Clerk:* Managed auth, excellent DX, drop-in UI components. Rejected — adds $25/mo+ at scale. The auth requirements are simple (Google OAuth only). NextAuth.js is free and sufficient.
-  - *Supabase Auth:* Would require Supabase as the database (see ADR-4 for why we chose Neon). Rejected.
-  - *Custom OAuth implementation:* Rejected — wheel reinvention. NextAuth.js handles the OAuth flow, token management, session storage, and CSRF protection.
-  - *Lucia Auth:* Lightweight, edge-compatible. Viable alternative. Rejected in favor of NextAuth.js due to larger community, more documentation, and official Next.js integration. Would reconsider if NextAuth.js has edge runtime issues.
-- **Consequences:**
-  - Positive: Battle-tested OAuth flow, Drizzle adapter available, JWT sessions work on edge runtime, handles token refresh automatically.
-  - Negative: NextAuth.js v5 (Auth.js) is still maturing — edge runtime support has had historical bugs. Session storage in Postgres adds a query per request (mitigated by JWT strategy — session data in the token, database lookup only on refresh).
+  - *Astro:* Excellent for content-heavy sites with minimal interactivity. Rejected because idea-fork has significant client-side interactivity (infinite scroll, tag filter re-sorting, auth modals, optimistic bookmark updates). Astro's island architecture adds friction for interactive features.
+  - *SvelteKit:* Smaller bundle, good SSR. Rejected because the UI toolkit recommendation (shadcn/ui, Radix UI) is React-only. Rebuilding all accessible components in Svelte is not viable for a solo developer.
+  - *Remix:* Good SSR with progressive enhancement. Rejected because Cloudflare Workers support for Remix is less mature than for Next.js (via OpenNext). Also, the Next.js ecosystem (shadcn/ui, React libraries) is larger.
+- **Consequences:** (+) Mature ecosystem, shadcn/ui compatibility, strong SSR + client interactivity, large community. (-) Next.js bundle size is larger than alternatives. Mitigated by code splitting (automatic with App Router) and edge CDN caching.
 
-### ADR-8: Drizzle ORM for Database Access (Web App)
+### ADR-7: Google OAuth + Self-Issued JWT (Not Supabase Auth, Not Auth0)
 
 - **Status:** Accepted
-- **Context:** Need a TypeScript ORM/query builder for the Next.js app that works with Neon serverless driver on Cloudflare Workers edge runtime.
-- **Decision:** Drizzle ORM with Neon serverless driver (`@neondatabase/serverless`).
+- **Context:** The product needs social login (Google OAuth). The PRD specifies Google OAuth as P0 and email/password as P1.
+- **Decision:** Implement Google OAuth directly (OAuth2 authorization code flow) and issue self-managed JWTs from the FastAPI backend.
 - **Alternatives Considered:**
-  - *Prisma:* Most popular TypeScript ORM. Rejected — Prisma Client requires a binary engine that doesn't run on Cloudflare Workers edge runtime. Prisma Accelerate (their edge proxy) adds latency and cost.
-  - *Kysely:* Lightweight query builder, edge-compatible. Viable alternative. Rejected because Drizzle provides both query builder and schema management (migrations) in one tool, while Kysely requires a separate migration tool.
-  - *Raw SQL (pg driver):* Rejected — no type safety, no schema management, error-prone for a solo developer.
-- **Consequences:**
-  - Positive: Edge-compatible, TypeScript-native, SQL-like syntax (no ORM magic), built-in migration support, works with Neon serverless driver.
-  - Negative: Smaller ecosystem than Prisma (fewer guides, fewer community adapters). Schema-first approach requires defining schema in TypeScript (but this is also a benefit for type safety).
-
-### ADR-9: Python Pipeline with psycopg3
-
-- **Status:** Accepted
-- **Context:** Pipeline needs to orchestrate LLM API calls, run clustering algorithms, and write results to Neon Postgres. Python is the chosen language (ADR-2).
-- **Decision:** Python 3.12 with psycopg3 (async) for database access, httpx for HTTP calls, and scikit-learn for clustering (if using embedding-based approach).
-- **Alternatives Considered:**
-  - *SQLAlchemy async:* Full ORM with migration support. Rejected — pipeline writes are straightforward bulk inserts and updates. An ORM adds abstraction overhead without benefit. psycopg3 with parameterized queries is sufficient and more transparent.
-  - *asyncpg:* Faster than psycopg3 for raw throughput. Rejected — psycopg3 is the official PostgreSQL adapter for Python, has better documentation, and the performance difference is negligible for batch workloads.
-- **Consequences:**
-  - Positive: Standard Python database adapter, async support for concurrent LLM calls, simple and well-documented.
-  - Negative: No ORM means writing SQL manually (acceptable for the limited number of pipeline queries). Schema changes must be manually coordinated with Drizzle migrations in the web app.
-
-### ADR-10: Stripe for Payments
-
-- **Status:** Accepted
-- **Context:** Need monthly subscription billing ($9/mo Pro tier) with upgrade, downgrade, and cancellation. PRD specifies Stripe.
-- **Decision:** Stripe Checkout (hosted payment page) + Stripe Customer Portal (for subscription management) + Stripe Webhooks (for subscription state sync).
-- **Alternatives Considered:**
-  - *Lemon Squeezy:* Merchant of record (handles tax, compliance). Attractive for solo developers. Rejected — Stripe has better reliability track record, more extensive documentation, and the PRD explicitly specifies Stripe. Lemon Squeezy could be reconsidered if tax compliance becomes a burden.
-  - *Paddle:* Similar to Lemon Squeezy (MoR). Rejected for same reasons.
-- **Consequences:**
-  - Positive: Industry-standard reliability. Hosted Checkout reduces PCI scope. Customer Portal provides self-service subscription management (no custom UI needed for cancel/downgrade). Webhooks provide real-time subscription state updates.
-  - Negative: Stripe is not a merchant of record — zzoo is responsible for tax compliance (sales tax, VAT). May need to add tax calculation later (Stripe Tax or manual).
-
----
-
-## Appendix: Technology Stack Summary
-
-| Layer | Technology | Version |
-|---|---|---|
-| **Frontend framework** | Next.js (App Router) | 15+ |
-| **Frontend hosting** | Cloudflare Workers (OpenNext) | — |
-| **UI components** | shadcn/ui + Radix UI | — |
-| **Styling** | Tailwind CSS | 4 |
-| **Icons** | Lucide Icons | — |
-| **Charts** | Recharts | — |
-| **Frontend ORM** | Drizzle ORM | — |
-| **Database driver (edge)** | @neondatabase/serverless | — |
-| **Auth** | NextAuth.js (Auth.js v5) | — |
-| **Database** | Neon PostgreSQL + pgvector | PG 16 |
-| **Pipeline runtime** | Python | 3.12 |
-| **Pipeline DB driver** | psycopg3 (async) | — |
-| **Pipeline HTTP client** | httpx | — |
-| **Pipeline clustering** | scikit-learn (HDBSCAN) or LLM-based | — |
-| **LLM** | Claude Haiku (Anthropic API) | — |
-| **Pipeline hosting** | GCP Cloud Run Job | — |
-| **Cron scheduler** | GCP Cloud Scheduler | — |
-| **Payments** | Stripe (Checkout + Webhooks) | — |
-| **Email** | Resend | — |
-| **Analytics** | PostHog (client-side SDK) | — |
-| **Error tracking** | Sentry | — |
-| **CI/CD** | GitHub Actions | — |
-| **IaC** | Pulumi (TypeScript) | — |
-| **Secret management** | Cloudflare Wrangler secrets + GCP Secret Manager | — |
+  - *Supabase Auth:* Managed auth with social providers. Rejected because the project doesn't use Supabase for the database, so adding Supabase Auth introduces a dependency on a service not otherwise used. Also, Supabase Auth stores users in its own database, creating a data ownership split.
+  - *Auth0:* Managed auth service. Rejected because Auth0's free tier has a 7,500 MAU limit and the paid tier starts at $23/month. For a solopreneur building a product with uncertain growth, self-managed JWT avoids recurring auth costs.
+  - *NextAuth.js (Auth.js):* Client-side auth library for Next.js. Rejected because the auth state needs to be validated on the FastAPI backend (for tier checks, API authorization). Splitting auth between Next.js (session) and FastAPI (validation) creates complexity. Centralizing JWT issuance in FastAPI makes the backend the single source of truth for auth state.
+- **Consequences:** (+) Full control over auth flow, no third-party dependency, no user data split, no recurring auth cost. (-) Must implement token refresh, token revocation, and security best practices manually. Mitigated by following established JWT patterns (short-lived access token, httpOnly refresh cookie, token rotation).
