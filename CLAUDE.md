@@ -9,13 +9,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Domain Glossary
 
 ## Build & Dev Commands
-
 All commands are in `justfile`. Run `just --list` to see available recipes.
 
 ## Environment Setup
 
 
-## Principles (MUST CONFORM TO)
+## Principles (MUST FOLLOW)
 
 1. All implementation must use skills (even if after plan mode.)
 2. Once the implementation is complete, run the two sub-agents below in parallel:
@@ -26,22 +25,20 @@ All commands are in `justfile`. Run `just --list` to see available recipes.
 
 ## API
 
-### API Workflow (MUST CONFORM TO)
-
-1. **z-database-design** → **z-api-design** (plan)
-2. **z-fastapi** (implementation) + **z-postgresql** (queries)
+### API Workflow (MUST FOLLOW)
+- Schema changes: **z-database-design** → **z-api-design** (plan)
+- Default: **z-fastapi** + **z-postgresql** (queries)
 
 ### Folder Structure (`api/`)
-
 See docs/structure-api.md. 
 
 ### Conventions
 
 ## Web
 
-### Web Workflow (MUST CONFORM TO)
-
-**z-nextjs** (implementation) → **vercel-react-best-practices** (review)
+### Web Workflow (MUST FOLLOW)
+- UI components: **ui-engineer**
+- Default: **z-nextjs** (implementation) → **vercel-react-best-practices** (review)
 
 ### Folder Structure (`web/`)
 
