@@ -8,14 +8,16 @@ export type TagType =
   | "self-promo"
   | "other";
 
-export type UserTier = "anonymous" | "free" | "pro";
-
 export type TrendDirection = "growing" | "stable" | "declining";
+
+export type FeedSortMode = "trending" | "recent";
+export type BriefSortMode = "evidence" | "recent" | "trending";
+export type ProductSortMode = "complaints" | "trending" | "recent";
 
 export interface FeedPost {
   id: string;
   platform: Platform;
-  platformSubSource: string; // e.g., "r/SaaS", "Google Play"
+  platformSubSource: string;
   title: string;
   excerpt: string;
   tag: TagType;
@@ -23,9 +25,8 @@ export interface FeedPost {
   upvotes: number;
   comments: number;
   helpfulVotes?: number;
-  createdAt: string; // ISO timestamp
-  needId?: string;
-  isBookmarked: boolean;
+  createdAt: string;
+  relatedBriefId?: string;
 }
 
 export interface Brief {
@@ -34,27 +35,26 @@ export interface Brief {
   summary: string;
   postCount: number;
   platforms: Platform[];
-  opportunityScore: number; // 0-10
-  cycleId: string;
-  cycleDate: string;
-  isBookmarked: boolean;
+  recencyLabel: string;
+  tags: string[];
+}
+
+export interface BriefSection {
+  heading: string;
+  body: string;
 }
 
 export interface BriefDetail {
   id: string;
   title: string;
-  cycleDate: string;
-  problemSummary: string;
+  postCount: number;
+  platforms: Platform[];
+  recencyLabel: string;
+  tags: string[];
+  sections: BriefSection[];
+  suggestedDirections: string[];
   sourceEvidence: SourcePost[];
-  volume: number;
-  intensity: "low" | "medium" | "high";
-  trend: TrendDirection;
-  sparklineData: number[];
-  alternatives: Alternative[];
-  opportunitySignal: string;
-  opportunityScore: number;
-  relatedNeeds: RelatedNeed[];
-  isBookmarked: boolean;
+  relatedBriefs: RelatedBrief[];
 }
 
 export interface SourcePost {
@@ -68,78 +68,11 @@ export interface SourcePost {
   createdAt: string;
 }
 
-export interface Alternative {
-  name: string;
-  sentiment: string;
-  mentionCount: number;
-}
-
-export interface RelatedNeed {
+export interface RelatedBrief {
   id: string;
   title: string;
   postCount: number;
 }
-
-export interface NeedDetail {
-  id: string;
-  title: string;
-  tag: TagType;
-  frequency: number;
-  intensity: number; // 0-5
-  trend: TrendDirection;
-  sparklineData: number[];
-  sourcePosts: SourcePost[];
-  totalSourcePosts: number;
-  relatedClusters: RelatedNeed[];
-  relatedBrief?: {
-    id: string;
-    title: string;
-    opportunityScore: number;
-  };
-  isBookmarked: boolean;
-}
-
-export interface Bookmark {
-  id: string;
-  type: "feed" | "brief";
-  itemId: string;
-  createdAt: string;
-  item: FeedPost | Brief;
-}
-
-export interface TrackedKeyword {
-  id: string;
-  keyword: string;
-  createdAt: string;
-  matchCount: number;
-}
-
-export interface User {
-  id: string;
-  name: string;
-  email: string;
-  avatarUrl?: string;
-  tier: UserTier;
-  memberSince: string;
-  weeklyDigest: boolean;
-  nextBillingDate?: string;
-}
-
-export interface Cycle {
-  id: string;
-  date: string;
-  briefCount: number;
-  postCount: number;
-}
-
-export interface TrendingKeyword {
-  keyword: string;
-  platform: Platform;
-}
-
-export type SentimentLevel = "negative" | "mixed" | "positive";
-
-export type ProductSortMode = "trending" | "new";
 
 export interface ComplaintTheme {
   theme: string;
@@ -153,20 +86,14 @@ export interface Product {
   description: string;
   platforms: Platform[];
   category: string;
-  engagementMetrics: Partial<
-    Record<Platform, { mentions: number; avgSentiment: number }>
-  >;
   complaintCount: number;
-  sentimentLevel: SentimentLevel;
   topIssue: string;
-  launchDate: string;
-  sourceUrls: Partial<Record<Platform, string>>;
-  isBookmarked: boolean;
+  tags: string[];
+  trendingIndicator?: boolean;
+  websiteUrl?: string;
 }
 
 export interface ProductDetail extends Product {
   complaintBreakdown: ComplaintTheme[];
-  sentimentTrend: TrendDirection;
-  sparklineData: number[];
-  relatedBriefs: RelatedNeed[];
+  relatedBriefs: RelatedBrief[];
 }

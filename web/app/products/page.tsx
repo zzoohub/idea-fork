@@ -4,7 +4,7 @@ import { ProductsView } from "@/views/products";
 export const metadata: Metadata = {
   title: "Products",
   description:
-    "Trending and newly launched products with aggregated user complaints from Reddit, Product Hunt, and app stores.",
+    "Trending products paired with user complaints from Reddit, Product Hunt, and app stores.",
 };
 
 export default function ProductsPage() {

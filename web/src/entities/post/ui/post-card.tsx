@@ -7,15 +7,14 @@ import { PLATFORM_CONFIG } from "@/shared/config/constants";
 import { PlatformIcon } from "@/shared/ui/platform-icon";
 import { TagBadge } from "@/shared/ui/tag-badge";
 import { RelativeTime } from "@/shared/ui/relative-time";
-import { BookmarkButton } from "@/shared/ui/bookmark-button";
 import { formatNumber, sanitizeExternalUrl, cn } from "@/shared/lib/utils";
 
 interface PostCardProps {
   post: FeedPost;
-  onBookmarkToggle: (postId: string) => void;
+  onTagClick?: (tag: string) => void;
 }
 
-export function PostCard({ post, onBookmarkToggle }: PostCardProps) {
+export function PostCard({ post, onTagClick }: PostCardProps) {
   const platformConfig = PLATFORM_CONFIG[post.platform];
 
   return (
@@ -25,58 +24,61 @@ export function PostCard({ post, onBookmarkToggle }: PostCardProps) {
         platformConfig.borderClass
       )}
     >
-      {/* Card click opens source */}
-      <a
-        href={sanitizeExternalUrl(post.sourceUrl)}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="absolute inset-0 z-0"
-        aria-label={`Open original post on ${platformConfig.name} (opens in new tab)`}
-      />
-
-      {/* Header: platform + bookmark */}
-      <div className="relative z-10 flex items-center justify-between mb-2">
-        <PlatformIcon platform={post.platform} showName />
-        <BookmarkButton
-          isBookmarked={post.isBookmarked}
-          onToggle={() => onBookmarkToggle(post.id)}
-        />
+      {/* Header: platform + source + time */}
+      <div className="flex items-center gap-2 mb-2 text-xs text-muted-foreground">
+        <PlatformIcon platform={post.platform} size={14} />
+        <span>{post.platformSubSource}</span>
+        <span aria-hidden="true">·</span>
+        <RelativeTime dateString={post.createdAt} />
       </div>
 
       {/* Excerpt */}
-      <p className="relative z-10 text-sm leading-relaxed line-clamp-2 mb-3 pointer-events-none">
+      <p className="text-sm leading-relaxed line-clamp-3 mb-3">
         &ldquo;{post.excerpt}&rdquo;
       </p>
 
-      {/* Meta row: tag, engagement, time */}
-      <div className="relative z-10 flex items-center gap-3 text-xs text-muted-foreground pointer-events-none">
-        <TagBadge tag={post.tag} />
-        {post.upvotes > 0 && (
-          <span>{formatNumber(post.upvotes)} upvotes</span>
-        )}
-        {post.comments > 0 && (
-          <span>{formatNumber(post.comments)} comments</span>
-        )}
-        {post.helpfulVotes != null && post.helpfulVotes > 0 && (
-          <span>{formatNumber(post.helpfulVotes)} helpful</span>
-        )}
-        <RelativeTime dateString={post.createdAt} className="ml-auto" />
+      {/* Tags + engagement */}
+      <div className="flex items-center gap-2 flex-wrap mb-3">
+        <button
+          type="button"
+          onClick={() => onTagClick?.(post.tag)}
+          className="relative z-10"
+        >
+          <TagBadge tag={post.tag} />
+        </button>
+        <div className="flex items-center gap-3 text-xs text-muted-foreground ml-auto">
+          {post.upvotes > 0 && (
+            <span>{formatNumber(post.upvotes)} upvotes</span>
+          )}
+          {post.comments > 0 && (
+            <span>{formatNumber(post.comments)} comments</span>
+          )}
+          {post.helpfulVotes != null && post.helpfulVotes > 0 && (
+            <span>{formatNumber(post.helpfulVotes)} helpful</span>
+          )}
+        </div>
       </div>
 
-      {/* Deep Dive link */}
-      {post.needId && (
-        <div className="relative z-10 mt-3 pt-3 border-t">
+      {/* Action row */}
+      <div className="flex items-center gap-4 pt-3 border-t text-sm">
+        <a
+          href={sanitizeExternalUrl(post.sourceUrl)}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors min-h-11 sm:min-h-0"
+        >
+          View original
+          <ExternalLink size={12} aria-hidden="true" />
+        </a>
+        {post.relatedBriefId && (
           <Link
-            href={`/needs/${post.needId}`}
-            onClick={(e) => e.stopPropagation()}
-            className="inline-flex items-center gap-1 text-sm font-medium text-primary hover:underline min-h-11 sm:min-h-0"
-            aria-label={`Deep dive into "${post.excerpt.slice(0, 50)}…"`}
+            href={`/briefs/${post.relatedBriefId}`}
+            className="inline-flex items-center gap-1 font-medium text-primary hover:underline ml-auto min-h-11 sm:min-h-0"
           >
-            Deep Dive
-            <ExternalLink size={12} aria-hidden="true" />
+            Related Brief &rarr;
           </Link>
-        </div>
-      )}
+        )}
+      </div>
     </article>
   );
 }

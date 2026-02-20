@@ -1,18 +1,16 @@
 "use client";
 
 import Link from "next/link";
-import { MessageSquareWarning } from "lucide-react";
+import { TrendingUp, MessageSquareWarning } from "lucide-react";
 import type { Product } from "@/shared/types";
-import { PlatformIcon } from "@/shared/ui/platform-icon";
-import { SentimentBadge } from "@/shared/ui/sentiment-badge";
-import { BookmarkButton } from "@/shared/ui/bookmark-button";
 
 interface ProductCardProps {
   product: Product;
-  onBookmarkToggle: (productId: string) => void;
 }
 
-export function ProductCard({ product, onBookmarkToggle }: ProductCardProps) {
+export function ProductCard({ product }: ProductCardProps) {
+  const initial = product.name[0]?.toUpperCase() ?? "?";
+
   return (
     <article className="group relative rounded-lg border bg-card p-4 transition-shadow hover:shadow-md">
       <Link
@@ -21,36 +19,45 @@ export function ProductCard({ product, onBookmarkToggle }: ProductCardProps) {
         aria-label={`View product: ${product.name}`}
       />
 
-      <div className="relative z-10 flex items-start justify-between gap-2 mb-2">
-        <div className="flex items-center gap-2">
-          <h3 className="text-base font-semibold leading-snug">
+      {/* Header: icon + name */}
+      <div className="relative z-10 flex items-center gap-3 mb-2 pointer-events-none">
+        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-muted text-sm font-bold shrink-0">
+          {initial}
+        </div>
+        <div className="min-w-0">
+          <h3 className="text-base font-semibold leading-snug truncate">
             {product.name}
           </h3>
-          <SentimentBadge level={product.sentimentLevel} />
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <span>{product.category}</span>
+            {product.trendingIndicator && (
+              <span className="inline-flex items-center gap-0.5 text-primary">
+                <TrendingUp size={12} aria-hidden="true" />
+                Trending
+              </span>
+            )}
+          </div>
         </div>
-        <BookmarkButton
-          isBookmarked={product.isBookmarked}
-          onToggle={() => onBookmarkToggle(product.id)}
-        />
       </div>
 
-      <p className="relative z-10 text-sm text-muted-foreground leading-relaxed line-clamp-2 mb-3 pointer-events-none">
-        {product.description}
-      </p>
+      {/* Complaint count + top issue */}
+      <div className="relative z-10 flex items-center gap-2 text-sm text-muted-foreground mb-3 pointer-events-none">
+        <MessageSquareWarning size={14} className="shrink-0" aria-hidden="true" />
+        <span>{product.complaintCount} complaints</span>
+        <span aria-hidden="true">·</span>
+        <span className="truncate">Top: &ldquo;{product.topIssue}&rdquo;</span>
+      </div>
 
-      <div className="relative z-10 flex items-center gap-4 pointer-events-none">
-        <div className="flex items-center gap-1">
-          {product.platforms.map((platform) => (
-            <PlatformIcon key={platform} platform={platform} size={14} />
-          ))}
-        </div>
-        <span className="flex items-center gap-1 text-xs text-muted-foreground">
-          <MessageSquareWarning size={12} />
-          {product.complaintCount} complaints
-        </span>
-        <span className="ml-auto text-xs text-muted-foreground truncate max-w-[200px]">
-          {product.topIssue}
-        </span>
+      {/* Tags */}
+      <div className="relative z-10 flex flex-wrap gap-1 pointer-events-none">
+        {product.tags.map((tag) => (
+          <span
+            key={tag}
+            className="inline-flex items-center rounded-full bg-secondary px-2 py-0.5 text-xs text-secondary-foreground"
+          >
+            {tag}
+          </span>
+        ))}
       </div>
     </article>
   );

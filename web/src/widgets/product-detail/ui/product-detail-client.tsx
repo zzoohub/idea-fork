@@ -2,137 +2,122 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { ExternalLink } from "lucide-react";
 import type { ProductDetail } from "@/shared/types";
 import { BackLink } from "@/shared/ui/back-link";
-import { BookmarkButton } from "@/shared/ui/bookmark-button";
-import { BriefSection } from "@/features/paywall";
-import { PlatformIcon } from "@/shared/ui/platform-icon";
-import { SentimentBadge } from "@/shared/ui/sentiment-badge";
-import { SourcePostList } from "@/shared/ui/source-post-list";
-import { TrendIndicator } from "@/shared/ui/trend-indicator";
-import { Sparkline } from "@/shared/ui/sparkline";
-import { toast } from "sonner";
+import { SourceSnippet } from "@/shared/ui/source-snippet";
+import { sanitizeExternalUrl } from "@/shared/lib/utils";
 
 interface ProductDetailClientProps {
   product: ProductDetail;
 }
 
 export function ProductDetailClient({ product }: ProductDetailClientProps) {
-  const [isBookmarked, setIsBookmarked] = useState(product.isBookmarked);
+  const [showAllComplaints, setShowAllComplaints] = useState(false);
+
+  const allComplaints = product.complaintBreakdown.flatMap((t) => t.posts);
+  const visibleComplaints = showAllComplaints
+    ? allComplaints
+    : allComplaints.slice(0, 5);
+
+  const initial = product.name[0]?.toUpperCase() ?? "?";
 
   return (
     <div>
-      {/* Header */}
-      <div className="flex items-center justify-between mb-4">
+      {/* Back link */}
+      <div className="mb-4">
         <BackLink href="/products" label="Back to Products" />
-        <BookmarkButton
-          isBookmarked={isBookmarked}
-          onToggle={() => {
-            setIsBookmarked(!isBookmarked);
-            toast(
-              isBookmarked ? "Removed from bookmarks" : "Saved to bookmarks"
-            );
-          }}
-        />
       </div>
 
-      <h1 className="text-2xl font-bold tracking-tight mb-1">
-        {product.name}
-      </h1>
-      <p className="text-xs text-muted-foreground mb-6">
-        {product.category} &mdash; launched{" "}
-        {new Date(product.launchDate).toLocaleDateString("en-US", {
-          month: "short",
-          day: "numeric",
-          year: "numeric",
-        })}
-      </p>
+      {/* Product header */}
+      <div className="flex items-center gap-4 mb-2">
+        <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-muted text-lg font-bold shrink-0">
+          {initial}
+        </div>
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">{product.name}</h1>
+          <p className="text-sm text-muted-foreground">
+            {product.category}
+          </p>
+        </div>
+      </div>
 
-      {/* Stacked sections */}
-      <div className="space-y-4">
-        {/* 1. Overview — always visible */}
-        <BriefSection title="Overview">
-          <p className="text-sm leading-relaxed mb-4">{product.description}</p>
-          <div className="flex flex-wrap items-center gap-4">
-            <div className="flex items-center gap-1.5">
-              {product.platforms.map((platform) => (
-                <PlatformIcon
-                  key={platform}
-                  platform={platform}
-                  showName
-                  size={14}
-                />
-              ))}
-            </div>
-            <SentimentBadge level={product.sentimentLevel} />
-            <span className="text-xs text-muted-foreground">
-              {product.complaintCount} total complaints
-            </span>
-          </div>
-        </BriefSection>
+      {product.websiteUrl && (
+        <a
+          href={sanitizeExternalUrl(product.websiteUrl)}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-1 text-sm text-primary hover:underline mb-6 min-h-11 sm:min-h-0"
+        >
+          Visit website
+          <ExternalLink size={12} aria-hidden="true" />
+        </a>
+      )}
 
-        {/* 2. Complaint Breakdown — Pro only */}
-        <BriefSection title="Complaint Breakdown" requiresPro>
-          <div className="space-y-6">
+      {/* Complaint Summary */}
+      <div className="mb-8">
+        <h2 className="text-lg font-semibold mb-3">Complaint Summary</h2>
+        <p className="text-sm text-muted-foreground mb-4">
+          {product.complaintCount} complaints across{" "}
+          {product.platforms.length} platform
+          {product.platforms.length !== 1 && "s"}
+        </p>
+        <div className="space-y-2">
+          <h3 className="text-sm font-medium">Top themes:</h3>
+          <ul className="space-y-1.5">
             {product.complaintBreakdown.map((theme) => (
-              <div key={theme.theme}>
-                <div className="flex items-center justify-between mb-2">
-                  <h3 className="text-sm font-medium">{theme.theme}</h3>
-                  <span className="text-xs text-muted-foreground">
-                    {theme.postCount} posts
-                  </span>
-                </div>
-                <SourcePostList posts={theme.posts} compact />
-              </div>
+              <li
+                key={theme.theme}
+                className="flex items-center gap-2 text-sm"
+              >
+                <span className="text-muted-foreground">-</span>
+                <span>{theme.theme}</span>
+                <span className="text-xs text-muted-foreground">
+                  ({theme.postCount} posts)
+                </span>
+              </li>
             ))}
-          </div>
-        </BriefSection>
-
-        {/* 3. Sentiment Trend — Pro only */}
-        <BriefSection title="Sentiment Trend" requiresPro>
-          <div className="flex items-center gap-6 mb-4">
-            <div>
-              <span className="text-xs text-muted-foreground">Trend</span>
-              <div className="mt-1">
-                <TrendIndicator trend={product.sentimentTrend} />
-              </div>
-            </div>
-            <div>
-              <span className="text-xs text-muted-foreground">
-                Top Issue
-              </span>
-              <p className="text-sm font-medium">{product.topIssue}</p>
-            </div>
-          </div>
-          <Sparkline
-            data={product.sparklineData}
-            width={600}
-            height={48}
-            className="w-full text-primary"
-          />
-        </BriefSection>
+          </ul>
+        </div>
       </div>
 
-      {/* Related briefs */}
+      {/* User Complaints */}
+      <div className="mb-8">
+        <h2 className="text-lg font-semibold mb-4">
+          User Complaints ({allComplaints.length})
+        </h2>
+        <div className="space-y-3">
+          {visibleComplaints.map((post) => (
+            <SourceSnippet key={post.id} post={post} />
+          ))}
+        </div>
+        {!showAllComplaints && allComplaints.length > 5 && (
+          <button
+            type="button"
+            onClick={() => setShowAllComplaints(true)}
+            className="mt-3 text-sm font-medium text-primary hover:underline min-h-11 sm:min-h-0"
+          >
+            Show all {allComplaints.length} complaints
+          </button>
+        )}
+      </div>
+
+      {/* Related Brief */}
       {product.relatedBriefs.length > 0 && (
-        <div className="mt-6">
-          <h2 className="text-sm font-semibold text-muted-foreground mb-3">
-            Related briefs
-          </h2>
-          <div className="flex flex-wrap gap-2">
-            {product.relatedBriefs.map((brief) => (
-              <Link
-                key={brief.id}
-                href={`/briefs/${brief.id}`}
-                className="rounded-full bg-secondary px-3 py-1.5 text-sm hover:bg-accent transition-colors min-h-[36px] flex items-center"
-              >
-                {brief.title}
-                <span className="text-muted-foreground ml-1.5">
-                  ({brief.postCount})
-                </span>
-              </Link>
-            ))}
-          </div>
+        <div>
+          <h2 className="text-lg font-semibold mb-4">Related Brief</h2>
+          {product.relatedBriefs.map((brief) => (
+            <Link
+              key={brief.id}
+              href={`/briefs/${brief.id}`}
+              className="block rounded-lg border bg-card p-4 hover:shadow-md transition-shadow"
+            >
+              <h3 className="text-sm font-semibold mb-1">{brief.title}</h3>
+              <span className="text-xs text-muted-foreground">
+                {brief.postCount} posts
+              </span>
+            </Link>
+          ))}
         </div>
       )}
     </div>

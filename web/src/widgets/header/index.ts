@@ -1,1 +1,1 @@
-export { Header } from "./ui/header";
+export { Header, BottomTabBar } from "./ui/header";

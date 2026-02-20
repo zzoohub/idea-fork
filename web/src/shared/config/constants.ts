@@ -65,10 +65,7 @@ export const FILTERABLE_TAGS: TagType[] = [
   "feature-request",
 ];
 
-export const FEED_BATCH_SIZE_DESKTOP = 20;
-export const FEED_BATCH_SIZE_MOBILE = 10;
-export const FREE_DEEP_DIVES_PER_DAY = 3;
-export const PRO_PRICE_MONTHLY = 9;
+export const FEED_PAGE_SIZE = 20;
 
 export const BREAKPOINTS = {
   mobile: 640,

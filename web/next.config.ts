@@ -8,7 +8,7 @@ const securityHeaders = [
   // Content-Type, which can turn benign downloads into executable scripts.
   { key: "X-Content-Type-Options", value: "nosniff" },
 
-  // Deny framing of any Mealio page to block clickjacking.
+  // Deny framing of any idea-fork page to block clickjacking.
   { key: "X-Frame-Options", value: "DENY" },
 
   // Restrict the Referer header to the origin only when navigating to

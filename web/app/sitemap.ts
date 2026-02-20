@@ -1,18 +1,19 @@
 import type { MetadataRoute } from "next";
-import { mockBriefDetails, mockNeedDetails } from "@/shared/mocks/data";
+import { mockBriefDetails, mockProductDetails } from "@/shared/mocks/data";
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://mealio.app";
+  const baseUrl =
+    process.env.NEXT_PUBLIC_APP_URL ?? "https://idea-fork.app";
 
   const briefUrls = mockBriefDetails.map((brief) => ({
     url: `${baseUrl}/briefs/${brief.id}`,
-    lastModified: new Date(brief.cycleDate),
+    lastModified: new Date(),
     changeFrequency: "weekly" as const,
     priority: 0.8,
   }));
 
-  const needUrls = mockNeedDetails.map((need) => ({
-    url: `${baseUrl}/needs/${need.id}`,
+  const productUrls = mockProductDetails.map((product) => ({
+    url: `${baseUrl}/products/${product.id}`,
     lastModified: new Date(),
     changeFrequency: "weekly" as const,
     priority: 0.7,
@@ -32,12 +33,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.9,
     },
     {
-      url: `${baseUrl}/pricing`,
+      url: `${baseUrl}/products`,
       lastModified: new Date(),
-      changeFrequency: "monthly",
-      priority: 0.5,
+      changeFrequency: "daily",
+      priority: 0.9,
     },
     ...briefUrls,
-    ...needUrls,
+    ...productUrls,
   ];
 }

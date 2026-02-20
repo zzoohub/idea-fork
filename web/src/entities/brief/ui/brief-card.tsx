@@ -2,16 +2,14 @@
 
 import Link from "next/link";
 import type { Brief } from "@/shared/types";
-import { PlatformIcon } from "@/shared/ui/platform-icon";
-import { OpportunityScore } from "@/shared/ui/opportunity-score";
-import { BookmarkButton } from "@/shared/ui/bookmark-button";
+import { DemandSignals } from "@/shared/ui/demand-signals";
+import { Chip } from "@/shared/ui/chip";
 
 interface BriefCardProps {
   brief: Brief;
-  onBookmarkToggle: (briefId: string) => void;
 }
 
-export function BriefCard({ brief, onBookmarkToggle }: BriefCardProps) {
+export function BriefCard({ brief }: BriefCardProps) {
   return (
     <article className="group relative rounded-lg border bg-card p-4 transition-shadow hover:shadow-md">
       <Link
@@ -20,11 +18,15 @@ export function BriefCard({ brief, onBookmarkToggle }: BriefCardProps) {
         aria-label={`Read brief: ${brief.title}`}
       />
 
-      <div className="relative z-10 flex items-start justify-between gap-2 mb-2">
-        <h3 className="text-base font-semibold leading-snug">{brief.title}</h3>
-        <BookmarkButton
-          isBookmarked={brief.isBookmarked}
-          onToggle={() => onBookmarkToggle(brief.id)}
+      <h3 className="relative z-10 text-base font-semibold leading-snug mb-2 pointer-events-none">
+        {brief.title}
+      </h3>
+
+      <div className="relative z-10 mb-2 pointer-events-none">
+        <DemandSignals
+          postCount={brief.postCount}
+          platforms={brief.platforms}
+          recencyLabel={brief.recencyLabel}
         />
       </div>
 
@@ -32,18 +34,15 @@ export function BriefCard({ brief, onBookmarkToggle }: BriefCardProps) {
         {brief.summary}
       </p>
 
-      <div className="relative z-10 flex items-center gap-4 pointer-events-none">
-        <span className="text-xs text-muted-foreground">
-          {brief.postCount} posts
-        </span>
-        <div className="flex items-center gap-1">
-          {brief.platforms.map((platform) => (
-            <PlatformIcon key={platform} platform={platform} size={14} />
-          ))}
-        </div>
-        <div className="ml-auto w-32">
-          <OpportunityScore score={brief.opportunityScore} />
-        </div>
+      <div className="relative z-10 flex flex-wrap gap-1 pointer-events-none">
+        {brief.tags.map((tag) => (
+          <span
+            key={tag}
+            className="inline-flex items-center rounded-full bg-secondary px-2 py-0.5 text-xs text-secondary-foreground"
+          >
+            {tag}
+          </span>
+        ))}
       </div>
     </article>
   );

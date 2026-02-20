@@ -59,6 +59,11 @@
   --color-tag-feature-request: #059669;
   --color-tag-other: #6B7280;
 
+  /* Feedback / semantic */
+  --color-positive: #16a34a;
+  --color-negative: #dc2626;
+  --color-warning: #d97706;
+
   /* Custom max-widths */
   --container-content: 1280px;
   --container-feed: 720px;

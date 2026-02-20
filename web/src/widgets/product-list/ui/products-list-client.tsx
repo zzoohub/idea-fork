@@ -1,29 +1,46 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useMemo } from "react";
 import type { ProductSortMode } from "@/shared/types";
 import { mockProducts } from "@/shared/mocks/data";
 import { ProductCard } from "@/entities/product";
-import { Button } from "@/shared/ui/button";
-import { toast } from "sonner";
+import { SortDropdown } from "@/shared/ui/sort-dropdown";
+import { Chip } from "@/shared/ui/chip";
+
+const SORT_OPTIONS: { value: ProductSortMode; label: string }[] = [
+  { value: "complaints", label: "Most Complaints" },
+  { value: "trending", label: "Trending" },
+  { value: "recent", label: "Recent" },
+];
 
 export function ProductsListClient() {
-  const [sortMode, setSortMode] = useState<ProductSortMode>("trending");
-  const [products, setProducts] = useState(mockProducts);
+  const [sortMode, setSortMode] = useState<ProductSortMode>("complaints");
+  const [activeCategory, setActiveCategory] = useState<string | null>(null);
 
-  const handleBookmarkToggle = useCallback((productId: string) => {
-    setProducts((prev) =>
-      prev.map((p) =>
-        p.id === productId ? { ...p, isBookmarked: !p.isBookmarked } : p
-      )
-    );
-    toast("Bookmark updated");
-  }, []);
+  const categories = useMemo(
+    () => [...new Set(mockProducts.map((p) => p.category))],
+    []
+  );
 
-  const sortedProducts = [...products].sort((a, b) => {
-    if (sortMode === "trending") return b.complaintCount - a.complaintCount;
-    return new Date(b.launchDate).getTime() - new Date(a.launchDate).getTime();
-  });
+  const sortedProducts = useMemo(() => {
+    let products = [...mockProducts];
+
+    if (activeCategory) {
+      products = products.filter((p) => p.category === activeCategory);
+    }
+
+    if (sortMode === "complaints") {
+      products.sort((a, b) => b.complaintCount - a.complaintCount);
+    } else if (sortMode === "trending") {
+      products.sort((a, b) => {
+        if (a.trendingIndicator && !b.trendingIndicator) return -1;
+        if (!a.trendingIndicator && b.trendingIndicator) return 1;
+        return b.complaintCount - a.complaintCount;
+      });
+    }
+
+    return products;
+  }, [sortMode, activeCategory]);
 
   return (
     <>
@@ -33,39 +50,41 @@ export function ProductsListClient() {
           <div>
             <h1 className="text-2xl font-bold tracking-tight">Products</h1>
             <p className="text-sm text-muted-foreground mt-1">
-              Trending and newly launched products with aggregated user
-              complaints
+              Trending products paired with user complaints.
             </p>
           </div>
-          <div className="flex items-center gap-1 shrink-0">
-            <Button
-              variant={sortMode === "trending" ? "default" : "ghost"}
-              size="sm"
-              onClick={() => setSortMode("trending")}
-              className="min-h-11 sm:min-h-0"
-            >
-              Trending
-            </Button>
-            <Button
-              variant={sortMode === "new" ? "default" : "ghost"}
-              size="sm"
-              onClick={() => setSortMode("new")}
-              className="min-h-11 sm:min-h-0"
-            >
-              New
-            </Button>
-          </div>
+          <SortDropdown
+            options={SORT_OPTIONS}
+            value={sortMode}
+            onChange={setSortMode}
+            className="shrink-0"
+          />
         </div>
       </div>
 
-      {/* Product cards */}
-      <div className="space-y-3">
-        {sortedProducts.map((product) => (
-          <ProductCard
-            key={product.id}
-            product={product}
-            onBookmarkToggle={handleBookmarkToggle}
+      {/* Category filter chips */}
+      <div className="flex gap-2 overflow-x-auto pb-1 mb-4 -mx-4 px-4 sm:mx-0 sm:px-0 scrollbar-none">
+        <Chip
+          label="All"
+          active={activeCategory === null}
+          onClick={() => setActiveCategory(null)}
+        />
+        {categories.map((cat) => (
+          <Chip
+            key={cat}
+            label={cat}
+            active={activeCategory === cat}
+            onClick={() =>
+              setActiveCategory(activeCategory === cat ? null : cat)
+            }
           />
+        ))}
+      </div>
+
+      {/* Product cards */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        {sortedProducts.map((product) => (
+          <ProductCard key={product.id} product={product} />
         ))}
       </div>
     </>

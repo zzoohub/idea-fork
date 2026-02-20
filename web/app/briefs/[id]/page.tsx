@@ -12,12 +12,13 @@ export async function generateMetadata({
   const { id } = await params;
   const brief = mockBriefDetails.find((b) => b.id === id);
   if (!brief) return { title: "Brief not found" };
+  const description = brief.sections[0]?.body.slice(0, 160) ?? "";
   return {
     title: brief.title,
-    description: brief.problemSummary.slice(0, 160),
+    description,
     openGraph: {
-      title: `${brief.title} — Mealio`,
-      description: brief.problemSummary.slice(0, 160),
+      title: `${brief.title} — idea-fork`,
+      description,
     },
   };
 }

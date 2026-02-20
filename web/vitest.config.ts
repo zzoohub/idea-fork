@@ -15,8 +15,6 @@ export default defineConfig({
         "src/shared/lib/utils.ts",
         "src/shared/config/constants.ts",
         "src/shared/ui/tag-badge.tsx",
-        "src/shared/ui/opportunity-score.tsx",
-        "src/shared/ui/sparkline.tsx",
         "src/shared/ui/empty-state.tsx",
       ],
       thresholds: {

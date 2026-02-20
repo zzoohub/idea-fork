@@ -2,17 +2,10 @@ import type {
   FeedPost,
   Brief,
   BriefDetail,
-  NeedDetail,
-  Bookmark,
-  TrackedKeyword,
-  User,
-  Cycle,
-  TrendingKeyword,
   Product,
   ProductDetail,
 } from "@/shared/types";
 
-// Helper to create ISO timestamps relative to now
 function hoursAgo(h: number): string {
   return new Date(Date.now() - h * 3600000).toISOString();
 }
@@ -33,8 +26,7 @@ export const mockFeedPosts: FeedPost[] = [
     upvotes: 142,
     comments: 47,
     createdAt: hoursAgo(2),
-    needId: "need-1",
-    isBookmarked: false,
+    relatedBriefId: "brief-1",
   },
   {
     id: "fp-2",
@@ -49,8 +41,7 @@ export const mockFeedPosts: FeedPost[] = [
     comments: 0,
     helpfulVotes: 38,
     createdAt: hoursAgo(5),
-    needId: "need-2",
-    isBookmarked: false,
+    relatedBriefId: "brief-2",
   },
   {
     id: "fp-3",
@@ -64,8 +55,6 @@ export const mockFeedPosts: FeedPost[] = [
     upvotes: 23,
     comments: 12,
     createdAt: hoursAgo(8),
-    needId: "need-3",
-    isBookmarked: true,
   },
   {
     id: "fp-4",
@@ -79,8 +68,7 @@ export const mockFeedPosts: FeedPost[] = [
     upvotes: 89,
     comments: 31,
     createdAt: hoursAgo(12),
-    needId: "need-1",
-    isBookmarked: false,
+    relatedBriefId: "brief-1",
   },
   {
     id: "fp-5",
@@ -95,8 +83,7 @@ export const mockFeedPosts: FeedPost[] = [
     comments: 0,
     helpfulVotes: 15,
     createdAt: daysAgo(1),
-    needId: "need-1",
-    isBookmarked: false,
+    relatedBriefId: "brief-1",
   },
   {
     id: "fp-6",
@@ -110,8 +97,7 @@ export const mockFeedPosts: FeedPost[] = [
     upvotes: 67,
     comments: 28,
     createdAt: daysAgo(1),
-    needId: "need-1",
-    isBookmarked: false,
+    relatedBriefId: "brief-1",
   },
   {
     id: "fp-7",
@@ -125,8 +111,7 @@ export const mockFeedPosts: FeedPost[] = [
     upvotes: 234,
     comments: 89,
     createdAt: hoursAgo(3),
-    needId: "need-4",
-    isBookmarked: false,
+    relatedBriefId: "brief-3",
   },
   {
     id: "fp-8",
@@ -140,8 +125,7 @@ export const mockFeedPosts: FeedPost[] = [
     upvotes: 45,
     comments: 18,
     createdAt: hoursAgo(6),
-    needId: "need-5",
-    isBookmarked: false,
+    relatedBriefId: "brief-4",
   },
   {
     id: "fp-9",
@@ -156,7 +140,6 @@ export const mockFeedPosts: FeedPost[] = [
     comments: 0,
     helpfulVotes: 52,
     createdAt: hoursAgo(10),
-    isBookmarked: false,
   },
   {
     id: "fp-10",
@@ -170,8 +153,7 @@ export const mockFeedPosts: FeedPost[] = [
     upvotes: 178,
     comments: 56,
     createdAt: hoursAgo(4),
-    needId: "need-5",
-    isBookmarked: false,
+    relatedBriefId: "brief-5",
   },
   {
     id: "fp-11",
@@ -185,7 +167,6 @@ export const mockFeedPosts: FeedPost[] = [
     upvotes: 312,
     comments: 124,
     createdAt: hoursAgo(1),
-    isBookmarked: false,
   },
   {
     id: "fp-12",
@@ -200,7 +181,7 @@ export const mockFeedPosts: FeedPost[] = [
     comments: 0,
     helpfulVotes: 29,
     createdAt: daysAgo(2),
-    isBookmarked: false,
+    relatedBriefId: "brief-6",
   },
   {
     id: "fp-13",
@@ -214,7 +195,6 @@ export const mockFeedPosts: FeedPost[] = [
     upvotes: 67,
     comments: 34,
     createdAt: hoursAgo(14),
-    isBookmarked: false,
   },
   {
     id: "fp-14",
@@ -228,7 +208,6 @@ export const mockFeedPosts: FeedPost[] = [
     upvotes: 156,
     comments: 72,
     createdAt: hoursAgo(7),
-    isBookmarked: false,
   },
   {
     id: "fp-15",
@@ -243,7 +222,6 @@ export const mockFeedPosts: FeedPost[] = [
     comments: 0,
     helpfulVotes: 44,
     createdAt: daysAgo(1),
-    isBookmarked: false,
   },
   {
     id: "fp-16",
@@ -257,7 +235,6 @@ export const mockFeedPosts: FeedPost[] = [
     upvotes: 201,
     comments: 67,
     createdAt: hoursAgo(9),
-    isBookmarked: false,
   },
   {
     id: "fp-17",
@@ -271,7 +248,6 @@ export const mockFeedPosts: FeedPost[] = [
     upvotes: 34,
     comments: 8,
     createdAt: hoursAgo(11),
-    isBookmarked: false,
   },
   {
     id: "fp-18",
@@ -285,7 +261,7 @@ export const mockFeedPosts: FeedPost[] = [
     upvotes: 445,
     comments: 187,
     createdAt: hoursAgo(5),
-    isBookmarked: false,
+    relatedBriefId: "brief-7",
   },
   {
     id: "fp-19",
@@ -300,7 +276,6 @@ export const mockFeedPosts: FeedPost[] = [
     comments: 0,
     helpfulVotes: 67,
     createdAt: daysAgo(3),
-    isBookmarked: false,
   },
   {
     id: "fp-20",
@@ -314,7 +289,6 @@ export const mockFeedPosts: FeedPost[] = [
     upvotes: 567,
     comments: 234,
     createdAt: hoursAgo(3),
-    isBookmarked: false,
   },
   {
     id: "fp-21",
@@ -329,7 +303,6 @@ export const mockFeedPosts: FeedPost[] = [
     comments: 0,
     helpfulVotes: 33,
     createdAt: hoursAgo(16),
-    isBookmarked: false,
   },
   {
     id: "fp-22",
@@ -343,7 +316,6 @@ export const mockFeedPosts: FeedPost[] = [
     upvotes: 198,
     comments: 76,
     createdAt: hoursAgo(6),
-    isBookmarked: false,
   },
   {
     id: "fp-23",
@@ -357,7 +329,6 @@ export const mockFeedPosts: FeedPost[] = [
     upvotes: 19,
     comments: 7,
     createdAt: daysAgo(2),
-    isBookmarked: false,
   },
   {
     id: "fp-24",
@@ -371,7 +342,6 @@ export const mockFeedPosts: FeedPost[] = [
     upvotes: 123,
     comments: 45,
     createdAt: hoursAgo(13),
-    isBookmarked: false,
   },
   {
     id: "fp-25",
@@ -386,7 +356,6 @@ export const mockFeedPosts: FeedPost[] = [
     comments: 0,
     helpfulVotes: 21,
     createdAt: daysAgo(4),
-    isBookmarked: false,
   },
   {
     id: "fp-26",
@@ -400,7 +369,6 @@ export const mockFeedPosts: FeedPost[] = [
     upvotes: 89,
     comments: 41,
     createdAt: hoursAgo(15),
-    isBookmarked: false,
   },
   {
     id: "fp-27",
@@ -414,7 +382,6 @@ export const mockFeedPosts: FeedPost[] = [
     upvotes: 78,
     comments: 42,
     createdAt: hoursAgo(4),
-    isBookmarked: false,
   },
   {
     id: "fp-28",
@@ -429,7 +396,6 @@ export const mockFeedPosts: FeedPost[] = [
     comments: 0,
     helpfulVotes: 57,
     createdAt: hoursAgo(18),
-    isBookmarked: false,
   },
   {
     id: "fp-29",
@@ -443,7 +409,7 @@ export const mockFeedPosts: FeedPost[] = [
     upvotes: 234,
     comments: 98,
     createdAt: hoursAgo(7),
-    isBookmarked: false,
+    relatedBriefId: "brief-8",
   },
   {
     id: "fp-30",
@@ -457,9 +423,7 @@ export const mockFeedPosts: FeedPost[] = [
     upvotes: 145,
     comments: 63,
     createdAt: hoursAgo(10),
-    isBookmarked: false,
   },
-  // GitHub Trending posts
   {
     id: "fp-31",
     platform: "github",
@@ -472,7 +436,7 @@ export const mockFeedPosts: FeedPost[] = [
     upvotes: 2100,
     comments: 45,
     createdAt: hoursAgo(4),
-    isBookmarked: false,
+    relatedBriefId: "brief-1",
   },
   {
     id: "fp-32",
@@ -486,7 +450,7 @@ export const mockFeedPosts: FeedPost[] = [
     upvotes: 5200,
     comments: 128,
     createdAt: hoursAgo(6),
-    isBookmarked: false,
+    relatedBriefId: "brief-8",
   },
   {
     id: "fp-33",
@@ -500,10 +464,13 @@ export const mockFeedPosts: FeedPost[] = [
     upvotes: 3400,
     comments: 67,
     createdAt: hoursAgo(2),
-    needId: "need-4",
-    isBookmarked: false,
+    relatedBriefId: "brief-3",
   },
 ];
+
+export const ALL_FEED_TAGS = [
+  ...new Set(mockFeedPosts.map((p) => p.tag)),
+] as const;
 
 export const mockBriefs: Brief[] = [
   {
@@ -513,10 +480,8 @@ export const mockBriefs: Brief[] = [
       "Freelancers are frustrated with bloated, expensive invoicing tools that don't handle recurring billing well. There is a clear gap for a simple, affordable solution.",
     postCount: 83,
     platforms: ["reddit", "appstore"],
-    opportunityScore: 8.2,
-    cycleId: "cycle-1",
-    cycleDate: "2026-02-19",
-    isBookmarked: false,
+    recencyLabel: "Last 30 days",
+    tags: ["SaaS", "invoicing", "freelancer"],
   },
   {
     id: "brief-2",
@@ -525,10 +490,8 @@ export const mockBriefs: Brief[] = [
       "Users can't export dashboards in useful formats. PDF and CSV are inadequate for the analysis workflows users need.",
     postCount: 61,
     platforms: ["reddit", "producthunt"],
-    opportunityScore: 7.5,
-    cycleId: "cycle-1",
-    cycleDate: "2026-02-19",
-    isBookmarked: true,
+    recencyLabel: "Last 30 days",
+    tags: ["SaaS", "export", "analytics"],
   },
   {
     id: "brief-3",
@@ -537,10 +500,8 @@ export const mockBriefs: Brief[] = [
       "Developers want to deploy simple websites without learning Docker, Kubernetes, or complex CI/CD pipelines. The gap between FTP and modern infra is too large.",
     postCount: 54,
     platforms: ["reddit", "producthunt", "github"],
-    opportunityScore: 7.1,
-    cycleId: "cycle-1",
-    cycleDate: "2026-02-19",
-    isBookmarked: false,
+    recencyLabel: "Last 14 days",
+    tags: ["DevTools", "deployment"],
   },
   {
     id: "brief-4",
@@ -549,10 +510,8 @@ export const mockBriefs: Brief[] = [
       "Small teams need a feedback widget that's simpler than Canny or UserVoice. Current tools are designed for enterprise product teams, not 2-person startups.",
     postCount: 47,
     platforms: ["producthunt", "reddit"],
-    opportunityScore: 6.8,
-    cycleId: "cycle-1",
-    cycleDate: "2026-02-19",
-    isBookmarked: false,
+    recencyLabel: "Last 30 days",
+    tags: ["SaaS", "feedback"],
   },
   {
     id: "brief-5",
@@ -561,10 +520,8 @@ export const mockBriefs: Brief[] = [
       "Small business owners want to track 30 customers, not manage a sales pipeline. Every CRM assumes enterprise workflows.",
     postCount: 42,
     platforms: ["reddit"],
-    opportunityScore: 6.5,
-    cycleId: "cycle-1",
-    cycleDate: "2026-02-19",
-    isBookmarked: false,
+    recencyLabel: "Last 30 days",
+    tags: ["SaaS", "CRM"],
   },
   {
     id: "brief-6",
@@ -573,10 +530,8 @@ export const mockBriefs: Brief[] = [
       "Users consistently report that cloud-synced apps fail to sync reliably between devices, leading to data loss and trust erosion.",
     postCount: 38,
     platforms: ["appstore", "playstore"],
-    opportunityScore: 5.9,
-    cycleId: "cycle-1",
-    cycleDate: "2026-02-19",
-    isBookmarked: false,
+    recencyLabel: "Last 14 days",
+    tags: ["Mobile", "sync"],
   },
   {
     id: "brief-7",
@@ -585,10 +540,8 @@ export const mockBriefs: Brief[] = [
       "GA4 migration frustration signals broader demand for simpler analytics. Users want pageview data without building custom reports.",
     postCount: 35,
     platforms: ["reddit"],
-    opportunityScore: 5.4,
-    cycleId: "cycle-1",
-    cycleDate: "2026-02-19",
-    isBookmarked: false,
+    recencyLabel: "Last 7 days",
+    tags: ["SaaS", "analytics"],
   },
   {
     id: "brief-8",
@@ -597,10 +550,8 @@ export const mockBriefs: Brief[] = [
       "Early-stage startups find Intercom and Zendesk prohibitively expensive. They need shared inbox + basic ticketing at a fraction of the price.",
     postCount: 31,
     platforms: ["reddit", "producthunt", "github"],
-    opportunityScore: 5.1,
-    cycleId: "cycle-1",
-    cycleDate: "2026-02-19",
-    isBookmarked: false,
+    recencyLabel: "Last 30 days",
+    tags: ["SaaS", "support"],
   },
 ];
 
@@ -608,9 +559,24 @@ export const mockBriefDetails: BriefDetail[] = [
   {
     id: "brief-1",
     title: "Invoicing Pain Points for Freelancers",
-    cycleDate: "2026-02-19",
-    problemSummary:
-      "83 people expressed frustration about invoicing tools across Reddit (54 posts) and App Store (29 reviews). Key themes: excessive pricing for simple needs, lack of recurring billing for freelancers, bloated UIs that require 10+ clicks to send a basic invoice.",
+    postCount: 83,
+    platforms: ["reddit", "appstore"],
+    recencyLabel: "Active last 30 days",
+    tags: ["SaaS", "invoicing", "freelancer"],
+    sections: [
+      {
+        heading: "Problem",
+        body: "Freelancers consistently report that existing invoicing tools require too much configuration. [1][2] The most common complaint is the lack of recurring invoice templates. [3][4][5] Pricing has also become a major friction point, with multiple tools tripling prices on legacy plans.",
+      },
+      {
+        heading: "Demand Signals",
+        body: "83 posts across Reddit and App Store. 78% negative sentiment. Growing: 15 new posts in last 7 days.",
+      },
+    ],
+    suggestedDirections: [
+      "Minimal invoicing tool focused on recurring templates for solo freelancers",
+      "Invoice plugin/extension for existing tools that simplifies the setup flow",
+    ],
     sourceEvidence: [
       {
         id: "se-1",
@@ -658,30 +624,32 @@ export const mockBriefDetails: BriefDetail[] = [
         createdAt: daysAgo(3),
       },
     ],
-    volume: 83,
-    intensity: "high",
-    trend: "growing",
-    sparklineData: [12, 15, 18, 14, 22, 25, 31, 38],
-    alternatives: [
-      { name: "FreshBooks", sentiment: "too expensive for freelancers", mentionCount: 12 },
-      { name: "Wave", sentiment: "shutting down features", mentionCount: 8 },
-      { name: "Zoho Invoice", sentiment: "terrible UX", mentionCount: 6 },
+    relatedBriefs: [
+      { id: "brief-2", title: "Dashboard Export Limitations Across Tools", postCount: 61 },
+      { id: "brief-5", title: "CRM for Small Businesses, Not Enterprise", postCount: 42 },
     ],
-    opportunitySignal:
-      "High opportunity. Growing demand with clear dissatisfaction with existing tools. Gap: a simple, affordable invoicing tool focused on freelancer recurring billing.",
-    opportunityScore: 8.2,
-    relatedNeeds: [
-      { id: "need-1", title: "Freelancer billing simplicity", postCount: 54 },
-      { id: "need-2", title: "Payment processing complaints", postCount: 41 },
-    ],
-    isBookmarked: false,
   },
   {
     id: "brief-2",
     title: "Dashboard Export Limitations Across Tools",
-    cycleDate: "2026-02-19",
-    problemSummary:
-      "61 users across Reddit and Product Hunt report inability to export dashboard data in useful formats. Most tools only offer PDF or basic CSV, which lose formatting and relationships.",
+    postCount: 61,
+    platforms: ["reddit", "producthunt"],
+    recencyLabel: "Active last 30 days",
+    tags: ["SaaS", "export", "analytics"],
+    sections: [
+      {
+        heading: "Problem",
+        body: "61 users across Reddit and Product Hunt report inability to export dashboard data in useful formats. [1][2] Most tools only offer PDF or basic CSV, which lose formatting and relationships.",
+      },
+      {
+        heading: "Demand Signals",
+        body: "61 posts across 2 platforms. Stable volume over the past month.",
+      },
+    ],
+    suggestedDirections: [
+      "Dashboard export tool that preserves formatting and relationships in Excel/Google Sheets",
+      "API-first dashboard platform with native export in multiple formats",
+    ],
     sourceEvidence: [
       {
         id: "se-6",
@@ -702,28 +670,31 @@ export const mockBriefDetails: BriefDetail[] = [
         createdAt: daysAgo(3),
       },
     ],
-    volume: 61,
-    intensity: "medium",
-    trend: "stable",
-    sparklineData: [8, 10, 9, 11, 10, 12, 11, 10],
-    alternatives: [
-      { name: "Metabase", sentiment: "export limited to CSV", mentionCount: 9 },
-      { name: "Looker", sentiment: "too expensive for small teams", mentionCount: 7 },
+    relatedBriefs: [
+      { id: "brief-1", title: "Invoicing Pain Points for Freelancers", postCount: 83 },
     ],
-    opportunitySignal:
-      "Moderate opportunity. Consistent demand but lower intensity. Users are frustrated but not desperate enough to switch tools solely for this.",
-    opportunityScore: 7.5,
-    relatedNeeds: [
-      { id: "need-3", title: "Data portability expectations", postCount: 38 },
-    ],
-    isBookmarked: true,
   },
   {
     id: "brief-3",
     title: "Simple Deployment for Non-DevOps Developers",
-    cycleDate: "2026-02-19",
-    problemSummary:
-      "54 developers expressed frustration that deploying simple websites requires expertise in Docker, CI/CD, and cloud infrastructure. The jump from localhost to production is too steep.",
+    postCount: 54,
+    platforms: ["reddit", "producthunt", "github"],
+    recencyLabel: "Active last 14 days",
+    tags: ["DevTools", "deployment"],
+    sections: [
+      {
+        heading: "Problem",
+        body: "54 developers expressed frustration that deploying simple websites requires expertise in Docker, CI/CD, and cloud infrastructure. [1][2] The jump from localhost to production is too steep.",
+      },
+      {
+        heading: "Demand Signals",
+        body: "54 posts across 3 platforms. Growing: 18 new posts in last 7 days.",
+      },
+    ],
+    suggestedDirections: [
+      "Zero-config deployment CLI for static sites (drop a folder, get a URL)",
+      "Simplified hosting platform that auto-detects project type",
+    ],
     sourceEvidence: [
       {
         id: "se-8",
@@ -744,299 +715,11 @@ export const mockBriefDetails: BriefDetail[] = [
         createdAt: daysAgo(2),
       },
     ],
-    volume: 54,
-    intensity: "high",
-    trend: "growing",
-    sparklineData: [5, 8, 7, 10, 12, 15, 18, 22],
-    alternatives: [
-      { name: "Vercel", sentiment: "great but framework-specific", mentionCount: 15 },
-      { name: "Netlify", sentiment: "getting too complex", mentionCount: 10 },
-      { name: "Render", sentiment: "good but learning curve", mentionCount: 6 },
+    relatedBriefs: [
+      { id: "brief-7", title: "Analytics Tool Usability Regression", postCount: 35 },
     ],
-    opportunitySignal:
-      "Moderate-high opportunity. Growing frustration with deployment complexity. Vercel/Netlify serve framework users well but miss the simple HTML/CSS/JS use case.",
-    opportunityScore: 7.1,
-    relatedNeeds: [
-      { id: "need-4", title: "Deployment simplicity", postCount: 54 },
-    ],
-    isBookmarked: false,
   },
 ];
-
-export const mockNeedDetails: NeedDetail[] = [
-  {
-    id: "need-1",
-    title: "Invoicing tools are too expensive for freelancers",
-    tag: "complaint",
-    frequency: 83,
-    intensity: 4.2,
-    trend: "growing",
-    sparklineData: [12, 15, 18, 14, 22, 25, 31, 38],
-    sourcePosts: [
-      {
-        id: "sp-1",
-        platform: "reddit",
-        excerpt: "Why is every invoicing tool so bloated and expensive for freelancers?",
-        platformSubSource: "r/SaaS",
-        sourceUrl: "https://reddit.com/r/SaaS/example1",
-        upvotes: 142,
-        createdAt: hoursAgo(2),
-      },
-      {
-        id: "sp-2",
-        platform: "reddit",
-        excerpt: "I just want to send an invoice without learning accounting",
-        platformSubSource: "r/freelance",
-        sourceUrl: "https://reddit.com/r/freelance/example4",
-        upvotes: 89,
-        createdAt: hoursAgo(12),
-      },
-      {
-        id: "sp-3",
-        platform: "appstore",
-        excerpt: "Terrible app. Can't even set recurring invoices.",
-        platformSubSource: "App Store",
-        sourceUrl: "https://apps.apple.com/app/example5",
-        helpfulVotes: 15,
-        createdAt: daysAgo(1),
-      },
-      {
-        id: "sp-4",
-        platform: "reddit",
-        excerpt: "Switched from FreshBooks because the pricing tripled overnight",
-        platformSubSource: "r/Entrepreneur",
-        sourceUrl: "https://reddit.com/r/Entrepreneur/example6",
-        upvotes: 67,
-        createdAt: daysAgo(1),
-      },
-      {
-        id: "sp-5",
-        platform: "appstore",
-        excerpt: "3 stars — recurring billing is missing, a basic feature",
-        platformSubSource: "App Store",
-        sourceUrl: "https://apps.apple.com/app/example5b",
-        helpfulVotes: 8,
-        createdAt: daysAgo(3),
-      },
-    ],
-    totalSourcePosts: 83,
-    relatedClusters: [
-      { id: "need-2", title: "Payment processing complaints", postCount: 41 },
-      { id: "need-3", title: "Freelancer tool pricing", postCount: 29 },
-    ],
-    relatedBrief: {
-      id: "brief-1",
-      title: "Invoicing Pain Points for Freelancers",
-      opportunityScore: 8.2,
-    },
-    isBookmarked: false,
-  },
-  {
-    id: "need-2",
-    title: "Data export and portability missing from apps",
-    tag: "need",
-    frequency: 61,
-    intensity: 3.8,
-    trend: "stable",
-    sparklineData: [8, 10, 9, 11, 10, 12, 11, 10],
-    sourcePosts: [
-      {
-        id: "sp-6",
-        platform: "playstore",
-        excerpt: "Can't export my data. Stuck in this app with no way out.",
-        platformSubSource: "Google Play",
-        sourceUrl: "https://play.google.com/store/apps/example2",
-        helpfulVotes: 38,
-        createdAt: hoursAgo(5),
-      },
-      {
-        id: "sp-7",
-        platform: "reddit",
-        excerpt: "Why can't any dashboard tool export to a proper spreadsheet format?",
-        platformSubSource: "r/analytics",
-        sourceUrl: "https://reddit.com/r/analytics/example-export1",
-        upvotes: 89,
-        createdAt: daysAgo(2),
-      },
-    ],
-    totalSourcePosts: 61,
-    relatedClusters: [
-      { id: "need-1", title: "Invoicing tools too expensive for freelancers", postCount: 83 },
-    ],
-    relatedBrief: {
-      id: "brief-2",
-      title: "Dashboard Export Limitations Across Tools",
-      opportunityScore: 7.5,
-    },
-    isBookmarked: false,
-  },
-  {
-    id: "need-3",
-    title: "Onboarding flows are too long and complex",
-    tag: "complaint",
-    frequency: 47,
-    intensity: 3.5,
-    trend: "growing",
-    sparklineData: [4, 5, 6, 5, 8, 9, 11, 14],
-    sourcePosts: [
-      {
-        id: "sp-8",
-        platform: "producthunt",
-        excerpt: "The onboarding flow took me 20 minutes just to see the product",
-        platformSubSource: "Product Hunt",
-        sourceUrl: "https://producthunt.com/posts/example3",
-        upvotes: 23,
-        createdAt: hoursAgo(8),
-      },
-    ],
-    totalSourcePosts: 47,
-    relatedClusters: [
-      { id: "need-5", title: "Lightweight feedback collection", postCount: 42 },
-    ],
-    isBookmarked: false,
-  },
-  {
-    id: "need-4",
-    title: "Simple deployment without DevOps knowledge",
-    tag: "need",
-    frequency: 54,
-    intensity: 4.0,
-    trend: "growing",
-    sparklineData: [5, 8, 7, 10, 12, 15, 18, 22],
-    sourcePosts: [
-      {
-        id: "sp-9",
-        platform: "reddit",
-        excerpt: "Why can't I deploy a simple static site without a PhD in DevOps?",
-        platformSubSource: "r/webdev",
-        sourceUrl: "https://reddit.com/r/webdev/example7",
-        upvotes: 234,
-        createdAt: hoursAgo(3),
-      },
-    ],
-    totalSourcePosts: 54,
-    relatedClusters: [
-      { id: "need-3", title: "Onboarding flows too complex", postCount: 47 },
-    ],
-    relatedBrief: {
-      id: "brief-3",
-      title: "Simple Deployment for Non-DevOps Developers",
-      opportunityScore: 7.1,
-    },
-    isBookmarked: false,
-  },
-  {
-    id: "need-5",
-    title: "Lightweight feedback and CRM for small teams",
-    tag: "need",
-    frequency: 42,
-    intensity: 3.2,
-    trend: "stable",
-    sparklineData: [6, 7, 5, 7, 6, 8, 7, 8],
-    sourcePosts: [
-      {
-        id: "sp-10",
-        platform: "producthunt",
-        excerpt: "Need a simple way to collect customer feedback without a huge tool",
-        platformSubSource: "Product Hunt",
-        sourceUrl: "https://producthunt.com/posts/example8",
-        upvotes: 45,
-        createdAt: hoursAgo(6),
-      },
-      {
-        id: "sp-11",
-        platform: "reddit",
-        excerpt: "CRM tools are designed for enterprise sales teams, not small businesses",
-        platformSubSource: "r/smallbusiness",
-        sourceUrl: "https://reddit.com/r/smallbusiness/example10",
-        upvotes: 178,
-        createdAt: hoursAgo(4),
-      },
-    ],
-    totalSourcePosts: 42,
-    relatedClusters: [
-      { id: "need-3", title: "Onboarding flows too complex", postCount: 47 },
-    ],
-    isBookmarked: false,
-  },
-];
-
-export const mockBookmarks: Bookmark[] = [
-  {
-    id: "bm-1",
-    type: "brief",
-    itemId: "brief-2",
-    createdAt: hoursAgo(24),
-    item: mockBriefs[1],
-  },
-  {
-    id: "bm-2",
-    type: "feed",
-    itemId: "fp-3",
-    createdAt: hoursAgo(48),
-    item: mockFeedPosts[2],
-  },
-  {
-    id: "bm-3",
-    type: "feed",
-    itemId: "fp-7",
-    createdAt: hoursAgo(72),
-    item: mockFeedPosts[6],
-  },
-  {
-    id: "bm-4",
-    type: "brief",
-    itemId: "brief-1",
-    createdAt: hoursAgo(96),
-    item: mockBriefs[0],
-  },
-  {
-    id: "bm-5",
-    type: "feed",
-    itemId: "fp-11",
-    createdAt: hoursAgo(120),
-    item: mockFeedPosts[10],
-  },
-];
-
-export const mockTrendingKeywords: TrendingKeyword[] = [
-  { keyword: "invoicing", platform: "reddit" },
-  { keyword: "auth", platform: "reddit" },
-  { keyword: "pricing", platform: "reddit" },
-  { keyword: "deploy", platform: "producthunt" },
-  { keyword: "AI", platform: "producthunt" },
-  { keyword: "sync", platform: "appstore" },
-  { keyword: "backup", platform: "appstore" },
-  { keyword: "export", platform: "playstore" },
-  { keyword: "offline", platform: "playstore" },
-  { keyword: "dark mode", platform: "playstore" },
-  { keyword: "open-source", platform: "github" },
-  { keyword: "self-hosted", platform: "github" },
-  { keyword: "CLI tool", platform: "github" },
-];
-
-export const mockTrackedKeywords: TrackedKeyword[] = [
-  { id: "tk-1", keyword: "invoicing", createdAt: daysAgo(14), matchCount: 23 },
-  { id: "tk-2", keyword: "onboarding", createdAt: daysAgo(10), matchCount: 15 },
-  { id: "tk-3", keyword: "HR tech", createdAt: daysAgo(7), matchCount: 8 },
-];
-
-export const mockCycles: Cycle[] = [
-  { id: "cycle-1", date: "2026-02-19", briefCount: 8, postCount: 342 },
-  { id: "cycle-2", date: "2026-02-12", briefCount: 6, postCount: 287 },
-  { id: "cycle-3", date: "2026-02-05", briefCount: 7, postCount: 315 },
-];
-
-export const mockUser: User = {
-  id: "user-1",
-  name: "Alex Kim",
-  email: "alex@example.com",
-  avatarUrl: undefined,
-  tier: "pro",
-  memberSince: "2026-01-15",
-  weeklyDigest: true,
-  nextBillingDate: "2026-03-15",
-};
 
 export const mockProducts: Product[] = [
   {
@@ -1046,21 +729,11 @@ export const mockProducts: Product[] = [
       "Cloud accounting and invoicing software for small businesses and freelancers. Recently tripled pricing on legacy plans.",
     platforms: ["reddit", "producthunt", "appstore"],
     category: "Invoicing",
-    engagementMetrics: {
-      reddit: { mentions: 142, avgSentiment: 2.1 },
-      producthunt: { mentions: 38, avgSentiment: 3.4 },
-      appstore: { mentions: 67, avgSentiment: 2.5 },
-    },
     complaintCount: 247,
-    sentimentLevel: "negative",
     topIssue: "Pricing tripled overnight",
-    launchDate: "2024-09-15",
-    sourceUrls: {
-      reddit: "https://reddit.com/r/Entrepreneur/example6",
-      producthunt: "https://producthunt.com/posts/freshbooks",
-      appstore: "https://apps.apple.com/app/freshbooks",
-    },
-    isBookmarked: false,
+    tags: ["SaaS", "invoicing"],
+    trendingIndicator: true,
+    websiteUrl: "https://freshbooks.com",
   },
   {
     id: "product-2",
@@ -1069,21 +742,11 @@ export const mockProducts: Product[] = [
       "Calendar app integrated with Notion workspace. Syncs tasks, databases, and events across devices.",
     platforms: ["producthunt", "appstore", "playstore"],
     category: "Productivity",
-    engagementMetrics: {
-      producthunt: { mentions: 89, avgSentiment: 3.8 },
-      appstore: { mentions: 54, avgSentiment: 3.2 },
-      playstore: { mentions: 41, avgSentiment: 2.9 },
-    },
     complaintCount: 184,
-    sentimentLevel: "mixed",
     topIssue: "Sync reliability issues",
-    launchDate: "2025-11-20",
-    sourceUrls: {
-      producthunt: "https://producthunt.com/posts/notion-calendar",
-      appstore: "https://apps.apple.com/app/notion-calendar",
-      playstore: "https://play.google.com/store/apps/notion-calendar",
-    },
-    isBookmarked: true,
+    tags: ["Productivity", "calendar"],
+    trendingIndicator: true,
+    websiteUrl: "https://notion.so/calendar",
   },
   {
     id: "product-3",
@@ -1092,21 +755,10 @@ export const mockProducts: Product[] = [
       "Streamlined issue tracking and project management for software teams. Known for speed and keyboard-first UX.",
     platforms: ["producthunt", "reddit", "github"],
     category: "Project Management",
-    engagementMetrics: {
-      producthunt: { mentions: 112, avgSentiment: 4.2 },
-      reddit: { mentions: 98, avgSentiment: 4.0 },
-      github: { mentions: 45, avgSentiment: 4.1 },
-    },
     complaintCount: 73,
-    sentimentLevel: "positive",
     topIssue: "Missing custom fields",
-    launchDate: "2026-01-10",
-    sourceUrls: {
-      producthunt: "https://producthunt.com/posts/linear",
-      reddit: "https://reddit.com/r/SaaS/linear",
-      github: "https://github.com/linear",
-    },
-    isBookmarked: false,
+    tags: ["DevTools", "project-management"],
+    websiteUrl: "https://linear.app",
   },
   {
     id: "product-4",
@@ -1115,19 +767,10 @@ export const mockProducts: Product[] = [
       "Customer feedback management platform for tracking feature requests and prioritizing roadmaps.",
     platforms: ["producthunt", "reddit"],
     category: "Feedback",
-    engagementMetrics: {
-      producthunt: { mentions: 56, avgSentiment: 3.3 },
-      reddit: { mentions: 78, avgSentiment: 3.0 },
-    },
     complaintCount: 134,
-    sentimentLevel: "mixed",
     topIssue: "Too complex for small teams",
-    launchDate: "2025-06-18",
-    sourceUrls: {
-      producthunt: "https://producthunt.com/posts/canny",
-      reddit: "https://reddit.com/r/SaaS/canny",
-    },
-    isBookmarked: false,
+    tags: ["SaaS", "feedback"],
+    websiteUrl: "https://canny.io",
   },
   {
     id: "product-5",
@@ -1136,21 +779,11 @@ export const mockProducts: Product[] = [
       "Frontend cloud platform for deploying web applications. Optimized for Next.js with edge functions and analytics.",
     platforms: ["github", "producthunt", "reddit"],
     category: "Deployment",
-    engagementMetrics: {
-      github: { mentions: 234, avgSentiment: 4.0 },
-      producthunt: { mentions: 67, avgSentiment: 4.1 },
-      reddit: { mentions: 189, avgSentiment: 3.8 },
-    },
     complaintCount: 91,
-    sentimentLevel: "positive",
     topIssue: "Framework lock-in",
-    launchDate: "2026-02-01",
-    sourceUrls: {
-      github: "https://github.com/vercel",
-      producthunt: "https://producthunt.com/posts/vercel",
-      reddit: "https://reddit.com/r/webdev/vercel",
-    },
-    isBookmarked: false,
+    tags: ["DevTools", "deployment"],
+    trendingIndicator: true,
+    websiteUrl: "https://vercel.com",
   },
   {
     id: "product-6",
@@ -1159,19 +792,11 @@ export const mockProducts: Product[] = [
       "Customer messaging platform with live chat, bots, and help desk. Widely used but increasingly expensive.",
     platforms: ["reddit", "producthunt"],
     category: "Customer Support",
-    engagementMetrics: {
-      reddit: { mentions: 167, avgSentiment: 2.3 },
-      producthunt: { mentions: 43, avgSentiment: 2.8 },
-    },
     complaintCount: 210,
-    sentimentLevel: "negative",
     topIssue: "Prohibitively expensive for startups",
-    launchDate: "2025-03-22",
-    sourceUrls: {
-      reddit: "https://reddit.com/r/startups/intercom",
-      producthunt: "https://producthunt.com/posts/intercom",
-    },
-    isBookmarked: false,
+    tags: ["SaaS", "support"],
+    trendingIndicator: true,
+    websiteUrl: "https://intercom.com",
   },
   {
     id: "product-7",
@@ -1180,21 +805,10 @@ export const mockProducts: Product[] = [
       "Conversational form builder with beautiful UI. Popular for surveys, quizzes, and lead generation.",
     platforms: ["producthunt", "reddit", "playstore"],
     category: "Forms",
-    engagementMetrics: {
-      producthunt: { mentions: 45, avgSentiment: 3.5 },
-      reddit: { mentions: 112, avgSentiment: 3.1 },
-      playstore: { mentions: 29, avgSentiment: 3.0 },
-    },
     complaintCount: 156,
-    sentimentLevel: "mixed",
     topIssue: "Conditional logic limitations",
-    launchDate: "2025-08-10",
-    sourceUrls: {
-      producthunt: "https://producthunt.com/posts/typeform",
-      reddit: "https://reddit.com/r/webdev/typeform",
-      playstore: "https://play.google.com/store/apps/typeform",
-    },
-    isBookmarked: false,
+    tags: ["SaaS", "forms"],
+    websiteUrl: "https://typeform.com",
   },
   {
     id: "product-8",
@@ -1203,19 +817,10 @@ export const mockProducts: Product[] = [
       "Lightweight, privacy-friendly web analytics. Open-source alternative to Google Analytics without cookies.",
     platforms: ["github", "producthunt"],
     category: "Analytics",
-    engagementMetrics: {
-      github: { mentions: 312, avgSentiment: 4.3 },
-      producthunt: { mentions: 89, avgSentiment: 4.1 },
-    },
     complaintCount: 48,
-    sentimentLevel: "positive",
     topIssue: "Missing real-time dashboard",
-    launchDate: "2026-01-28",
-    sourceUrls: {
-      github: "https://github.com/plausible/analytics",
-      producthunt: "https://producthunt.com/posts/plausible",
-    },
-    isBookmarked: false,
+    tags: ["DevTools", "analytics"],
+    websiteUrl: "https://plausible.io",
   },
 ];
 
@@ -1241,7 +846,7 @@ export const mockProductDetails: ProductDetail[] = [
             id: "pp-2",
             platform: "reddit",
             excerpt:
-              "FreshBooks just sent me an email that my plan is going up 200%. No new features, just higher prices. Classic bait-and-switch.",
+              "FreshBooks just sent me an email that my plan is going up 200%. No new features, just higher prices.",
             platformSubSource: "r/freelance",
             sourceUrl: "https://reddit.com/r/freelance/freshbooks-pricing",
             upvotes: 134,
@@ -1312,8 +917,6 @@ export const mockProductDetails: ProductDetail[] = [
         ],
       },
     ],
-    sentimentTrend: "declining",
-    sparklineData: [45, 52, 48, 61, 78, 89, 95, 102],
     relatedBriefs: [
       { id: "brief-1", title: "Invoicing Pain Points for Freelancers", postCount: 83 },
     ],
@@ -1374,8 +977,6 @@ export const mockProductDetails: ProductDetail[] = [
         ],
       },
     ],
-    sentimentTrend: "stable",
-    sparklineData: [32, 28, 35, 30, 38, 34, 36, 40],
     relatedBriefs: [
       { id: "brief-6", title: "Cross-Device Sync Reliability Issues", postCount: 38 },
     ],
@@ -1391,7 +992,7 @@ export const mockProductDetails: ProductDetail[] = [
             id: "pp-12",
             platform: "reddit",
             excerpt:
-              "Linear is amazing for speed but the lack of custom fields is a dealbreaker for our team. We need to track priority, effort, and business value.",
+              "Linear is amazing for speed but the lack of custom fields is a dealbreaker for our team.",
             platformSubSource: "r/SaaS",
             sourceUrl: "https://reddit.com/r/SaaS/linear-custom-fields",
             upvotes: 56,
@@ -1417,7 +1018,7 @@ export const mockProductDetails: ProductDetail[] = [
             id: "pp-14",
             platform: "producthunt",
             excerpt:
-              "Linear is perfect for small teams but starts to break down at 50+ engineers. Missing role-based permissions and audit logs.",
+              "Linear is perfect for small teams but starts to break down at 50+ engineers. Missing role-based permissions.",
             platformSubSource: "Product Hunt",
             sourceUrl: "https://producthunt.com/posts/linear-enterprise",
             upvotes: 34,
@@ -1436,8 +1037,6 @@ export const mockProductDetails: ProductDetail[] = [
         ],
       },
     ],
-    sentimentTrend: "growing",
-    sparklineData: [15, 18, 14, 20, 22, 19, 25, 28],
     relatedBriefs: [
       { id: "brief-4", title: "Lightweight Customer Feedback Collection", postCount: 47 },
     ],

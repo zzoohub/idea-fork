@@ -13,12 +13,8 @@ export async function generateMetadata({
   const product = mockProductDetails.find((p) => p.id === id);
   if (!product) return { title: "Product not found" };
   return {
-    title: product.name,
+    title: `${product.name} complaints`,
     description: product.description.slice(0, 160),
-    openGraph: {
-      title: `${product.name} — Mealio`,
-      description: product.description.slice(0, 160),
-    },
   };
 }
 
