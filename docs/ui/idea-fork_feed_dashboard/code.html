@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>idea-fork Feed Dashboard</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#137fec",
+                        "background-light": "#f6f7f8",
+                        "background-dark": "#0b0f14",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.5rem",
+                        "lg": "1rem",
+                        "xl": "1.5rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+<style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .material-symbols-outlined {
+            font-size: 20px;
+        }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 font-display min-h-screen">
+<!-- Top Navigation Bar -->
+<header class="sticky top-0 z-50 w-full border-b border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-background-dark/80 backdrop-blur-md">
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+<div class="flex justify-between items-center h-16">
+<!-- Logo & Nav Links -->
+<div class="flex items-center gap-10">
+<div class="flex items-center gap-2.5">
+<div class="bg-primary p-1.5 rounded-lg flex items-center justify-center text-white">
+<span class="material-symbols-outlined">fork_right</span>
+</div>
+<h1 class="text-xl font-bold tracking-tight text-slate-900 dark:text-white">idea-fork</h1>
+</div>
+<nav class="hidden md:flex items-center gap-8">
+<a class="relative text-sm font-semibold text-primary after:absolute after:-bottom-[22px] after:left-0 after:right-0 after:h-0.5 after:bg-primary" href="#">Feed</a>
+<a class="text-sm font-medium text-slate-500 dark:text-slate-400 hover:text-primary transition-colors" href="#">Briefs</a>
+<a class="text-sm font-medium text-slate-500 dark:text-slate-400 hover:text-primary transition-colors" href="#">Products</a>
+</nav>
+</div>
+<!-- Search Bar & Profile -->
+<div class="flex items-center gap-4 flex-1 justify-end max-w-md">
+<div class="relative w-full hidden sm:block">
+<span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">
+<span class="material-symbols-outlined">search</span>
+</span>
+<input class="block w-full pl-10 pr-12 py-2 bg-slate-100 dark:bg-slate-900 border-none rounded-lg text-sm placeholder:text-slate-500 focus:ring-2 focus:ring-primary/50 text-slate-900 dark:text-white" placeholder="Search complaints..." type="text"/>
+<span class="absolute inset-y-0 right-0 pr-3 flex items-center">
+<kbd class="hidden sm:inline-flex items-center px-1.5 py-0.5 border border-slate-300 dark:border-slate-700 rounded text-[10px] font-medium text-slate-400">⌘K</kbd>
+</span>
+</div>
+<div class="flex items-center gap-3">
+<button class="p-2 text-slate-500 hover:text-primary transition-colors">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<div class="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center border border-primary/30 overflow-hidden">
+<img alt="User Avatar" class="w-full h-full object-cover" data-alt="Minimalist illustrated user avatar profile picture" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAcwWtBh-rW5DMd2bUrSReCffAf8gF29e3kQW1vT_z2LyfgrBN8mDHlqejHi3SlxgUHb23rdYEArAaq_OuvTcPsPkPq6kEOKDMJY05XkEcUWFKPp_0b0C81DlJWpAbjXrxfOPrFTIbju1K-0d2dPULe6RJeDZ3eWxL6aXaNJWrQvb_f8OTqVyKxGFUQOVewG6ky260EUYHt9_tN5imu33M9a-rUH2U8ehoPJDFHb2GJ-jSbEzApQmkMz2nynsxbT9cXw_t1TaAyM8k"/>
+</div>
+</div>
+</div>
+</div>
+</div>
+</header>
+<main class="max-w-4xl mx-auto px-4 py-8">
+<!-- Filter Bar -->
+<div class="mb-8 space-y-4">
+<div class="flex items-center justify-between gap-4 flex-wrap">
+<div class="flex items-center gap-2 overflow-x-auto no-scrollbar pb-2 sm:pb-0">
+<button class="whitespace-nowrap px-4 py-1.5 rounded-full bg-primary text-white text-sm font-medium">SaaS</button>
+<button class="whitespace-nowrap px-4 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-sm font-medium hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">Mobile App</button>
+<button class="whitespace-nowrap px-4 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-sm font-medium hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">Developer Tools</button>
+<button class="whitespace-nowrap px-4 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-sm font-medium hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">Complaint</button>
+<button class="whitespace-nowrap px-4 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-sm font-medium hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">Feature Request</button>
+</div>
+<div class="flex items-center gap-2">
+<span class="text-xs font-medium text-slate-500 uppercase tracking-wider">Sort by</span>
+<select class="bg-transparent border-none text-sm font-semibold text-slate-900 dark:text-white focus:ring-0 p-0 pr-6 cursor-pointer">
+<option>Recency</option>
+<option>Trending</option>
+<option>Upvotes</option>
+</select>
+</div>
+</div>
+</div>
+<!-- Feed List -->
+<div class="space-y-4">
+<!-- Card 1 -->
+<article class="bg-white dark:bg-[#151b23] border border-slate-200 dark:border-slate-800 rounded-xl p-5 hover:border-primary/50 transition-all group">
+<header class="flex items-center justify-between mb-4">
+<div class="flex items-center gap-2">
+<div class="w-6 h-6 bg-orange-600 rounded-full flex items-center justify-center">
+<span class="text-[10px] font-bold text-white">R</span>
+</div>
+<span class="text-xs font-bold text-slate-900 dark:text-slate-200">r/saas</span>
+<span class="text-slate-400 text-xs">•</span>
+<span class="text-xs text-slate-500">2h ago</span>
+</div>
+<button class="text-slate-400 hover:text-slate-100">
+<span class="material-symbols-outlined">more_horiz</span>
+</button>
+</header>
+<div class="mb-4">
+<h2 class="text-lg font-bold text-slate-900 dark:text-white leading-snug mb-2 group-hover:text-primary transition-colors">
+                        Cannot find a simple CRUD wrapper for Postgres
+                    </h2>
+<p class="text-sm text-slate-600 dark:text-slate-400 line-clamp-2 leading-relaxed">
+                        I've been looking for hours and every solution is either too complex or overpriced. I just need a simple interface to manage my tables without writing custom admin panels every time.
+                    </p>
+</div>
+<div class="flex flex-wrap gap-2 mb-6">
+<span class="px-2.5 py-0.5 rounded text-[11px] font-semibold bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400">Frustrated</span>
+<span class="px-2.5 py-0.5 rounded text-[11px] font-semibold bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400">Complaint</span>
+<span class="px-2.5 py-0.5 rounded text-[11px] font-semibold bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400">Infrastructure</span>
+</div>
+<footer class="flex items-center justify-between border-t border-slate-100 dark:border-slate-800/50 pt-4">
+<div class="flex items-center gap-6">
+<div class="flex items-center gap-1.5 text-slate-500 dark:text-slate-400">
+<span class="material-symbols-outlined text-[18px]">arrow_upward</span>
+<span class="text-xs font-semibold uppercase tracking-tight">128</span>
+</div>
+<a class="flex items-center gap-1.5 text-xs font-semibold text-slate-500 dark:text-slate-400 hover:text-primary transition-colors" href="#">
+<span class="material-symbols-outlined text-[18px]">link</span>
+                            View Original
+                        </a>
+</div>
+<a class="flex items-center gap-1 text-sm font-bold text-primary hover:underline" href="#">
+                        Related Brief
+                        <span class="material-symbols-outlined">arrow_forward</span>
+</a>
+</footer>
+</article>
+<!-- Card 2 -->
+<article class="bg-white dark:bg-[#151b23] border border-slate-200 dark:border-slate-800 rounded-xl p-5 hover:border-primary/50 transition-all group">
+<header class="flex items-center justify-between mb-4">
+<div class="flex items-center gap-2">
+<div class="w-6 h-6 bg-blue-600 rounded-full flex items-center justify-center">
+<span class="text-[10px] font-bold text-white">R</span>
+</div>
+<span class="text-xs font-bold text-slate-900 dark:text-slate-200">r/productivity</span>
+<span class="text-slate-400 text-xs">•</span>
+<span class="text-xs text-slate-500">5h ago</span>
+</div>
+<button class="text-slate-400 hover:text-slate-100">
+<span class="material-symbols-outlined">more_horiz</span>
+</button>
+</header>
+<div class="mb-4">
+<h2 class="text-lg font-bold text-slate-900 dark:text-white leading-snug mb-2 group-hover:text-primary transition-colors">
+                        Why is every calendar app so bloated with AI features?
+                    </h2>
+<p class="text-sm text-slate-600 dark:text-slate-400 line-clamp-2 leading-relaxed">
+                        I literally just want a clean grid that loads fast. I don't need a chatbot to tell me I have a meeting at 2 PM. Every update makes the UI slower.
+                    </p>
+</div>
+<div class="flex flex-wrap gap-2 mb-6">
+<span class="px-2.5 py-0.5 rounded text-[11px] font-semibold bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400">Annoyed</span>
+<span class="px-2.5 py-0.5 rounded text-[11px] font-semibold bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400">Feature Request</span>
+<span class="px-2.5 py-0.5 rounded text-[11px] font-semibold bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400">Mobile App</span>
+</div>
+<footer class="flex items-center justify-between border-t border-slate-100 dark:border-slate-800/50 pt-4">
+<div class="flex items-center gap-6">
+<div class="flex items-center gap-1.5 text-slate-500 dark:text-slate-400">
+<span class="material-symbols-outlined text-[18px]">arrow_upward</span>
+<span class="text-xs font-semibold uppercase tracking-tight">842</span>
+</div>
+<a class="flex items-center gap-1.5 text-xs font-semibold text-slate-500 dark:text-slate-400 hover:text-primary transition-colors" href="#">
+<span class="material-symbols-outlined text-[18px]">link</span>
+                            View Original
+                        </a>
+</div>
+<a class="flex items-center gap-1 text-sm font-bold text-primary hover:underline" href="#">
+                        Related Brief
+                        <span class="material-symbols-outlined">arrow_forward</span>
+</a>
+</footer>
+</article>
+<!-- Card 3 -->
+<article class="bg-white dark:bg-[#151b23] border border-slate-200 dark:border-slate-800 rounded-xl p-5 hover:border-primary/50 transition-all group">
+<header class="flex items-center justify-between mb-4">
+<div class="flex items-center gap-2">
+<div class="w-6 h-6 bg-purple-600 rounded-full flex items-center justify-center">
+<span class="text-[10px] font-bold text-white">R</span>
+</div>
+<span class="text-xs font-bold text-slate-900 dark:text-slate-200">r/webdev</span>
+<span class="text-slate-400 text-xs">•</span>
+<span class="text-xs text-slate-500">1d ago</span>
+</div>
+<button class="text-slate-400 hover:text-slate-100">
+<span class="material-symbols-outlined">more_horiz</span>
+</button>
+</header>
+<div class="mb-4">
+<h2 class="text-lg font-bold text-slate-900 dark:text-white leading-snug mb-2 group-hover:text-primary transition-colors">
+                        Documentation for modern CMS is getting worse
+                    </h2>
+<p class="text-sm text-slate-600 dark:text-slate-400 line-clamp-2 leading-relaxed">
+                        Trying to integrate Headless UI with certain CMS platforms feels like a nightmare. Half the links in the official docs are broken and the examples are outdated.
+                    </p>
+</div>
+<div class="flex flex-wrap gap-2 mb-6">
+<span class="px-2.5 py-0.5 rounded text-[11px] font-semibold bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400">Urgent</span>
+<span class="px-2.5 py-0.5 rounded text-[11px] font-semibold bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400">Complaint</span>
+<span class="px-2.5 py-0.5 rounded text-[11px] font-semibold bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400">DevTools</span>
+</div>
+<footer class="flex items-center justify-between border-t border-slate-100 dark:border-slate-800/50 pt-4">
+<div class="flex items-center gap-6">
+<div class="flex items-center gap-1.5 text-slate-500 dark:text-slate-400">
+<span class="material-symbols-outlined text-[18px]">arrow_upward</span>
+<span class="text-xs font-semibold uppercase tracking-tight">3.1k</span>
+</div>
+<a class="flex items-center gap-1.5 text-xs font-semibold text-slate-500 dark:text-slate-400 hover:text-primary transition-colors" href="#">
+<span class="material-symbols-outlined text-[18px]">link</span>
+                            View Original
+                        </a>
+</div>
+<a class="flex items-center gap-1 text-sm font-bold text-primary hover:underline" href="#">
+                        Related Brief
+                        <span class="material-symbols-outlined">arrow_forward</span>
+</a>
+</footer>
+</article>
+</div>
+<!-- Footer / Load More -->
+<footer class="mt-12 text-center pb-20">
+<button class="w-full sm:w-auto min-w-[200px] px-8 py-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg text-sm font-bold text-slate-600 dark:text-slate-300 hover:border-primary/50 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-all flex items-center justify-center gap-2 mx-auto">
+<span class="material-symbols-outlined">refresh</span>
+                Load more ideas
+            </button>
+<p class="mt-6 text-xs text-slate-500 dark:text-slate-600">
+                Aggregating from 2,400+ subreddits. Last updated 4 mins ago.
+            </p>
+</footer>
+</main>
+<!-- Floating Action Button for Mobile -->
+<div class="fixed bottom-6 right-6 md:hidden">
+<button class="w-14 h-14 rounded-full bg-primary shadow-lg shadow-primary/40 flex items-center justify-center text-white">
+<span class="material-symbols-outlined !text-3xl">add</span>
+</button>
+</div>
+</body></html>

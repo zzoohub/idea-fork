@@ -1,26 +1,370 @@
 @import "tailwindcss";
 
+/* ==========================================================================
+   Design Tokens — globals.css
+   Content-heavy information app. Editorial warmth, single accent.
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   Tier 1: Primitive Palette
+   These are raw values. NEVER reference directly in components.
+   -------------------------------------------------------------------------- */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* --- Neutrals (warm stone) --- */
+  --primitive-gray-50: #fafaf9;
+  --primitive-gray-100: #f5f5f4;
+  --primitive-gray-150: #ececea;
+  --primitive-gray-200: #e7e5e4;
+  --primitive-gray-300: #d6d3d1;
+  --primitive-gray-400: #a8a29e;
+  --primitive-gray-500: #78716c;
+  --primitive-gray-600: #57534e;
+  --primitive-gray-700: #44403c;
+  --primitive-gray-800: #292524;
+  --primitive-gray-850: #1f1d1c;
+  --primitive-gray-900: #1c1917;
+  --primitive-gray-950: #0c0a09;
+
+  /* --- Accent (deep teal) --- */
+  --primitive-accent-400: #2ea4a1;
+  --primitive-accent-500: #0d7c79;
+  --primitive-accent-600: #0a635f;
+  --primitive-accent-700: #084e4b;
+
+  /* --- Positive (muted green) --- */
+  --primitive-positive-400: #4ade80;
+  --primitive-positive-500: #16a34a;
+  --primitive-positive-600: #15803d;
+
+  /* --- Negative (muted red) --- */
+  --primitive-negative-400: #f87171;
+  --primitive-negative-500: #dc2626;
+  --primitive-negative-600: #b91c1c;
+
+  /* --- Warning (amber) --- */
+  --primitive-warning-400: #fbbf24;
+  --primitive-warning-500: #d97706;
+  --primitive-warning-600: #b45309;
+
+  /* --- Focus (teal ring — light/dark variants) --- */
+  --primitive-focus-light: #0f766e;
+  --primitive-focus-dark: #2dd4bf;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+/* --------------------------------------------------------------------------
+   Tier 2: Semantic Tokens — Light Mode
+   Components reference ONLY these tokens.
+   -------------------------------------------------------------------------- */
+:root {
+  /* Surfaces */
+  --color-bg-primary: var(--primitive-gray-50);
+  --color-bg-secondary: #ffffff;
+  --color-bg-tertiary: var(--primitive-gray-100);
+
+  /* Text */
+  --color-text-primary: var(--primitive-gray-900);
+  --color-text-secondary: var(--primitive-gray-500);
+  --color-text-tertiary: var(--primitive-gray-400);
+
+  /* Interactive */
+  --color-interactive: var(--primitive-accent-500);
+  --color-interactive-hover: var(--primitive-accent-600);
+
+  /* Feedback */
+  --color-positive: var(--primitive-positive-500);
+  --color-negative: var(--primitive-negative-500);
+  --color-warning: var(--primitive-warning-500);
+
+  /* Border */
+  --color-border: var(--primitive-gray-200);
+  --color-border-active: var(--primitive-accent-500);
+
+  /* Focus */
+  --color-focus: var(--primitive-focus-light);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+/* --------------------------------------------------------------------------
+   Tier 2: Semantic Tokens — Dark Mode
+   Manual toggle via [data-theme="dark"], auto via prefers-color-scheme.
+   -------------------------------------------------------------------------- */
+[data-theme="dark"],
+:root:not([data-theme="light"]) {
+  @media (prefers-color-scheme: dark) {
+    & {
+      --color-bg-primary: var(--primitive-gray-950);
+      --color-bg-secondary: var(--primitive-gray-900);
+      --color-bg-tertiary: var(--primitive-gray-850);
+
+      --color-text-primary: var(--primitive-gray-100);
+      --color-text-secondary: var(--primitive-gray-400);
+      --color-text-tertiary: var(--primitive-gray-600);
+
+      --color-interactive: var(--primitive-accent-400);
+      --color-interactive-hover: var(--primitive-accent-500);
+
+      --color-positive: var(--primitive-positive-400);
+      --color-negative: var(--primitive-negative-400);
+      --color-warning: var(--primitive-warning-400);
+
+      --color-border: var(--primitive-gray-800);
+      --color-border-active: var(--primitive-accent-400);
+
+      --color-focus: var(--primitive-focus-dark);
+    }
   }
 }
 
+/* Explicit dark toggle (no media query needed) */
+[data-theme="dark"] {
+  --color-bg-primary: var(--primitive-gray-950);
+  --color-bg-secondary: var(--primitive-gray-900);
+  --color-bg-tertiary: var(--primitive-gray-850);
+
+  --color-text-primary: var(--primitive-gray-100);
+  --color-text-secondary: var(--primitive-gray-400);
+  --color-text-tertiary: var(--primitive-gray-600);
+
+  --color-interactive: var(--primitive-accent-400);
+  --color-interactive-hover: var(--primitive-accent-500);
+
+  --color-positive: var(--primitive-positive-400);
+  --color-negative: var(--primitive-negative-400);
+  --color-warning: var(--primitive-warning-400);
+
+  --color-border: var(--primitive-gray-800);
+  --color-border-active: var(--primitive-accent-400);
+
+  --color-focus: var(--primitive-focus-dark);
+}
+
+/* --------------------------------------------------------------------------
+   Spacing Tokens
+   -------------------------------------------------------------------------- */
+:root {
+  /* Component spacing (inside) */
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 12px;
+  --space-lg: 16px;
+  --space-xl: 24px;
+
+  /* Layout spacing (between sections) */
+  --layout-xs: 16px;
+  --layout-sm: 24px;
+  --layout-md: 32px;
+  --layout-lg: 48px;
+  --layout-xl: 64px;
+
+  /* Component-specific */
+  --card-padding: 16px;
+  --card-gap: 16px;
+  --card-radius: 8px;
+}
+
+@media (min-width: 640px) {
+  :root {
+    --card-gap: 24px;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Typography Tokens
+   -------------------------------------------------------------------------- */
+:root {
+  --font-family-sans: var(--font-geist-sans), system-ui, -apple-system,
+    BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-family-mono: var(--font-geist-mono), ui-monospace, SFMono-Regular,
+    "SF Mono", Menlo, Consolas, monospace;
+
+  /* Size */
+  --text-display: 30px;
+  --text-h1: 24px;
+  --text-h2: 20px;
+  --text-h3: 16px;
+  --text-body: 15px;
+  --text-body-sm: 13px;
+  --text-caption: 11px;
+
+  /* Weight */
+  --weight-regular: 400;
+  --weight-semibold: 600;
+  --weight-bold: 700;
+
+  /* Line height */
+  --leading-display: 1.2;
+  --leading-h1: 1.3;
+  --leading-h2: 1.3;
+  --leading-h3: 1.4;
+  --leading-body: 1.6;
+  --leading-body-sm: 1.5;
+  --leading-caption: 1.4;
+}
+
+/* --------------------------------------------------------------------------
+   Animation Tokens
+   -------------------------------------------------------------------------- */
+:root {
+  --duration-instant: 100ms;
+  --duration-fast: 150ms;
+  --duration-normal: 200ms;
+  --duration-slow: 300ms;
+  --duration-shimmer: 1500ms;
+
+  --ease-out: cubic-bezier(0.33, 1, 0.68, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+}
+
+/* --------------------------------------------------------------------------
+   Tailwind v4 Theme Registration
+   All tokens exposed as Tailwind utilities via @theme inline.
+   -------------------------------------------------------------------------- */
+@theme inline {
+  /* -- Fonts -- */
+  --font-sans: var(--font-family-sans);
+  --font-mono: var(--font-family-mono);
+
+  /* -- Semantic Colors -- */
+  --color-bg-primary: var(--color-bg-primary);
+  --color-bg-secondary: var(--color-bg-secondary);
+  --color-bg-tertiary: var(--color-bg-tertiary);
+
+  --color-text-primary: var(--color-text-primary);
+  --color-text-secondary: var(--color-text-secondary);
+  --color-text-tertiary: var(--color-text-tertiary);
+
+  --color-interactive: var(--color-interactive);
+  --color-interactive-hover: var(--color-interactive-hover);
+
+  --color-positive: var(--color-positive);
+  --color-negative: var(--color-negative);
+  --color-warning: var(--color-warning);
+
+  --color-border: var(--color-border);
+  --color-border-active: var(--color-border-active);
+
+  --color-focus: var(--color-focus);
+
+  /* -- Component Spacing -- */
+  --spacing-space-xs: var(--space-xs);
+  --spacing-space-sm: var(--space-sm);
+  --spacing-space-md: var(--space-md);
+  --spacing-space-lg: var(--space-lg);
+  --spacing-space-xl: var(--space-xl);
+
+  /* -- Layout Spacing -- */
+  --spacing-layout-xs: var(--layout-xs);
+  --spacing-layout-sm: var(--layout-sm);
+  --spacing-layout-md: var(--layout-md);
+  --spacing-layout-lg: var(--layout-lg);
+  --spacing-layout-xl: var(--layout-xl);
+
+  /* -- Card -- */
+  --spacing-card-padding: var(--card-padding);
+  --spacing-card-gap: var(--card-gap);
+  --radius-card: var(--card-radius);
+
+  /* -- Typography (font-size) -- */
+  --text-display: var(--text-display);
+  --text-h1: var(--text-h1);
+  --text-h2: var(--text-h2);
+  --text-h3: var(--text-h3);
+  --text-body: var(--text-body);
+  --text-body-sm: var(--text-body-sm);
+  --text-caption: var(--text-caption);
+
+  /* -- Animation -- */
+  --animate-shimmer: shimmer var(--duration-shimmer) linear infinite;
+}
+
+/* --------------------------------------------------------------------------
+   Keyframes
+   -------------------------------------------------------------------------- */
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+@keyframes citationExpand {
+  from {
+    max-height: 0;
+    opacity: 0;
+  }
+  to {
+    max-height: 200px;
+    opacity: 1;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Base Styles
+   -------------------------------------------------------------------------- */
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background-color: var(--color-bg-primary);
+  color: var(--color-text-primary);
+  font-family: var(--font-family-sans);
+  font-size: var(--text-body);
+  line-height: var(--leading-body);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* --------------------------------------------------------------------------
+   Accessibility: Focus Visible
+   -------------------------------------------------------------------------- */
+:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* --------------------------------------------------------------------------
+   Accessibility: Reduced Motion
+   -------------------------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Accessibility: Touch Targets
+   -------------------------------------------------------------------------- */
+@media (pointer: coarse) {
+  button,
+  a,
+  [role="button"],
+  [role="tab"],
+  [role="menuitem"],
+  input[type="checkbox"],
+  input[type="radio"] {
+    min-height: 44px;
+    min-width: 44px;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Utility: Skeleton Loader
+   -------------------------------------------------------------------------- */
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--color-bg-tertiary) 0%,
+    var(--color-bg-secondary) 40%,
+    var(--color-bg-tertiary) 80%
+  );
+  background-size: 200% 100%;
+  animation: shimmer var(--duration-shimmer) linear infinite;
+  border-radius: 4px;
 }

@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Better Expense Tracking - idea-fork Brief</title>
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#137fec",
+                        "background-light": "#f6f7f8",
+                        "background-dark": "#101922",
+                        "surface-dark": "#1a242d",
+                        "border-dark": "#283039",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"],
+                        "sans": ["Inter", "sans-serif"],
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.5rem",
+                        "lg": "0.75rem",
+                        "xl": "1rem",
+                        "2xl": "1.5rem",
+                    },
+                },
+            },
+        }
+    </script>
+<style>
+        /* Custom scrollbar for dark theme */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #101922; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #283039; 
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #3e4a56; 
+        }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 font-display min-h-screen flex flex-col antialiased">
+<!-- Navigation -->
+<header class="flex items-center justify-between whitespace-nowrap border-b border-solid border-border-dark bg-[#111418] px-6 lg:px-10 py-3 sticky top-0 z-50">
+<div class="flex items-center gap-4 text-white">
+<div class="size-8 rounded-lg bg-primary/20 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-xl">fork_right</span>
+</div>
+<h2 class="text-white text-lg font-bold leading-tight tracking-[-0.015em]">idea-fork</h2>
+</div>
+<div class="flex flex-1 justify-end gap-8 items-center">
+<nav class="hidden md:flex items-center gap-9">
+<a class="text-slate-400 hover:text-white transition-colors text-sm font-medium leading-normal" href="#">Feed</a>
+<a class="text-white text-sm font-medium leading-normal" href="#">Briefs</a>
+<a class="text-slate-400 hover:text-white transition-colors text-sm font-medium leading-normal" href="#">Products</a>
+</nav>
+<div class="flex items-center gap-4">
+<button class="hidden md:flex size-10 items-center justify-center rounded-full hover:bg-white/5 transition-colors">
+<span class="material-symbols-outlined text-slate-400">notifications</span>
+</button>
+<button class="flex items-center gap-2 cursor-pointer overflow-hidden rounded-full h-9 pl-1 pr-3 bg-border-dark border border-white/5 hover:bg-white/10 transition-colors">
+<div class="size-7 rounded-full bg-gradient-to-tr from-primary to-purple-500"></div>
+<span class="text-white text-sm font-medium hidden sm:block">Alex M.</span>
+</button>
+</div>
+</div>
+</header>
+<main class="flex-1 flex justify-center py-8 px-4 sm:px-6 lg:px-8">
+<div class="w-full max-w-[1280px] grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-8">
+<!-- Left Column: Main Brief Content -->
+<div class="flex flex-col gap-6">
+<!-- Header Section -->
+<div class="flex flex-col gap-4">
+<!-- Breadcrumbs -->
+<div class="flex flex-wrap items-center gap-2 text-sm">
+<a class="text-slate-500 hover:text-primary transition-colors" href="#">Briefs</a>
+<span class="material-symbols-outlined text-slate-600 text-[16px]">chevron_right</span>
+<span class="text-slate-200 font-medium">Better Expense Tracking</span>
+</div>
+<!-- Title & Meta -->
+<div>
+<div class="flex flex-wrap items-start justify-between gap-4">
+<h1 class="text-3xl sm:text-4xl font-black text-white leading-tight tracking-tight mb-2 max-w-3xl">
+                                Better Expense Tracking for Freelancers
+                            </h1>
+<div class="flex gap-2">
+<button class="h-10 px-4 rounded-lg bg-surface-dark border border-border-dark text-slate-300 hover:text-white hover:border-slate-500 transition-colors flex items-center gap-2 font-medium text-sm">
+<span class="material-symbols-outlined text-[18px]">bookmark</span>
+                                    Save
+                                </button>
+<button class="h-10 px-4 rounded-lg bg-primary text-white hover:bg-primary/90 transition-colors flex items-center gap-2 font-medium text-sm shadow-[0_0_15px_rgba(19,127,236,0.3)]">
+<span class="material-symbols-outlined text-[18px]">rocket_launch</span>
+                                    Create Project
+                                </button>
+</div>
+</div>
+<p class="text-slate-400 text-lg max-w-2xl mt-2">
+                            Aggregated from <span class="text-slate-200 font-medium">47 posts</span> across <span class="text-slate-200 font-medium">3 platforms</span> in the last <span class="text-slate-200 font-medium">30 days</span>.
+                        </p>
+</div>
+<!-- Badges -->
+<div class="flex flex-wrap gap-3 mt-2">
+<div class="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-sm font-semibold">
+<span class="material-symbols-outlined text-[18px] filled">check_circle</span>
+                            High Confidence
+                        </div>
+<div class="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-surface-dark border border-border-dark text-slate-300 text-sm font-medium">
+<span class="material-symbols-outlined text-[18px] text-primary">payments</span>
+                            FinTech
+                        </div>
+<div class="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-surface-dark border border-border-dark text-slate-300 text-sm font-medium">
+<span class="material-symbols-outlined text-[18px] text-amber-400">bolt</span>
+                            Productivity
+                        </div>
+<div class="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-surface-dark border border-border-dark text-slate-300 text-sm font-medium">
+<span class="material-symbols-outlined text-[18px] text-purple-400">work</span>
+                            Freelance
+                        </div>
+</div>
+</div>
+<!-- Problem Statement Card -->
+<div class="rounded-xl bg-surface-dark border border-border-dark p-6 sm:p-8">
+<h3 class="text-xl font-bold text-white mb-4 flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">report_problem</span>
+                        Problem Statement
+                    </h3>
+<p class="text-slate-300 leading-relaxed text-lg">
+                        Freelancers struggle to separate personal and business expenses automatically, leading to hours of manual reconciliation during tax season. Existing tools are often too complex (Quickbooks) or too simple (Excel), lacking intelligent automation for "solopreneur" workflows. Users express frustration with categorization fatigue and fear of missing deductions.
+                    </p>
+</div>
+<!-- Demand Signals Card -->
+<div class="rounded-xl bg-surface-dark border border-border-dark p-6 sm:p-8">
+<div class="flex items-center justify-between mb-6">
+<h3 class="text-xl font-bold text-white flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">monitoring</span>
+                            Demand Signals
+                        </h3>
+<span class="text-xs font-medium text-slate-500 uppercase tracking-wider">Data from last 30 days</span>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+<!-- Platform Breakdown -->
+<div>
+<h4 class="text-sm font-semibold text-slate-400 mb-4">Platform Breakdown</h4>
+<div class="space-y-4">
+<div>
+<div class="flex justify-between text-sm mb-1">
+<span class="text-white flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-[#FF4500]"></span> Reddit</span>
+<span class="text-slate-400">62% (29 posts)</span>
+</div>
+<div class="h-2 w-full bg-slate-800 rounded-full overflow-hidden">
+<div class="h-full bg-[#FF4500] w-[62%]"></div>
+</div>
+</div>
+<div>
+<div class="flex justify-between text-sm mb-1">
+<span class="text-white flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-[#1DA1F2]"></span> Twitter / X</span>
+<span class="text-slate-400">28% (13 posts)</span>
+</div>
+<div class="h-2 w-full bg-slate-800 rounded-full overflow-hidden">
+<div class="h-full bg-[#1DA1F2] w-[28%]"></div>
+</div>
+</div>
+<div>
+<div class="flex justify-between text-sm mb-1">
+<span class="text-white flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-[#5865F2]"></span> Discord</span>
+<span class="text-slate-400">10% (5 posts)</span>
+</div>
+<div class="h-2 w-full bg-slate-800 rounded-full overflow-hidden">
+<div class="h-full bg-[#5865F2] w-[10%]"></div>
+</div>
+</div>
+</div>
+</div>
+<!-- Trend Visualization (CSS Only) -->
+<div>
+<h4 class="text-sm font-semibold text-slate-400 mb-4">Volume Trend</h4>
+<div class="flex items-end justify-between h-32 gap-2 pt-4 border-b border-border-dark pb-1">
+<div class="w-full bg-primary/20 rounded-t hover:bg-primary/40 transition-colors h-[20%]"></div>
+<div class="w-full bg-primary/20 rounded-t hover:bg-primary/40 transition-colors h-[35%]"></div>
+<div class="w-full bg-primary/20 rounded-t hover:bg-primary/40 transition-colors h-[30%]"></div>
+<div class="w-full bg-primary/20 rounded-t hover:bg-primary/40 transition-colors h-[50%]"></div>
+<div class="w-full bg-primary/20 rounded-t hover:bg-primary/40 transition-colors h-[45%]"></div>
+<div class="w-full bg-primary/20 rounded-t hover:bg-primary/40 transition-colors h-[60%]"></div>
+<div class="w-full bg-primary/20 rounded-t hover:bg-primary/40 transition-colors h-[80%]"></div>
+<div class="w-full bg-primary/40 rounded-t hover:bg-primary/60 transition-colors h-[70%]"></div>
+<div class="w-full bg-primary/60 rounded-t hover:bg-primary/80 transition-colors h-[90%]"></div>
+<div class="w-full bg-primary rounded-t shadow-[0_0_10px_rgba(19,127,236,0.5)] h-[100%]"></div>
+</div>
+<div class="flex justify-between text-xs text-slate-500 mt-2">
+<span>30 days ago</span>
+<span>Today</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Suggested Solution Directions -->
+<div class="rounded-xl bg-surface-dark border border-border-dark p-6 sm:p-8 relative overflow-hidden">
+<!-- Subtle background decoration -->
+<div class="absolute -top-24 -right-24 w-64 h-64 bg-primary/5 rounded-full blur-3xl pointer-events-none"></div>
+<h3 class="text-xl font-bold text-white mb-6 flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">lightbulb</span>
+                        Suggested Solution Directions
+                    </h3>
+<div class="space-y-6">
+<div class="flex gap-4">
+<div class="flex-shrink-0 size-8 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-sm">1</div>
+<div>
+<h4 class="text-white font-semibold text-lg">AI-First Receipt Parsing &amp; Classification</h4>
+<p class="text-slate-400 mt-1 leading-relaxed">
+                                    Develop a mobile-first interface that uses advanced OCR and LLMs to not just read the total, but understand the context of the purchase (e.g., "client dinner" vs "personal meal") based on location and time. <a class="inline-flex items-center justify-center bg-slate-800 text-primary text-xs font-bold px-1.5 rounded ml-1 hover:bg-slate-700 transition-colors cursor-pointer" href="#source-1">[1]</a> <a class="inline-flex items-center justify-center bg-slate-800 text-primary text-xs font-bold px-1.5 rounded ml-1 hover:bg-slate-700 transition-colors cursor-pointer" href="#source-3">[3]</a>
+</p>
+</div>
+</div>
+<div class="flex gap-4">
+<div class="flex-shrink-0 size-8 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-sm">2</div>
+<div>
+<h4 class="text-white font-semibold text-lg">"Tinder for Expenses" Workflow</h4>
+<p class="text-slate-400 mt-1 leading-relaxed">
+                                    Gamify the reconciliation process. Connect bank feeds and allow users to swipe left (personal) or right (business) on transactions. Batch processing for recurring payments. <a class="inline-flex items-center justify-center bg-slate-800 text-primary text-xs font-bold px-1.5 rounded ml-1 hover:bg-slate-700 transition-colors cursor-pointer" href="#source-2">[2]</a>
+</p>
+</div>
+</div>
+<div class="flex gap-4">
+<div class="flex-shrink-0 size-8 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-sm">3</div>
+<div>
+<h4 class="text-white font-semibold text-lg">Real-time Tax Liability Estimation</h4>
+<p class="text-slate-400 mt-1 leading-relaxed">
+                                    Provide a running tally of estimated taxes owed based on classified income and expenses, removing the end-of-year surprise factor.
+                                </p>
+</div>
+</div>
+</div>
+</div>
+<!-- Source Posts Section -->
+<div class="flex flex-col gap-4">
+<h3 class="text-xl font-bold text-white flex items-center gap-2 px-1">
+<span class="material-symbols-outlined text-slate-500">format_quote</span>
+                        Key Source Posts
+                    </h3>
+<div class="grid grid-cols-1 gap-4">
+<!-- Source Card 1 -->
+<div class="group p-5 rounded-xl bg-surface-dark border border-border-dark hover:border-slate-600 transition-all" id="source-1">
+<div class="flex justify-between items-start mb-3">
+<div class="flex items-center gap-3">
+<div class="size-8 rounded-full bg-[#FF4500]/10 flex items-center justify-center text-[#FF4500]">
+<!-- Reddit Icon Placeholder via material symbol or generic -->
+<span class="font-bold text-xs">Rd</span>
+</div>
+<div>
+<div class="text-sm font-semibold text-slate-200 group-hover:text-primary transition-colors">u/freelance_dev_99</div>
+<div class="text-xs text-slate-500">r/freelance • 2 days ago</div>
+</div>
+</div>
+<span class="bg-slate-800 text-slate-400 text-xs px-2 py-1 rounded font-mono">Source [1]</span>
+</div>
+<h5 class="text-white font-medium mb-2">Why is QuickBooks so overkill for a solopreneur?</h5>
+<p class="text-slate-400 text-sm leading-relaxed">
+                                "I literally just need to know what I spent on hosting and coffee. I tried setting up QB and it wants me to be an accountant. I just spent 4 hours categorizing stuff from last month. Is there anything that just uses AI to guess for me?"
+                            </p>
+</div>
+<!-- Source Card 2 -->
+<div class="group p-5 rounded-xl bg-surface-dark border border-border-dark hover:border-slate-600 transition-all" id="source-2">
+<div class="flex justify-between items-start mb-3">
+<div class="flex items-center gap-3">
+<div class="size-8 rounded-full bg-[#1DA1F2]/10 flex items-center justify-center text-[#1DA1F2]">
+<span class="font-bold text-xs">Tw</span>
+</div>
+<div>
+<div class="text-sm font-semibold text-slate-200 group-hover:text-primary transition-colors">@design_sarah</div>
+<div class="text-xs text-slate-500">Twitter • 5 days ago</div>
+</div>
+</div>
+<span class="bg-slate-800 text-slate-400 text-xs px-2 py-1 rounded font-mono">Source [2]</span>
+</div>
+<p class="text-slate-400 text-sm leading-relaxed">
+                                "Doing my monthly expense report. I would pay $20/mo for an app where I can just swipe left/right on my bank transactions like Tinder. Why does this not exist yet? #freelancelife #admin"
+                            </p>
+</div>
+<!-- Source Card 3 -->
+<div class="group p-5 rounded-xl bg-surface-dark border border-border-dark hover:border-slate-600 transition-all" id="source-3">
+<div class="flex justify-between items-start mb-3">
+<div class="flex items-center gap-3">
+<div class="size-8 rounded-full bg-[#FF4500]/10 flex items-center justify-center text-[#FF4500]">
+<span class="font-bold text-xs">Rd</span>
+</div>
+<div>
+<div class="text-sm font-semibold text-slate-200 group-hover:text-primary transition-colors">u/nomad_life</div>
+<div class="text-xs text-slate-500">r/digitalnomad • 1 week ago</div>
+</div>
+</div>
+<span class="bg-slate-800 text-slate-400 text-xs px-2 py-1 rounded font-mono">Source [3]</span>
+</div>
+<h5 class="text-white font-medium mb-2">Best app for multi-currency expense tracking?</h5>
+<p class="text-slate-400 text-sm leading-relaxed">
+                                "Most apps break when I travel. I need something that auto-converts currency based on the transaction date and understands that a coffee in Bali is a business meeting."
+                            </p>
+</div>
+</div>
+</div>
+<!-- Feedback Footer -->
+<div class="flex items-center justify-between p-6 rounded-xl bg-slate-800/30 border border-slate-700/50 mt-4">
+<span class="text-slate-300 font-medium">Was this brief useful?</span>
+<div class="flex gap-3">
+<button class="flex items-center gap-2 px-4 py-2 rounded-lg border border-slate-600 hover:bg-slate-700 text-slate-300 transition-colors text-sm font-medium">
+<span class="material-symbols-outlined text-[18px]">thumb_up</span>
+                            Yes
+                        </button>
+<button class="flex items-center gap-2 px-4 py-2 rounded-lg border border-slate-600 hover:bg-slate-700 text-slate-300 transition-colors text-sm font-medium">
+<span class="material-symbols-outlined text-[18px]">thumb_down</span>
+                            No
+                        </button>
+</div>
+</div>
+</div>
+<!-- Right Column: Sidebar -->
+<aside class="flex flex-col gap-6">
+<!-- User Context -->
+<div class="p-5 rounded-xl bg-gradient-to-b from-surface-dark to-slate-900 border border-border-dark">
+<h3 class="text-white font-bold mb-1">Your Filters</h3>
+<p class="text-xs text-slate-400 mb-4">Matches your preferences for B2B SaaS &amp; FinTech.</p>
+<div class="flex flex-wrap gap-2">
+<span class="text-xs font-medium px-2 py-1 rounded bg-slate-800 text-slate-300 border border-slate-700">SaaS</span>
+<span class="text-xs font-medium px-2 py-1 rounded bg-slate-800 text-slate-300 border border-slate-700">B2B</span>
+<span class="text-xs font-medium px-2 py-1 rounded bg-slate-800 text-slate-300 border border-slate-700">Low CapEx</span>
+</div>
+</div>
+<!-- Related Briefs -->
+<div>
+<h3 class="text-slate-400 font-bold text-sm uppercase tracking-wider mb-4 px-1">Related Opportunities</h3>
+<div class="flex flex-col gap-3">
+<!-- Brief Card 1 -->
+<a class="block group p-4 rounded-xl bg-surface-dark border border-border-dark hover:border-primary/50 hover:bg-slate-800 transition-all" href="#">
+<div class="flex justify-between items-start mb-2">
+<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-purple-500/20 text-purple-300 border border-purple-500/30">MEDIUM CONFIDENCE</span>
+</div>
+<h4 class="text-white font-semibold text-sm leading-snug group-hover:text-primary transition-colors mb-2">
+                                Automated Invoice Chasing for Agencies
+                            </h4>
+<div class="flex items-center gap-3 text-xs text-slate-500">
+<span class="flex items-center gap-1"><span class="material-symbols-outlined text-[14px]">forum</span> 24 posts</span>
+<span class="flex items-center gap-1"><span class="material-symbols-outlined text-[14px]">trending_up</span> +12%</span>
+</div>
+</a>
+<!-- Brief Card 2 -->
+<a class="block group p-4 rounded-xl bg-surface-dark border border-border-dark hover:border-primary/50 hover:bg-slate-800 transition-all" href="#">
+<div class="flex justify-between items-start mb-2">
+<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">HIGH CONFIDENCE</span>
+</div>
+<h4 class="text-white font-semibold text-sm leading-snug group-hover:text-primary transition-colors mb-2">
+                                Fractional CFO Dashboard for SMBs
+                            </h4>
+<div class="flex items-center gap-3 text-xs text-slate-500">
+<span class="flex items-center gap-1"><span class="material-symbols-outlined text-[14px]">forum</span> 89 posts</span>
+<span class="flex items-center gap-1"><span class="material-symbols-outlined text-[14px]">trending_up</span> +45%</span>
+</div>
+</a>
+<!-- Brief Card 3 -->
+<a class="block group p-4 rounded-xl bg-surface-dark border border-border-dark hover:border-primary/50 hover:bg-slate-800 transition-all" href="#">
+<div class="flex justify-between items-start mb-2">
+<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">NEW</span>
+</div>
+<h4 class="text-white font-semibold text-sm leading-snug group-hover:text-primary transition-colors mb-2">
+                                Subscription Manager Chrome Extension
+                            </h4>
+<div class="flex items-center gap-3 text-xs text-slate-500">
+<span class="flex items-center gap-1"><span class="material-symbols-outlined text-[14px]">forum</span> 15 posts</span>
+<span class="flex items-center gap-1"><span class="material-symbols-outlined text-[14px]">calendar_today</span> 2d ago</span>
+</div>
+</a>
+</div>
+<button class="w-full mt-4 py-2 text-sm text-slate-400 hover:text-white border border-dashed border-slate-700 rounded-lg hover:border-slate-500 transition-colors">
+                        View all related
+                    </button>
+</div>
+</aside>
+</div>
+</main>
+</body></html>
