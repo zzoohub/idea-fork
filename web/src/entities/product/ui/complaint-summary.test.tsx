@@ -8,142 +8,107 @@ const THEMES = [
   { name: "Crashes", count: 40 },
 ];
 
+const DEFAULT_PROPS = {
+  totalMentions: 270,
+  criticalComplaints: 15,
+  sentimentScore: 72,
+  themes: THEMES,
+};
+
 describe("ComplaintSummary", () => {
-  describe("stats header", () => {
-    it("renders total complaint count", () => {
+  describe("stats cards", () => {
+    it("renders total mentions count", () => {
+      render(<ComplaintSummary {...DEFAULT_PROPS} />);
+      expect(screen.getByText("270")).toBeInTheDocument();
+    });
+
+    it("renders critical complaints count", () => {
+      render(<ComplaintSummary {...DEFAULT_PROPS} />);
+      expect(screen.getByText("15")).toBeInTheDocument();
+    });
+
+    it("renders sentiment score", () => {
+      render(<ComplaintSummary {...DEFAULT_PROPS} />);
+      expect(screen.getByText("72")).toBeInTheDocument();
+    });
+
+    it("renders card labels", () => {
+      render(<ComplaintSummary {...DEFAULT_PROPS} />);
+      expect(screen.getByText("Total Mentions")).toBeInTheDocument();
+      expect(screen.getByText("Critical Complaints")).toBeInTheDocument();
+      expect(screen.getByText("Sentiment Score")).toBeInTheDocument();
+    });
+
+    it("renders trend badges when provided", () => {
       render(
         <ComplaintSummary
-          totalCount={270}
-          platformCount={2}
-          themes={THEMES}
+          {...DEFAULT_PROPS}
+          mentionsTrend={12}
+          criticalTrend={-5}
         />
       );
-      // toLocaleString may vary by locale
-      expect(screen.getByText(/270/)).toBeInTheDocument();
+      expect(screen.getByText(/\+12%/)).toBeInTheDocument();
+      expect(screen.getByText(/-5%/)).toBeInTheDocument();
     });
 
-    it("renders platform count", () => {
-      const { container } = render(
-        <ComplaintSummary
-          totalCount={100}
-          platformCount={3}
-          themes={[]}
-        />
-      );
-      // Use container text to avoid ambiguity with theme counts
-      expect(container.textContent).toContain("3");
-    });
-
-    it("renders 'platforms' plural when platformCount > 1", () => {
-      const { container } = render(
-        <ComplaintSummary
-          totalCount={100}
-          platformCount={3}
-          themes={THEMES}
-        />
-      );
-      expect(container.textContent).toContain("platforms");
-    });
-
-    it("renders 'platform' singular when platformCount = 1", () => {
-      const { container } = render(
-        <ComplaintSummary
-          totalCount={100}
-          platformCount={1}
-          themes={THEMES}
-        />
-      );
-      expect(container.textContent).toContain("platform");
-      expect(container.textContent).not.toContain("platforms");
+    it("does not render trend badges when not provided", () => {
+      render(<ComplaintSummary {...DEFAULT_PROPS} />);
+      expect(screen.queryByText(/%/)).not.toBeInTheDocument();
     });
   });
 
-  describe("themes list", () => {
-    it("renders themes list with accessible label", () => {
-      render(
-        <ComplaintSummary
-          totalCount={100}
-          platformCount={2}
-          themes={THEMES}
-        />
+  describe("sentiment progress bar", () => {
+    it("renders a progressbar with correct value", () => {
+      render(<ComplaintSummary {...DEFAULT_PROPS} />);
+      const progressbar = screen.getByRole("progressbar");
+      expect(progressbar).toHaveAttribute("aria-valuenow", "72");
+      expect(progressbar).toHaveAttribute("aria-valuemin", "0");
+      expect(progressbar).toHaveAttribute("aria-valuemax", "100");
+    });
+
+    it("clamps score to 0-100 range in width", () => {
+      const { container } = render(
+        <ComplaintSummary {...DEFAULT_PROPS} sentimentScore={150} />
       );
+      const bar = container.querySelector('[role="progressbar"]');
+      expect(bar).toHaveStyle({ width: "100%" });
+    });
+  });
+
+  describe("top theme subtitle", () => {
+    it("displays top theme name in critical complaints card", () => {
+      const { container } = render(<ComplaintSummary {...DEFAULT_PROPS} />);
+      expect(container.textContent).toContain("Top issue: Slow sync");
+    });
+
+    it("shows fallback text when themes is empty", () => {
+      const { container } = render(
+        <ComplaintSummary {...DEFAULT_PROPS} themes={[]} />
+      );
+      expect(container.textContent).toContain("Requires immediate attention");
+    });
+  });
+
+  describe("region role", () => {
+    it("renders with region role and accessible label", () => {
+      render(<ComplaintSummary {...DEFAULT_PROPS} />);
       expect(
-        screen.getByRole("list", { name: "Complaint themes" })
+        screen.getByRole("region", { name: "Complaint statistics" })
       ).toBeInTheDocument();
-    });
-
-    it("renders all theme names", () => {
-      render(
-        <ComplaintSummary
-          totalCount={100}
-          platformCount={2}
-          themes={THEMES}
-        />
-      );
-      expect(screen.getByText("Slow sync")).toBeInTheDocument();
-      expect(screen.getByText("UI bugs")).toBeInTheDocument();
-      expect(screen.getByText("Crashes")).toBeInTheDocument();
-    });
-
-    it("renders theme counts", () => {
-      render(
-        <ComplaintSummary
-          totalCount={100}
-          platformCount={2}
-          themes={THEMES}
-        />
-      );
-      expect(screen.getByText(/150/)).toBeInTheDocument();
-      expect(screen.getByText(/80/)).toBeInTheDocument();
-    });
-
-    it("renders numbered rank labels", () => {
-      render(
-        <ComplaintSummary
-          totalCount={100}
-          platformCount={2}
-          themes={THEMES}
-        />
-      );
-      expect(screen.getByText("1.")).toBeInTheDocument();
-      expect(screen.getByText("2.")).toBeInTheDocument();
-      expect(screen.getByText("3.")).toBeInTheDocument();
-    });
-
-    it("does not render themes list when themes is empty", () => {
-      render(
-        <ComplaintSummary totalCount={100} platformCount={2} themes={[]} />
-      );
-      expect(
-        screen.queryByRole("list", { name: "Complaint themes" })
-      ).not.toBeInTheDocument();
-    });
-
-    it("handles maxCount=1 fallback when themes is empty (no bar rendering)", () => {
-      // With no themes, maxCount defaults to 1 — just verifies no crash
-      render(
-        <ComplaintSummary totalCount={0} platformCount={0} themes={[]} />
-      );
-      expect(screen.queryByRole("list")).not.toBeInTheDocument();
     });
   });
 
   describe("className", () => {
     it("merges custom className", () => {
       const { container } = render(
-        <ComplaintSummary
-          totalCount={100}
-          platformCount={2}
-          themes={THEMES}
-          className="extra"
-        />
+        <ComplaintSummary {...DEFAULT_PROPS} className="extra" />
       );
       expect(container.firstChild).toHaveClass("extra");
     });
 
     it("renders without className prop", () => {
       const { container } = render(
-        <ComplaintSummary totalCount={100} platformCount={2} themes={THEMES} />
+        <ComplaintSummary {...DEFAULT_PROPS} />
       );
       expect(container.firstChild).toBeInTheDocument();
     });

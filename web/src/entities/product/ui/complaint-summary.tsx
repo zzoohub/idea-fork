@@ -1,85 +1,136 @@
-interface ComplaintTheme {
+import { MaterialIcon } from "@/src/shared/ui/material-icon";
+import { Badge } from "@/src/shared/ui/badge";
+
+export interface ComplaintTheme {
   name: string;
   count: number;
 }
 
 interface ComplaintSummaryProps {
-  totalCount: number;
-  platformCount: number;
+  totalMentions: number;
+  mentionsTrend?: number;
+  criticalComplaints: number;
+  criticalTrend?: number;
+  sentimentScore: number;
   themes: ComplaintTheme[];
   className?: string;
 }
 
+function TrendBadge({ value }: { value: number }) {
+  const isPositive = value >= 0;
+  return (
+    <Badge variant={isPositive ? "positive" : "negative"}>
+      <span className="inline-flex items-center gap-0.5">
+        <MaterialIcon
+          name={isPositive ? "trending_up" : "trending_down"}
+          size={14}
+        />
+        {isPositive ? "+" : ""}
+        {value}%
+      </span>
+    </Badge>
+  );
+}
+
 export function ComplaintSummary({
-  totalCount,
-  platformCount,
+  totalMentions,
+  mentionsTrend,
+  criticalComplaints,
+  criticalTrend,
+  sentimentScore,
   themes,
   className,
 }: ComplaintSummaryProps) {
-  /* Find max count for relative bar width */
-  const maxCount = themes.length > 0 ? Math.max(...themes.map((t) => t.count)) : 1;
+  // Find top theme for subtitle display
+  const topTheme = themes.length > 0 ? themes[0] : null;
 
   return (
     <div
-      className={["flex flex-col gap-space-lg", className]
+      className={[
+        "grid grid-cols-1 sm:grid-cols-3 gap-4",
+        className,
+      ]
         .filter(Boolean)
         .join(" ")}
+      role="region"
+      aria-label="Complaint statistics"
     >
-      {/* Summary stats */}
-      <div className="flex items-center gap-space-lg text-body-sm text-text-secondary">
-        <div>
-          <span className="text-h2 font-bold text-text-primary tabular-nums">
-            {totalCount.toLocaleString()}
-          </span>
-          <span className="ml-space-xs">complaints</span>
+      {/* Total Mentions Card */}
+      <div className="relative overflow-hidden p-5 rounded-2xl bg-white dark:bg-[#18212F] border border-slate-200 dark:border-[#283039]">
+        <div className="absolute -right-2 -top-2 opacity-10" aria-hidden="true">
+          <MaterialIcon name="forum" size={64} className="text-blue-500" />
         </div>
-        <span aria-hidden="true" className="text-text-tertiary">
-          &middot;
-        </span>
-        <div>
-          <span className="font-semibold text-text-primary tabular-nums">
-            {platformCount}
-          </span>
-          <span className="ml-space-xs">
-            {platformCount === 1 ? "platform" : "platforms"}
-          </span>
+        <div className="relative">
+          <p className="text-sm text-slate-500 dark:text-slate-400">
+            Total Mentions
+          </p>
+          <div className="mt-2 flex items-baseline gap-2">
+            <span className="text-3xl font-bold text-slate-900 dark:text-slate-50 tabular-nums">
+              {totalMentions.toLocaleString()}
+            </span>
+            {mentionsTrend != null && <TrendBadge value={mentionsTrend} />}
+          </div>
+          <p className="mt-1.5 text-xs text-slate-500 dark:text-slate-400">
+            Across all platforms
+          </p>
         </div>
       </div>
 
-      {/* Complaint themes ranked list */}
-      {themes.length > 0 && (
-        <div className="flex flex-col gap-space-md" role="list" aria-label="Complaint themes">
-          {themes.map((theme, i) => {
-            const widthPercent = Math.max((theme.count / maxCount) * 100, 4);
-            return (
-              <div key={theme.name} className="flex flex-col gap-space-xs" role="listitem">
-                <div className="flex items-baseline justify-between gap-space-md">
-                  <span className="text-body-sm text-text-primary">
-                    <span className="text-text-tertiary tabular-nums mr-space-sm">
-                      {i + 1}.
-                    </span>
-                    {theme.name}
-                  </span>
-                  <span className="shrink-0 text-body-sm text-text-secondary tabular-nums">
-                    {theme.count.toLocaleString()}
-                  </span>
-                </div>
-                {/* Visual bar */}
-                <div className="h-[4px] w-full rounded-full bg-bg-tertiary overflow-hidden">
-                  <div
-                    className="h-full rounded-full bg-interactive transition-all"
-                    style={{
-                      width: `${widthPercent}%`,
-                      transitionDuration: "var(--duration-slow)",
-                      transitionTimingFunction: "var(--ease-out)",
-                    }}
-                  />
-                </div>
-              </div>
-            );
-          })}
+      {/* Critical Complaints Card */}
+      <div className="relative overflow-hidden p-5 rounded-2xl bg-white dark:bg-[#18212F] border border-slate-200 dark:border-[#283039]">
+        <div className="absolute -right-2 -top-2 opacity-10" aria-hidden="true">
+          <MaterialIcon name="warning" size={64} className="text-orange-500" />
         </div>
-      )}
+        <div className="relative">
+          <p className="text-sm text-slate-500 dark:text-slate-400">
+            Critical Complaints
+          </p>
+          <div className="mt-2 flex items-baseline gap-2">
+            <span className="text-3xl font-bold text-slate-900 dark:text-slate-50 tabular-nums">
+              {criticalComplaints.toLocaleString()}
+            </span>
+            {criticalTrend != null && <TrendBadge value={criticalTrend} />}
+          </div>
+          <p className="mt-1.5 text-xs text-slate-500 dark:text-slate-400">
+            {topTheme
+              ? `Top issue: ${topTheme.name}`
+              : "Requires immediate attention"}
+          </p>
+        </div>
+      </div>
+
+      {/* Sentiment Score Card */}
+      <div className="relative overflow-hidden p-5 rounded-2xl bg-white dark:bg-[#18212F] border border-slate-200 dark:border-[#283039]">
+        <div className="absolute -right-2 -top-2 opacity-10" aria-hidden="true">
+          <MaterialIcon name="query_stats" size={64} className="text-purple-500" />
+        </div>
+        <div className="relative">
+          <p className="text-sm text-slate-500 dark:text-slate-400">
+            Sentiment Score
+          </p>
+          <div className="mt-2 flex items-baseline gap-2">
+            <span className="text-3xl font-bold text-slate-900 dark:text-slate-50 tabular-nums">
+              {sentimentScore}
+            </span>
+            <span className="text-sm text-slate-400 dark:text-slate-500">/ 100</span>
+          </div>
+          {/* Progress bar */}
+          <div className="mt-3 h-1.5 w-full rounded-full bg-slate-200 dark:bg-slate-700/50 overflow-hidden">
+            <div
+              className="h-full rounded-full bg-gradient-to-r from-blue-500 to-purple-500 transition-all duration-700 ease-out"
+              style={{ width: `${Math.min(Math.max(sentimentScore, 0), 100)}%` }}
+              role="progressbar"
+              aria-valuenow={sentimentScore}
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-label={`Sentiment score: ${sentimentScore} out of 100`}
+            />
+          </div>
+          <p className="mt-1.5 text-xs text-slate-500 dark:text-slate-400">
+            Based on recent analysis
+          </p>
+        </div>
+      </div>
     </div>
   );
 }

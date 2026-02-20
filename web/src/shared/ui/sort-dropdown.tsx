@@ -1,6 +1,6 @@
 "use client";
 
-import { Icon } from "./icon";
+import { MaterialIcon } from "./material-icon";
 
 interface SortOption {
   label: string;
@@ -22,16 +22,19 @@ export function SortDropdown({
 }: SortDropdownProps) {
   return (
     <div className={`relative inline-flex items-center ${className}`}>
-      <Icon
+      <MaterialIcon
         name="sort"
         size={16}
-        className="pointer-events-none absolute left-space-md text-text-secondary"
+        className="pointer-events-none absolute left-3 text-text-secondary"
       />
       <select
         value={value}
         onChange={onChange ? (e) => onChange(e.target.value) : undefined}
         className={[
-          "appearance-none rounded-card border border-border bg-bg-secondary py-space-sm pl-[36px] pr-[32px]",
+          "appearance-none rounded-lg",
+          "border border-slate-200 dark:border-[#283039]",
+          "bg-white dark:bg-[#283039]",
+          "py-2 pl-9 pr-8",
           "text-body-sm text-text-primary",
           "transition-colors cursor-pointer",
           "hover:border-border-active",
@@ -45,10 +48,10 @@ export function SortDropdown({
           </option>
         ))}
       </select>
-      <Icon
-        name="chevron-down"
-        size={14}
-        className="pointer-events-none absolute right-space-md text-text-secondary"
+      <MaterialIcon
+        name="expand_more"
+        size={16}
+        className="pointer-events-none absolute right-2 text-text-secondary"
       />
     </div>
   );

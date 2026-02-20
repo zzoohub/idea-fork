@@ -4,11 +4,11 @@ import { DemandSignals } from "./demand-signals";
 
 describe("DemandSignals", () => {
   describe("postCount", () => {
-    it("renders post count", () => {
+    it("renders post count within aggregation text", () => {
       render(
-        <DemandSignals postCount={120} platformCount={2} recency="2 days ago" />
+        <DemandSignals postCount={120} platformCount={2} recency="2 days" />
       );
-      expect(screen.getByText("120")).toBeInTheDocument();
+      expect(screen.getByText("120 posts")).toBeInTheDocument();
     });
 
     it("formats large post count with toLocaleString", () => {
@@ -16,11 +16,11 @@ describe("DemandSignals", () => {
         <DemandSignals
           postCount={1234}
           platformCount={1}
-          recency="1 hour ago"
+          recency="1 hour"
         />
       );
       // toLocaleString may produce "1,234" or "1234" depending on locale
-      const el = screen.getByText(/1[,.]?234/);
+      const el = screen.getByText(/1[,.]?234 posts/);
       expect(el).toBeInTheDocument();
     });
   });
@@ -30,25 +30,36 @@ describe("DemandSignals", () => {
       const { container } = render(
         <DemandSignals postCount={10} platformCount={1} recency="today" />
       );
-      expect(container.textContent).toContain("1");
-      expect(container.textContent).toContain(" platform");
-      expect(container.textContent).not.toContain(" platforms");
+      expect(container.textContent).toContain("1 platform");
+      expect(container.textContent).not.toContain("1 platforms");
     });
 
     it("renders plural 'platforms' when platformCount > 1", () => {
       const { container } = render(
         <DemandSignals postCount={10} platformCount={3} recency="today" />
       );
-      expect(container.textContent).toContain(" platforms");
+      expect(container.textContent).toContain("3 platforms");
     });
   });
 
   describe("recency", () => {
-    it("renders the recency string", () => {
+    it("renders the recency string within aggregation text", () => {
       render(
-        <DemandSignals postCount={5} platformCount={2} recency="last week" />
+        <DemandSignals postCount={5} platformCount={2} recency="30 days" />
       );
-      expect(screen.getByText("last week")).toBeInTheDocument();
+      expect(screen.getByText("30 days")).toBeInTheDocument();
+    });
+  });
+
+  describe("aggregation text format", () => {
+    it("renders the full aggregation sentence", () => {
+      const { container } = render(
+        <DemandSignals postCount={47} platformCount={3} recency="30 days" />
+      );
+      expect(container.textContent).toContain("Aggregated from");
+      expect(container.textContent).toContain("47 posts");
+      expect(container.textContent).toContain("3 platforms");
+      expect(container.textContent).toContain("30 days");
     });
   });
 

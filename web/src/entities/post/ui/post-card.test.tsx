@@ -41,18 +41,14 @@ describe("PostCard", () => {
       expect(screen.getByText("Jan 15, 2024")).toBeInTheDocument();
     });
 
-    it("renders reddit icon for reddit source", () => {
-      const { container } = render(<PostCard {...defaultProps} />);
-      const svgs = container.querySelectorAll("svg");
-      expect(svgs.length).toBeGreaterThan(0);
+    it("renders reddit avatar for reddit source", () => {
+      render(<PostCard {...defaultProps} />);
+      expect(screen.getByText("r/")).toBeInTheDocument();
     });
 
-    it("renders app-store icon for appstore source", () => {
-      const { container } = render(
-        <PostCard {...defaultProps} source="appstore" />
-      );
-      const svgs = container.querySelectorAll("svg");
-      expect(svgs.length).toBeGreaterThan(0);
+    it("renders appstore avatar for appstore source", () => {
+      render(<PostCard {...defaultProps} source="appstore" />);
+      expect(screen.getByText("smartphone")).toBeInTheDocument();
     });
   });
 

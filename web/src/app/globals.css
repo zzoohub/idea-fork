@@ -1,8 +1,11 @@
 @import "tailwindcss";
 
+/* Enable class-based dark mode (.dark on <html>) instead of prefers-color-scheme */
+@custom-variant dark (&:where(.dark, .dark *));
+
 /* ==========================================================================
    Design Tokens — globals.css
-   Content-heavy information app. Editorial warmth, single accent.
+   Blue primary, Inter font, slate neutrals. Dark-mode-first design system.
    ========================================================================== */
 
 /* --------------------------------------------------------------------------
@@ -10,45 +13,45 @@
    These are raw values. NEVER reference directly in components.
    -------------------------------------------------------------------------- */
 :root {
-  /* --- Neutrals (warm stone) --- */
-  --primitive-gray-50: #fafaf9;
-  --primitive-gray-100: #f5f5f4;
-  --primitive-gray-150: #ececea;
-  --primitive-gray-200: #e7e5e4;
-  --primitive-gray-300: #d6d3d1;
-  --primitive-gray-400: #a8a29e;
-  --primitive-gray-500: #78716c;
-  --primitive-gray-600: #57534e;
-  --primitive-gray-700: #44403c;
-  --primitive-gray-800: #292524;
-  --primitive-gray-850: #1f1d1c;
-  --primitive-gray-900: #1c1917;
-  --primitive-gray-950: #0c0a09;
+  /* --- Neutrals (slate) --- */
+  --primitive-gray-50: #f8fafc;
+  --primitive-gray-100: #f1f5f9;
+  --primitive-gray-150: #e8edf3;
+  --primitive-gray-200: #e2e8f0;
+  --primitive-gray-300: #cbd5e1;
+  --primitive-gray-400: #94a3b8;
+  --primitive-gray-500: #64748b;
+  --primitive-gray-600: #475569;
+  --primitive-gray-700: #334155;
+  --primitive-gray-800: #1e293b;
+  --primitive-gray-850: #1b2531;
+  --primitive-gray-900: #0f172a;
+  --primitive-gray-950: #101922;
 
-  /* --- Accent (deep teal) --- */
-  --primitive-accent-400: #2ea4a1;
-  --primitive-accent-500: #0d7c79;
-  --primitive-accent-600: #0a635f;
-  --primitive-accent-700: #084e4b;
+  /* --- Accent (blue) --- */
+  --primitive-accent-400: #3b9af5;
+  --primitive-accent-500: #137fec;
+  --primitive-accent-600: #0e6bca;
+  --primitive-accent-700: #0a56a8;
 
-  /* --- Positive (muted green) --- */
-  --primitive-positive-400: #4ade80;
-  --primitive-positive-500: #16a34a;
-  --primitive-positive-600: #15803d;
+  /* --- Positive (emerald) --- */
+  --primitive-positive-400: #34d399;
+  --primitive-positive-500: #10b981;
+  --primitive-positive-600: #059669;
 
-  /* --- Negative (muted red) --- */
+  /* --- Negative (red) --- */
   --primitive-negative-400: #f87171;
-  --primitive-negative-500: #dc2626;
-  --primitive-negative-600: #b91c1c;
+  --primitive-negative-500: #ef4444;
+  --primitive-negative-600: #dc2626;
 
   /* --- Warning (amber) --- */
   --primitive-warning-400: #fbbf24;
-  --primitive-warning-500: #d97706;
-  --primitive-warning-600: #b45309;
+  --primitive-warning-500: #f59e0b;
+  --primitive-warning-600: #d97706;
 
-  /* --- Focus (teal ring — light/dark variants) --- */
-  --primitive-focus-light: #0f766e;
-  --primitive-focus-dark: #2dd4bf;
+  /* --- Focus (blue ring — light/dark variants) --- */
+  --primitive-focus-light: #137fec;
+  --primitive-focus-dark: #3b9af5;
 }
 
 /* --------------------------------------------------------------------------
@@ -57,7 +60,7 @@
    -------------------------------------------------------------------------- */
 :root {
   /* Surfaces */
-  --color-bg-primary: var(--primitive-gray-50);
+  --color-bg-primary: #f6f7f8;
   --color-bg-secondary: #ffffff;
   --color-bg-tertiary: var(--primitive-gray-100);
 
@@ -85,40 +88,12 @@
 
 /* --------------------------------------------------------------------------
    Tier 2: Semantic Tokens — Dark Mode
-   Manual toggle via [data-theme="dark"], auto via prefers-color-scheme.
+   Class-based toggle via .dark on <html>, auto via prefers-color-scheme.
    -------------------------------------------------------------------------- */
-[data-theme="dark"],
-:root:not([data-theme="light"]) {
-  @media (prefers-color-scheme: dark) {
-    & {
-      --color-bg-primary: var(--primitive-gray-950);
-      --color-bg-secondary: var(--primitive-gray-900);
-      --color-bg-tertiary: var(--primitive-gray-850);
-
-      --color-text-primary: var(--primitive-gray-100);
-      --color-text-secondary: var(--primitive-gray-400);
-      --color-text-tertiary: var(--primitive-gray-600);
-
-      --color-interactive: var(--primitive-accent-400);
-      --color-interactive-hover: var(--primitive-accent-500);
-
-      --color-positive: var(--primitive-positive-400);
-      --color-negative: var(--primitive-negative-400);
-      --color-warning: var(--primitive-warning-400);
-
-      --color-border: var(--primitive-gray-800);
-      --color-border-active: var(--primitive-accent-400);
-
-      --color-focus: var(--primitive-focus-dark);
-    }
-  }
-}
-
-/* Explicit dark toggle (no media query needed) */
-[data-theme="dark"] {
-  --color-bg-primary: var(--primitive-gray-950);
-  --color-bg-secondary: var(--primitive-gray-900);
-  --color-bg-tertiary: var(--primitive-gray-850);
+.dark {
+  --color-bg-primary: #101922;
+  --color-bg-secondary: #1b2531;
+  --color-bg-tertiary: #232b36;
 
   --color-text-primary: var(--primitive-gray-100);
   --color-text-secondary: var(--primitive-gray-400);
@@ -131,10 +106,35 @@
   --color-negative: var(--primitive-negative-400);
   --color-warning: var(--primitive-warning-400);
 
-  --color-border: var(--primitive-gray-800);
+  --color-border: #283039;
   --color-border-active: var(--primitive-accent-400);
 
   --color-focus: var(--primitive-focus-dark);
+}
+
+/* Auto dark mode for users without explicit toggle */
+@media (prefers-color-scheme: dark) {
+  :root:not(.light):not(.dark) {
+    --color-bg-primary: #101922;
+    --color-bg-secondary: #1b2531;
+    --color-bg-tertiary: #232b36;
+
+    --color-text-primary: var(--primitive-gray-100);
+    --color-text-secondary: var(--primitive-gray-400);
+    --color-text-tertiary: var(--primitive-gray-600);
+
+    --color-interactive: var(--primitive-accent-400);
+    --color-interactive-hover: var(--primitive-accent-500);
+
+    --color-positive: var(--primitive-positive-400);
+    --color-negative: var(--primitive-negative-400);
+    --color-warning: var(--primitive-warning-400);
+
+    --color-border: #283039;
+    --color-border-active: var(--primitive-accent-400);
+
+    --color-focus: var(--primitive-focus-dark);
+  }
 }
 
 /* --------------------------------------------------------------------------
@@ -156,9 +156,9 @@
   --layout-xl: 64px;
 
   /* Component-specific */
-  --card-padding: 16px;
+  --card-padding: 20px;
   --card-gap: 16px;
-  --card-radius: 8px;
+  --card-radius: 12px;
 }
 
 @media (min-width: 640px) {
@@ -171,9 +171,9 @@
    Typography Tokens
    -------------------------------------------------------------------------- */
 :root {
-  --font-family-sans: var(--font-geist-sans), system-ui, -apple-system,
+  --font-family-sans: var(--font-inter), "Inter", system-ui, -apple-system,
     BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  --font-family-mono: var(--font-geist-mono), ui-monospace, SFMono-Regular,
+  --font-family-mono: ui-monospace, SFMono-Regular,
     "SF Mono", Menlo, Consolas, monospace;
 
   /* Size */
@@ -243,6 +243,11 @@
   --color-border-active: var(--color-border-active);
 
   --color-focus: var(--color-focus);
+
+  /* -- Raw colors for direct use -- */
+  --color-primary: #137fec;
+  --color-surface-dark: #1b2531;
+  --color-border-dark: #283039;
 
   /* -- Component Spacing -- */
   --spacing-space-xs: var(--space-xs);
@@ -367,4 +372,15 @@ body {
   background-size: 200% 100%;
   animation: shimmer var(--duration-shimmer) linear infinite;
   border-radius: 4px;
+}
+
+/* --------------------------------------------------------------------------
+   Utility: Hide scrollbar
+   -------------------------------------------------------------------------- */
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }

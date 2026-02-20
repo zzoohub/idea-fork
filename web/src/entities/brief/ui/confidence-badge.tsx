@@ -1,43 +1,60 @@
-import { Icon } from "@/src/shared/ui/icon";
+import { MaterialIcon } from "@/src/shared/ui/material-icon";
 
 interface ConfidenceBadgeProps {
-  sourceCount: number;
+  level: "high" | "medium" | "low";
   className?: string;
 }
 
+const LEVEL_CONFIG = {
+  high: {
+    icon: "check_circle",
+    label: "High Confidence",
+    containerClass:
+      "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20",
+    iconClass: "text-emerald-400",
+  },
+  medium: {
+    icon: "info",
+    label: "Medium Confidence",
+    containerClass:
+      "bg-amber-500/10 text-amber-400 border border-amber-500/20",
+    iconClass: "text-amber-400",
+  },
+  low: {
+    icon: "warning",
+    label: "Low Confidence",
+    containerClass:
+      "bg-red-500/10 text-red-400 border border-red-500/20",
+    iconClass: "text-red-400",
+  },
+} as const;
+
 /**
- * Renders a low-confidence warning when sourceCount < 3.
- * Returns null if confidence is adequate.
+ * Displays a confidence level badge with icon and label.
+ * Renders for all confidence levels (high, medium, low).
  */
-export function ConfidenceBadge({
-  sourceCount,
-  className,
-}: ConfidenceBadgeProps) {
-  if (sourceCount >= 3) {
-    return null;
-  }
+export function ConfidenceBadge({ level, className }: ConfidenceBadgeProps) {
+  const config = LEVEL_CONFIG[level];
 
   return (
-    <div
+    <span
       className={[
-        "inline-flex items-center gap-space-sm rounded-card bg-warning/15 px-space-md py-space-xs",
+        "inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold",
+        config.containerClass,
         className,
       ]
         .filter(Boolean)
         .join(" ")}
       role="status"
-      aria-label={`Low confidence: only ${sourceCount} source${sourceCount === 1 ? "" : "s"}`}
+      aria-label={config.label}
     >
-      <Icon name="warning" size={16} className="shrink-0 text-warning" />
-      <div className="flex flex-col">
-        <span className="text-body-sm font-semibold text-warning">
-          Low confidence
-        </span>
-        <span className="text-caption text-text-secondary leading-[var(--leading-caption)]">
-          Based on {sourceCount === 1 ? "1 source" : `${sourceCount} sources`}
-          &mdash;more data needed
-        </span>
-      </div>
-    </div>
+      <MaterialIcon
+        name={config.icon}
+        size={14}
+        className={config.iconClass}
+        filled
+      />
+      {config.label}
+    </span>
   );
 }

@@ -21,11 +21,10 @@ vi.mock("next/link", () => ({
 const defaultProps = {
   name: "Acme CRM",
   category: "Productivity",
-  isTrending: false,
   complaintCount: 342,
-  topIssue: "Slow sync",
-  tags: ["crm", "sales"],
+  topFrustration: "Slow sync",
   slug: "acme-crm",
+  tags: ["crm", "sales"],
 };
 
 describe("ProductCard", () => {
@@ -74,15 +73,32 @@ describe("ProductCard", () => {
     });
   });
 
-  describe("trending indicator", () => {
-    it("shows Trending when isTrending=true", () => {
-      render(<ProductCard {...defaultProps} isTrending={true} />);
-      expect(screen.getByText("Trending")).toBeInTheDocument();
+  describe("trend badge", () => {
+    it('shows "Hot" when trendLabel is "Hot"', () => {
+      render(<ProductCard {...defaultProps} trendLabel="Hot" />);
+      expect(screen.getByText("Hot")).toBeInTheDocument();
     });
 
-    it("does not show Trending when isTrending=false", () => {
-      render(<ProductCard {...defaultProps} isTrending={false} />);
-      expect(screen.queryByText("Trending")).not.toBeInTheDocument();
+    it('shows "Stable" when trendLabel is "Stable"', () => {
+      render(<ProductCard {...defaultProps} trendLabel="Stable" />);
+      expect(screen.getByText("Stable")).toBeInTheDocument();
+    });
+
+    it("shows positive trend percent when trendPercent > 0", () => {
+      render(<ProductCard {...defaultProps} trendPercent={12} />);
+      expect(screen.getByText("+12%")).toBeInTheDocument();
+    });
+
+    it("shows negative trend percent when trendPercent < 0", () => {
+      render(<ProductCard {...defaultProps} trendPercent={-5} />);
+      expect(screen.getByText("-5%")).toBeInTheDocument();
+    });
+
+    it("does not show a trend badge when neither trendLabel nor trendPercent is provided", () => {
+      render(<ProductCard {...defaultProps} />);
+      expect(screen.queryByText("Hot")).not.toBeInTheDocument();
+      expect(screen.queryByText("Stable")).not.toBeInTheDocument();
+      expect(screen.queryByText(/[+\-]\d+%/)).not.toBeInTheDocument();
     });
   });
 
@@ -93,28 +109,17 @@ describe("ProductCard", () => {
       expect(screen.getByText(/342/)).toBeInTheDocument();
     });
 
-    it("renders top issue", () => {
+    it("renders top frustration text", () => {
       render(<ProductCard {...defaultProps} />);
+      // The component wraps the text in curly-quote characters
       expect(screen.getByText(/Slow sync/)).toBeInTheDocument();
     });
   });
 
-  describe("tags", () => {
-    it("renders all tags", () => {
+  describe("View Details footer", () => {
+    it('renders "View Details" link text', () => {
       render(<ProductCard {...defaultProps} />);
-      expect(screen.getByText("crm")).toBeInTheDocument();
-      expect(screen.getByText("sales")).toBeInTheDocument();
-    });
-
-    it("does not render tags section when tags is empty", () => {
-      render(<ProductCard {...defaultProps} tags={[]} />);
-      expect(screen.queryByText("crm")).not.toBeInTheDocument();
-    });
-
-    it("renders tags as static spans (non-interactive)", () => {
-      render(<ProductCard {...defaultProps} />);
-      // static chips are spans, not buttons
-      expect(screen.queryByRole("button")).not.toBeInTheDocument();
+      expect(screen.getByText("View Details")).toBeInTheDocument();
     });
   });
 });

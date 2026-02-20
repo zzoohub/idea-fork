@@ -1,7 +1,7 @@
 "use client";
 
 import { type InputHTMLAttributes, type Ref } from "react";
-import { Icon } from "./icon";
+import { MaterialIcon } from "./material-icon";
 
 interface SearchInputProps
   extends Omit<
@@ -30,8 +30,8 @@ export function SearchInput({
         .filter(Boolean)
         .join(" ")}
     >
-      <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-space-md text-text-tertiary">
-        <Icon name="search" size={18} />
+      <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-text-tertiary">
+        <MaterialIcon name="search" size={18} />
       </div>
       <input
         ref={ref}
@@ -40,12 +40,13 @@ export function SearchInput({
         onChange={onChange}
         placeholder={placeholder}
         className={[
-          "w-full rounded-card border border-border bg-bg-secondary",
-          "py-space-sm pl-[40px]",
-          value ? "pr-[40px]" : "pr-space-md",
+          "w-full rounded-xl",
+          "border border-transparent bg-slate-100 dark:bg-[#1b2531]",
+          "py-2.5 pl-10",
+          value ? "pr-10" : "pr-4",
           "text-body text-text-primary placeholder:text-text-tertiary",
           "outline-none",
-          "focus:border-border-active focus:ring-2 focus:ring-focus/25",
+          "focus:border-primary focus:ring-2 focus:ring-primary/25",
           "transition-[border-color,box-shadow]",
         ].join(" ")}
         style={{
@@ -59,9 +60,9 @@ export function SearchInput({
           type="button"
           onClick={onClear}
           className={[
-            "absolute right-space-sm flex items-center justify-center",
-            "w-[28px] h-[28px] rounded-full",
-            "text-text-tertiary hover:text-text-secondary hover:bg-bg-tertiary",
+            "absolute right-2 flex items-center justify-center",
+            "h-7 w-7 rounded-full",
+            "text-text-tertiary hover:text-text-secondary hover:bg-slate-200 dark:hover:bg-[#232b36]",
             "transition-colors cursor-pointer",
           ].join(" ")}
           style={{
@@ -70,7 +71,7 @@ export function SearchInput({
           }}
           aria-label="Clear search"
         >
-          <Icon name="close" size={16} />
+          <MaterialIcon name="close" size={16} />
         </button>
       )}
     </div>

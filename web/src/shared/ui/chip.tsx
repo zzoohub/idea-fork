@@ -1,15 +1,19 @@
 "use client";
 
 import { type ButtonHTMLAttributes, type HTMLAttributes, type Ref } from "react";
+import { MaterialIcon } from "./material-icon";
 
 const VARIANT_CLASSES = {
-  active: "bg-interactive text-white border border-transparent",
-  inactive: "bg-transparent text-text-secondary border border-border",
+  active:
+    "bg-primary text-white shadow-lg shadow-primary/20 border border-transparent",
+  inactive:
+    "bg-white dark:bg-[#1b2531] border border-slate-200 dark:border-[#283039] text-text-secondary",
 } as const;
 
 type ChipBaseProps = {
   variant?: keyof typeof VARIANT_CLASSES;
   interactive?: boolean;
+  icon?: string;
   ref?: Ref<HTMLButtonElement | HTMLSpanElement>;
   className?: string;
   children: React.ReactNode;
@@ -28,19 +32,20 @@ type ChipProps = InteractiveChipProps | StaticChipProps;
 export function Chip({
   variant = "inactive",
   interactive = true,
+  icon,
   ref,
   className,
   children,
   ...props
 }: ChipProps) {
   const sharedClasses = [
-    "inline-flex items-center justify-center",
-    "min-h-[32px] px-space-md",
+    "inline-flex items-center justify-center gap-1.5",
+    "h-9 px-3.5",
     "rounded-full",
     "text-body-sm font-semibold",
     "transition-colors",
     VARIANT_CLASSES[variant],
-    interactive && variant === "inactive" && "hover:bg-bg-tertiary",
+    interactive && variant === "inactive" && "hover:bg-slate-100 dark:hover:bg-[#232b36]",
     interactive && variant === "active" && "hover:bg-interactive-hover",
     interactive && "cursor-pointer",
     className,
@@ -48,20 +53,23 @@ export function Chip({
     .filter(Boolean)
     .join(" ");
 
-  const transitionStyle = {
-    transitionDuration: "var(--duration-fast)",
-    transitionTimingFunction: "var(--ease-out)",
-  };
+  const content = (
+    <>
+      {icon && (
+        <MaterialIcon name={icon} size={16} aria-hidden />
+      )}
+      {children}
+    </>
+  );
 
   if (!interactive) {
     return (
       <span
         ref={ref as Ref<HTMLSpanElement>}
         className={sharedClasses}
-        style={transitionStyle}
         {...(props as HTMLAttributes<HTMLSpanElement>)}
       >
-        {children}
+        {content}
       </span>
     );
   }
@@ -71,10 +79,9 @@ export function Chip({
       ref={ref as Ref<HTMLButtonElement>}
       type="button"
       className={sharedClasses}
-      style={transitionStyle}
       {...(props as ButtonHTMLAttributes<HTMLButtonElement>)}
     >
-      {children}
+      {content}
     </button>
   );
 }

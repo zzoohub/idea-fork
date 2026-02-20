@@ -88,14 +88,14 @@ describe("SearchInput", () => {
   });
 
   describe("pr class based on value", () => {
-    it("uses pr-space-md when value is empty", () => {
+    it("uses pr-4 when value is empty", () => {
       render(<SearchInput value="" onChange={noop} />);
-      expect(screen.getByRole("searchbox")).toHaveClass("pr-space-md");
+      expect(screen.getByRole("searchbox")).toHaveClass("pr-4");
     });
 
-    it("uses pr-[40px] when value is non-empty", () => {
+    it("uses pr-10 when value is non-empty", () => {
       render(<SearchInput value="text" onChange={noop} />);
-      expect(screen.getByRole("searchbox")).toHaveClass("pr-[40px]");
+      expect(screen.getByRole("searchbox")).toHaveClass("pr-10");
     });
   });
 });

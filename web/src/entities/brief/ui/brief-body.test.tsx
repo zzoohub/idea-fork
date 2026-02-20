@@ -25,16 +25,19 @@ const CITATIONS = [
 const CONTENT = {
   problem: "Users face friction at checkout. [1] Some drop off. [2]",
   demandSignals: ["Signal A", "Signal B"],
-  suggestedDirections: ["Direction 1", "Direction 2"],
+  suggestedDirections: [
+    { title: "Direction 1", description: "Description for direction 1" },
+    { title: "Direction 2", description: "Description for direction 2" },
+  ],
 };
 
 describe("BriefBody", () => {
   describe("problem section", () => {
-    it("renders the Problem heading", () => {
+    it("renders the Problem Statement heading", () => {
       render(
         <BriefBody content={CONTENT} citations={CITATIONS} />
       );
-      expect(screen.getByRole("heading", { name: "Problem" })).toBeInTheDocument();
+      expect(screen.getByRole("heading", { name: "Problem Statement" })).toBeInTheDocument();
     });
 
     it("renders plain text parts of the problem", () => {
@@ -97,16 +100,16 @@ describe("BriefBody", () => {
   });
 
   describe("suggested directions section", () => {
-    it("renders Suggested Directions heading when list is non-empty", () => {
+    it("renders Suggested Solution Directions heading when list is non-empty", () => {
       render(
         <BriefBody content={CONTENT} citations={CITATIONS} />
       );
       expect(
-        screen.getByRole("heading", { name: "Suggested Directions" })
+        screen.getByRole("heading", { name: "Suggested Solution Directions" })
       ).toBeInTheDocument();
     });
 
-    it("renders each direction", () => {
+    it("renders each direction title", () => {
       render(
         <BriefBody content={CONTENT} citations={CITATIONS} />
       );
@@ -114,11 +117,19 @@ describe("BriefBody", () => {
       expect(screen.getByText("Direction 2")).toBeInTheDocument();
     });
 
-    it("does not render Suggested Directions section when list is empty", () => {
+    it("renders each direction description", () => {
+      render(
+        <BriefBody content={CONTENT} citations={CITATIONS} />
+      );
+      expect(screen.getByText(/Description for direction 1/)).toBeInTheDocument();
+      expect(screen.getByText(/Description for direction 2/)).toBeInTheDocument();
+    });
+
+    it("does not render Suggested Solution Directions section when list is empty", () => {
       const contentEmpty = { ...CONTENT, suggestedDirections: [] };
       render(<BriefBody content={contentEmpty} citations={CITATIONS} />);
       expect(
-        screen.queryByRole("heading", { name: "Suggested Directions" })
+        screen.queryByRole("heading", { name: "Suggested Solution Directions" })
       ).not.toBeInTheDocument();
     });
   });
@@ -153,6 +164,27 @@ describe("BriefBody", () => {
         screen.getByRole("button", { name: /Citation 1: r\/startups/ })
       );
       expect(screen.getByText("The checkout is too slow.")).toBeInTheDocument();
+    });
+  });
+
+  describe("platforms", () => {
+    it("renders platform breakdown when platforms prop is provided", () => {
+      const platforms = [
+        { name: "Reddit", color: "bg-[#FF4500]", percentage: 62, postCount: 29 },
+        { name: "Twitter", color: "bg-[#1DA1F2]", percentage: 28, postCount: 13 },
+      ];
+      render(
+        <BriefBody content={CONTENT} citations={CITATIONS} platforms={platforms} />
+      );
+      expect(screen.getByText("Reddit")).toBeInTheDocument();
+      expect(screen.getByText("Twitter")).toBeInTheDocument();
+    });
+
+    it("does not render platform breakdown when platforms is empty", () => {
+      render(
+        <BriefBody content={CONTENT} citations={CITATIONS} platforms={[]} />
+      );
+      expect(screen.queryByText("Platform Breakdown")).not.toBeInTheDocument();
     });
   });
 });

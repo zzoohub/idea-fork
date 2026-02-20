@@ -3,7 +3,15 @@ import { render, screen, fireEvent } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { FilterChipBar } from "./filter-chip-bar";
 
-const TAGS = ["JavaScript", "React", "Node.js", "Python", "Go", "Rust", "TypeScript"];
+const TAGS = [
+  { label: "JavaScript" },
+  { label: "React" },
+  { label: "Node.js" },
+  { label: "Python" },
+  { label: "Go" },
+  { label: "Rust" },
+  { label: "TypeScript" },
+];
 
 describe("FilterChipBar", () => {
   describe("rendering", () => {
@@ -40,14 +48,14 @@ describe("FilterChipBar", () => {
       render(
         <FilterChipBar tags={TAGS} activeTag={null} onTagChange={vi.fn()} />
       );
-      // 7 tags, visibleCount=6 → 1 overflow → "+1"
+      // 7 tags, visibleCount=6 -> 1 overflow -> "+1"
       expect(screen.getByRole("button", { name: "+1" })).toBeInTheDocument();
     });
 
     it("does not render overflow trigger when tags <= visibleCount", () => {
       render(
         <FilterChipBar
-          tags={["A", "B", "C"]}
+          tags={[{ label: "A" }, { label: "B" }, { label: "C" }]}
           activeTag={null}
           onTagChange={vi.fn()}
         />
@@ -194,7 +202,7 @@ describe("FilterChipBar", () => {
     });
 
     it("does not add event listeners when dropdown is closed", () => {
-      // Render with overflow but no open — shouldn't throw
+      // Render with overflow but no open -- shouldn't throw
       render(
         <FilterChipBar tags={TAGS} activeTag={null} onTagChange={vi.fn()} />
       );
@@ -210,7 +218,7 @@ describe("FilterChipBar", () => {
       );
       await user.click(screen.getByRole("button", { name: "+1" }));
       expect(screen.getByRole("menu")).toBeInTheDocument();
-      // Press a non-Escape key — dropdown should remain open
+      // Press a non-Escape key -- dropdown should remain open
       fireEvent.keyDown(document, { key: "Enter" });
       expect(screen.getByRole("menu")).toBeInTheDocument();
     });
@@ -224,8 +232,8 @@ describe("FilterChipBar", () => {
         />
       );
       const overflowTrigger = screen.getByRole("button", { name: "+1" });
-      // When overflow has active tag, trigger uses "active" variant → bg-interactive
-      expect(overflowTrigger).toHaveClass("bg-interactive");
+      // When overflow has active tag, trigger uses "active" variant -> bg-primary
+      expect(overflowTrigger).toHaveClass("bg-primary");
     });
 
     it("overflow trigger chip shows inactive variant when no overflow tag is active", () => {
@@ -233,7 +241,7 @@ describe("FilterChipBar", () => {
         <FilterChipBar tags={TAGS} activeTag={null} onTagChange={vi.fn()} />
       );
       const overflowTrigger = screen.getByRole("button", { name: "+1" });
-      expect(overflowTrigger).toHaveClass("bg-transparent");
+      expect(overflowTrigger).toHaveClass("bg-white");
     });
 
     it("toggles dropdown closed when overflow trigger is clicked again", async () => {
@@ -252,13 +260,19 @@ describe("FilterChipBar", () => {
     it("respects custom visibleCount", () => {
       render(
         <FilterChipBar
-          tags={["A", "B", "C", "D", "E"]}
+          tags={[
+            { label: "A" },
+            { label: "B" },
+            { label: "C" },
+            { label: "D" },
+            { label: "E" },
+          ]}
           activeTag={null}
           onTagChange={vi.fn()}
           visibleCount={3}
         />
       );
-      // 3 visible + 2 overflow → "+2"
+      // 3 visible + 2 overflow -> "+2"
       expect(screen.getByRole("button", { name: "+2" })).toBeInTheDocument();
     });
   });

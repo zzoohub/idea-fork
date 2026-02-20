@@ -10,15 +10,12 @@ interface CardProps {
 
 const CARD_CLASSES = [
   "block",
-  "bg-bg-secondary border border-border rounded-card p-card-padding",
-  "transition-[box-shadow,transform]",
-  "hover:shadow-md hover:-translate-y-px",
+  "bg-white dark:bg-[#1b2531]",
+  "border border-slate-200 dark:border-[#283039]",
+  "rounded-xl p-5",
+  "transition-colors",
+  "hover:border-primary/50 hover:shadow-lg hover:shadow-primary/10",
 ].join(" ");
-
-const TRANSITION_STYLE = {
-  transitionDuration: "var(--duration-fast)",
-  transitionTimingFunction: "var(--ease-out)",
-};
 
 export function Card({
   as: Tag = "article",
@@ -33,7 +30,6 @@ export function Card({
       <Link
         href={href}
         className={[classes, "no-underline"].join(" ")}
-        style={TRANSITION_STYLE}
       >
         <Tag className="contents">{children}</Tag>
       </Link>
@@ -41,7 +37,7 @@ export function Card({
   }
 
   return (
-    <Tag className={classes} style={TRANSITION_STYLE}>
+    <Tag className={classes}>
       {children}
     </Tag>
   );

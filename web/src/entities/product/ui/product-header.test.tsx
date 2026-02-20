@@ -19,6 +19,41 @@ describe("ProductHeader", () => {
     });
   });
 
+  describe("description", () => {
+    it("renders description when provided", () => {
+      render(
+        <ProductHeader
+          name="App"
+          category="Tools"
+          description="A productivity tool"
+        />
+      );
+      expect(screen.getByText("A productivity tool")).toBeInTheDocument();
+    });
+
+    it("does not render description when not provided", () => {
+      const { container } = render(
+        <ProductHeader name="App" category="Tools" />
+      );
+      // Only the category text should appear, no description paragraph
+      expect(container.querySelectorAll("p")).toHaveLength(0);
+    });
+  });
+
+  describe("status", () => {
+    it("renders status badge when provided", () => {
+      render(
+        <ProductHeader name="App" category="Tools" status="Active" />
+      );
+      expect(screen.getByText("Active")).toBeInTheDocument();
+    });
+
+    it("does not render status badge when not provided", () => {
+      render(<ProductHeader name="App" category="Tools" />);
+      expect(screen.queryByText("Active")).not.toBeInTheDocument();
+    });
+  });
+
   describe("icon / avatar", () => {
     it("renders img when iconUrl is provided", () => {
       const { container } = render(
@@ -41,7 +76,7 @@ describe("ProductHeader", () => {
   });
 
   describe("websiteUrl", () => {
-    it("renders Website link when websiteUrl is provided", () => {
+    it("renders website link when websiteUrl is provided", () => {
       render(
         <ProductHeader
           name="App"
@@ -49,7 +84,7 @@ describe("ProductHeader", () => {
           websiteUrl="https://example.com"
         />
       );
-      const link = screen.getByRole("link", { name: /Website/i });
+      const link = screen.getByRole("link", { name: /example\.com/i });
       expect(link).toHaveAttribute("href", "https://example.com");
     });
 
@@ -61,14 +96,14 @@ describe("ProductHeader", () => {
           websiteUrl="https://example.com"
         />
       );
-      const link = screen.getByRole("link", { name: /Website/i });
+      const link = screen.getByRole("link", { name: /example\.com/i });
       expect(link).toHaveAttribute("target", "_blank");
       expect(link).toHaveAttribute("rel", "noopener noreferrer");
     });
 
-    it("does not render Website link when websiteUrl is not provided", () => {
+    it("does not render website link when websiteUrl is not provided", () => {
       render(<ProductHeader name="App" category="Tools" />);
-      expect(screen.queryByRole("link", { name: /Website/i })).not.toBeInTheDocument();
+      expect(screen.queryByRole("link")).not.toBeInTheDocument();
     });
   });
 

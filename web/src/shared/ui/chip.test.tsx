@@ -13,14 +13,14 @@ describe("Chip", () => {
     it("renders active variant classes when variant=active", () => {
       render(<Chip variant="active">Active</Chip>);
       const btn = screen.getByRole("button");
-      expect(btn).toHaveClass("bg-interactive");
+      expect(btn).toHaveClass("bg-primary");
       expect(btn).toHaveClass("text-white");
     });
 
     it("renders inactive variant classes by default", () => {
       render(<Chip>Inactive</Chip>);
       const btn = screen.getByRole("button");
-      expect(btn).toHaveClass("bg-transparent");
+      expect(btn).toHaveClass("bg-white");
       expect(btn).toHaveClass("text-text-secondary");
     });
 
@@ -78,7 +78,7 @@ describe("Chip", () => {
   describe("hover classes", () => {
     it("includes hover class for inactive interactive chip", () => {
       render(<Chip variant="inactive">Tag</Chip>);
-      expect(screen.getByRole("button")).toHaveClass("hover:bg-bg-tertiary");
+      expect(screen.getByRole("button")).toHaveClass("hover:bg-slate-100");
     });
 
     it("includes hover class for active interactive chip", () => {
