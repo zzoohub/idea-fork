@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { MaterialIcon } from "@/src/shared/ui/material-icon";
+import { Icon } from "@/src/shared/ui/icon";
 
 interface SourcePlatform {
   name: string;
@@ -130,7 +130,7 @@ export function BriefCard({
               e.stopPropagation();
             }}
           >
-            <MaterialIcon name="bookmark" size={20} />
+            <Icon name="bookmark" size={20} />
           </button>
         </div>
 
@@ -175,7 +175,7 @@ export function BriefCard({
             </div>
             <span className="inline-flex items-center gap-1 text-[#137fec] text-sm font-bold shrink-0 transition-all group-hover:gap-2">
               Read Brief
-              <MaterialIcon name="arrow_forward" size={16} />
+              <Icon name="arrow-right" size={16} />
             </span>
           </div>
         </div>

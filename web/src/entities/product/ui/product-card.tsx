@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { MaterialIcon } from "@/src/shared/ui/material-icon";
+import { Icon } from "@/src/shared/ui/icon";
 
 interface ProductCardProps {
   name: string;
@@ -52,7 +52,7 @@ export function ProductCard({
       <div className="flex items-center gap-2 mb-4">
         <AvatarStack />
         <span className="inline-flex items-center gap-1 text-orange-600 dark:text-orange-400 bg-orange-100 dark:bg-orange-500/10 border border-orange-200 dark:border-orange-500/20 rounded-full px-2.5 py-1 text-xs font-semibold tabular-nums">
-          <MaterialIcon name="feedback" size={14} />
+          <Icon name="message-square-warning" size={14} />
           {complaintCount.toLocaleString()} complaints
         </span>
       </div>
@@ -60,8 +60,8 @@ export function ProductCard({
       {/* Row 3: Top Frustration */}
       <div className="bg-slate-50 dark:bg-[#232b36] rounded-lg p-3 mb-4 flex-1">
         <div className="flex items-center gap-1.5 mb-1.5">
-          <MaterialIcon
-            name="warning"
+          <Icon
+            name="triangle-alert"
             size={14}
             filled
             className="text-orange-500"
@@ -80,8 +80,8 @@ export function ProductCard({
         <span className="text-primary font-bold text-sm group-hover:underline">
           View Details
         </span>
-        <MaterialIcon
-          name="arrow_forward"
+        <Icon
+          name="arrow-right"
           size={16}
           className="text-primary transition-transform duration-200 group-hover:translate-x-0.5"
         />
@@ -140,7 +140,7 @@ function TrendBadge({
   if (trendLabel === "Hot") {
     return (
       <span className="inline-flex items-center gap-1 text-red-500 bg-red-500/10 rounded-full px-2 py-0.5 text-xs font-semibold shrink-0">
-        <MaterialIcon name="local_fire_department" size={14} filled />
+        <Icon name="flame" size={14} filled />
         Hot
       </span>
     );
@@ -159,7 +159,7 @@ function TrendBadge({
   if (trendPercent != null && trendPercent > 0) {
     return (
       <span className="inline-flex items-center gap-0.5 text-emerald-500 bg-emerald-500/10 rounded-full px-2 py-0.5 text-xs font-semibold shrink-0">
-        <MaterialIcon name="trending_up" size={14} />
+        <Icon name="trending-up" size={14} />
         +{trendPercent}%
       </span>
     );
@@ -169,7 +169,7 @@ function TrendBadge({
   if (trendPercent != null && trendPercent < 0) {
     return (
       <span className="inline-flex items-center gap-0.5 text-red-500 bg-red-500/10 rounded-full px-2 py-0.5 text-xs font-semibold shrink-0">
-        <MaterialIcon name="trending_down" size={14} />
+        <Icon name="trending-down" size={14} />
         {trendPercent}%
       </span>
     );

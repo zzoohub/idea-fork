@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { MaterialIcon } from "@/src/shared/ui/material-icon";
+import { Icon } from "@/src/shared/ui/icon";
 import { Badge } from "@/src/shared/ui/badge";
 import {
   ProductHeader,
@@ -217,8 +217,8 @@ export function ProductDetailPage({ slug }: ProductDetailPageProps) {
             </Link>
           </li>
           <li aria-hidden="true">
-            <MaterialIcon
-              name="chevron_right"
+            <Icon
+              name="chevron-right"
               size={16}
               className="text-slate-400 dark:text-slate-500"
             />
@@ -266,8 +266,8 @@ export function ProductDetailPage({ slug }: ProductDetailPageProps) {
               {/* Header */}
               <div className="flex items-center gap-2.5">
                 <div className="flex size-9 items-center justify-center rounded-lg bg-[#137fec]/15">
-                  <MaterialIcon
-                    name="auto_awesome"
+                  <Icon
+                    name="sparkles"
                     size={20}
                     className="text-[#137fec]"
                     filled
@@ -406,11 +406,11 @@ export function ProductDetailPage({ slug }: ProductDetailPageProps) {
                   {/* Footer: actions */}
                   <div className="flex items-center gap-5 mt-4 pt-3 border-t border-slate-100 dark:border-[#283039]">
                     <span className="inline-flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
-                      <MaterialIcon name="thumb_up" size={14} />
+                      <Icon name="thumbs-up" size={14} />
                       <span className="tabular-nums">{complaint.upvotes.toLocaleString()}</span>
                     </span>
                     <span className="inline-flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
-                      <MaterialIcon name="chat_bubble" size={14} />
+                      <Icon name="message-circle" size={14} />
                       <span className="tabular-nums">{complaint.comments.toLocaleString()}</span>
                     </span>
                     <span className="flex-1" />
@@ -422,7 +422,7 @@ export function ProductDetailPage({ slug }: ProductDetailPageProps) {
                         className="inline-flex items-center gap-1 text-xs font-medium text-[#137fec] hover:text-[#0f6bca] transition-colors duration-150"
                       >
                         View Original
-                        <MaterialIcon name="open_in_new" size={14} />
+                        <Icon name="external-link" size={14} />
                       </a>
                     ) : (
                       <span className="text-xs text-slate-400">
@@ -450,8 +450,8 @@ export function ProductDetailPage({ slug }: ProductDetailPageProps) {
                 ].join(" ")}
                 onClick={() => setShowAllComplaints((prev) => !prev)}
               >
-                <MaterialIcon
-                  name={showAllComplaints ? "expand_less" : "expand_more"}
+                <Icon
+                  name={showAllComplaints ? "chevron-up" : "chevron-down"}
                   size={18}
                 />
                 {showAllComplaints
@@ -482,8 +482,8 @@ export function ProductDetailPage({ slug }: ProductDetailPageProps) {
                 >
                   <div className="flex items-center justify-between mb-2">
                     <Badge variant="default">{brief.category}</Badge>
-                    <MaterialIcon
-                      name="arrow_forward"
+                    <Icon
+                      name="arrow-right"
                       size={16}
                       className="text-slate-400 group-hover:text-[#137fec] transition-colors duration-150"
                     />
@@ -493,11 +493,11 @@ export function ProductDetailPage({ slug }: ProductDetailPageProps) {
                   </h4>
                   <div className="flex items-center gap-3 text-xs text-slate-500 dark:text-slate-400">
                     <span className="inline-flex items-center gap-1">
-                      <MaterialIcon name="article" size={14} />
+                      <Icon name="file-text" size={14} />
                       <span className="tabular-nums">{brief.postCount}</span> posts
                     </span>
                     <span className="inline-flex items-center gap-1">
-                      <MaterialIcon name="verified" size={14} className="text-[#137fec]" />
+                      <Icon name="badge-check" size={14} className="text-[#137fec]" />
                       {brief.confidence}
                     </span>
                   </div>
@@ -516,8 +516,8 @@ export function ProductDetailPage({ slug }: ProductDetailPageProps) {
 
             <div className="relative space-y-3">
               <div className="flex size-10 items-center justify-center rounded-xl bg-white/15">
-                <MaterialIcon
-                  name="auto_awesome"
+                <Icon
+                  name="sparkles"
                   size={22}
                   className="text-white"
                   filled
@@ -541,7 +541,7 @@ export function ProductDetailPage({ slug }: ProductDetailPageProps) {
                 ].join(" ")}
               >
                 Create Brief
-                <MaterialIcon name="arrow_forward" size={16} />
+                <Icon name="arrow-right" size={16} />
               </button>
             </div>
           </div>

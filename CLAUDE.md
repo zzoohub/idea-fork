@@ -48,5 +48,3 @@ See docs/structure-web.md. Feature-Sliced Design (FSD) with Next.js App Router.
 
 ### Conventions
 - **i18n**: Use `next-intl` for all UI text (Korean/English).
-- **Responsive**: Support all screen sizes.
-- **Dark mode**: Support light and dark themes.

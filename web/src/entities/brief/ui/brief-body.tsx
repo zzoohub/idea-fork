@@ -1,6 +1,6 @@
 "use client";
 
-import { MaterialIcon } from "@/src/shared/ui/material-icon";
+import { Icon } from "@/src/shared/ui/icon";
 import { CitationRef } from "./citation-ref";
 
 /* ---------------------------------------------------------------------------
@@ -64,8 +64,8 @@ export function BriefBody({
         aria-labelledby="brief-problem-heading"
       >
         <div className="flex items-center gap-3 mb-5">
-          <MaterialIcon
-            name="report_problem"
+          <Icon
+            name="triangle-alert"
             size={24}
             className="text-[#137fec] shrink-0"
           />
@@ -91,8 +91,8 @@ export function BriefBody({
         >
           {/* Header row */}
           <div className="flex items-center gap-3 mb-6">
-            <MaterialIcon
-              name="monitoring"
+            <Icon
+              name="activity"
               size={24}
               className="text-[#137fec] shrink-0"
             />
@@ -187,7 +187,7 @@ export function BriefBody({
 
           <div className="relative">
             <div className="flex items-center gap-3 mb-6">
-              <MaterialIcon
+              <Icon
                 name="lightbulb"
                 size={24}
                 className="text-[#137fec] shrink-0"

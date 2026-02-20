@@ -1,7 +1,7 @@
 "use client";
 
 import { type InputHTMLAttributes, type Ref } from "react";
-import { MaterialIcon } from "./material-icon";
+import { Icon } from "./icon";
 
 interface SearchInputProps
   extends Omit<
@@ -31,7 +31,7 @@ export function SearchInput({
         .join(" ")}
     >
       <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-text-tertiary">
-        <MaterialIcon name="search" size={18} />
+        <Icon name="search" size={18} />
       </div>
       <input
         ref={ref}
@@ -71,7 +71,7 @@ export function SearchInput({
           }}
           aria-label="Clear search"
         >
-          <MaterialIcon name="close" size={16} />
+          <Icon name="x" size={16} />
         </button>
       )}
     </div>

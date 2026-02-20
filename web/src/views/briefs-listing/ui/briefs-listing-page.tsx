@@ -2,7 +2,7 @@
 
 import { useSearchParams, useRouter } from "next/navigation";
 import { useCallback, Suspense } from "react";
-import { Skeleton, EmptyState, MaterialIcon } from "@/src/shared/ui";
+import { Skeleton, EmptyState, Icon } from "@/src/shared/ui";
 import { BriefCard } from "@/src/entities/brief/ui";
 
 /* --------------------------------------------------------------------------
@@ -203,10 +203,10 @@ function BriefsListingInner() {
             className="shrink-0 inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm text-slate-600 dark:text-[#9dabb9] hover:bg-slate-100 dark:hover:bg-[#1c2127] transition-colors"
             aria-label={`Sort by: ${sortBy}`}
           >
-            <MaterialIcon name="sort" size={18} />
+            <Icon name="arrow-up-down" size={18} />
             <span className="hidden sm:inline">Sort:</span>
             <span className="font-semibold capitalize">{sortBy}</span>
-            <MaterialIcon name="expand_more" size={18} />
+            <Icon name="chevron-down" size={18} />
           </button>
         </div>
       </div>
@@ -255,7 +255,7 @@ function BriefsListingInner() {
           ].join(" ")}
         >
           Load More Opportunities
-          <MaterialIcon name="expand_more" size={20} />
+          <Icon name="chevron-down" size={20} />
         </button>
       </div>
     </div>

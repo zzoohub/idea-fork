@@ -1,4 +1,4 @@
-import { MaterialIcon } from "@/src/shared/ui/material-icon";
+import { Icon } from "@/src/shared/ui/icon";
 import { Badge } from "@/src/shared/ui/badge";
 import { isSafeUrl } from "@/src/shared/lib/sanitize-url";
 
@@ -73,7 +73,7 @@ export function ProductHeader({
 
         <div className="flex flex-wrap items-center gap-4 pt-1">
           <span className="inline-flex items-center gap-1.5 text-sm text-slate-500 dark:text-slate-400">
-            <MaterialIcon name="category" size={16} className="text-slate-400 dark:text-slate-500" />
+            <Icon name="layout-grid" size={16} className="text-slate-400 dark:text-slate-500" />
             {category}
           </span>
 
@@ -84,7 +84,7 @@ export function ProductHeader({
               rel="noopener noreferrer"
               className="inline-flex items-center gap-1.5 text-sm text-[#137fec] hover:text-[#0f6bca] transition-colors duration-150"
             >
-              <MaterialIcon name="language" size={16} />
+              <Icon name="globe" size={16} />
               {new URL(websiteUrl).hostname.replace("www.", "")}
             </a>
           )}
@@ -106,7 +106,7 @@ export function ProductHeader({
             "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#137fec]",
           ].join(" ")}
         >
-          <MaterialIcon name="notifications_active" size={18} />
+          <Icon name="bell-ring" size={18} />
           Track Changes
         </button>
       </div>

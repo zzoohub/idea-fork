@@ -15,18 +15,18 @@ const MOCK_TAGS = [
   { label: "SaaS", icon: "cloud" },
   { label: "Mobile App", icon: "smartphone" },
   { label: "Developer Tools", icon: "terminal" },
-  { label: "E-commerce", icon: "shopping_cart" },
-  { label: "Fintech", icon: "account_balance" },
-  { label: "Health", icon: "favorite" },
-  { label: "Education", icon: "school" },
-  { label: "Productivity", icon: "task_alt" },
-  { label: "AI", icon: "auto_awesome" },
+  { label: "E-commerce", icon: "shopping-cart" },
+  { label: "Fintech", icon: "landmark" },
+  { label: "Health", icon: "heart" },
+  { label: "Education", icon: "graduation-cap" },
+  { label: "Productivity", icon: "circle-check-big" },
+  { label: "AI", icon: "sparkles" },
 ];
 
 const MOCK_TYPE_FILTERS = [
-  { label: "Complaint", icon: "sentiment_dissatisfied", color: "text-amber-500" },
+  { label: "Complaint", icon: "frown", color: "text-amber-500" },
   { label: "Feature Request", icon: "lightbulb", color: "text-emerald-500" },
-  { label: "Question", icon: "help", color: "text-blue-400" },
+  { label: "Question", icon: "help-circle", color: "text-blue-400" },
 ];
 
 const MOCK_POSTS: Array<{

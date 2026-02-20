@@ -1,7 +1,7 @@
 "use client";
 
 import { type ButtonHTMLAttributes, type HTMLAttributes, type Ref } from "react";
-import { MaterialIcon } from "./material-icon";
+import { Icon } from "./icon";
 
 const VARIANT_CLASSES = {
   active:
@@ -56,7 +56,7 @@ export function Chip({
   const content = (
     <>
       {icon && (
-        <MaterialIcon name={icon} size={16} aria-hidden />
+        <Icon name={icon} size={16} aria-hidden />
       )}
       {children}
     </>

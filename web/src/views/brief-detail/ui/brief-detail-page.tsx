@@ -6,7 +6,7 @@ import {
   BackLink,
   Chip,
   Button,
-  MaterialIcon,
+  Icon,
 } from "@/src/shared/ui";
 import { isSafeUrl } from "@/src/shared/lib/sanitize-url";
 import {
@@ -183,9 +183,9 @@ const MOCK_BRIEF = {
 };
 
 const TAG_ICONS: Record<string, string> = {
-  SaaS: "payments",
-  invoicing: "bolt",
-  freelancer: "work",
+  SaaS: "credit-card",
+  invoicing: "zap",
+  freelancer: "briefcase",
 };
 
 /* --------------------------------------------------------------------------
@@ -226,8 +226,8 @@ export function BriefDetailPage({ slug }: BriefDetailPageProps) {
                 </Link>
               </li>
               <li aria-hidden="true">
-                <MaterialIcon
-                  name="chevron_right"
+                <Icon
+                  name="chevron-right"
                   size={16}
                   className="text-slate-600"
                 />
@@ -263,7 +263,7 @@ export function BriefDetailPage({ slug }: BriefDetailPageProps) {
               ].join(" ")}
               aria-label="Save this brief"
             >
-              <MaterialIcon name="bookmark" size={18} />
+              <Icon name="bookmark" size={18} />
               Save
             </button>
             <button
@@ -277,7 +277,7 @@ export function BriefDetailPage({ slug }: BriefDetailPageProps) {
                 "transition-colors cursor-pointer",
               ].join(" ")}
             >
-              <MaterialIcon name="rocket_launch" size={18} />
+              <Icon name="rocket" size={18} />
               Create Project
             </button>
           </div>
@@ -322,8 +322,8 @@ export function BriefDetailPage({ slug }: BriefDetailPageProps) {
           {/* ---- Key Source Posts ---- */}
           <section aria-labelledby="source-posts-heading">
             <div className="flex items-center gap-3 mb-6">
-              <MaterialIcon
-                name="forum"
+              <Icon
+                name="messages-square"
                 size={24}
                 className="text-[#137fec] shrink-0"
               />
@@ -361,8 +361,8 @@ export function BriefDetailPage({ slug }: BriefDetailPageProps) {
                     "transition-colors cursor-pointer",
                   ].join(" ")}
                 >
-                  <MaterialIcon
-                    name={showAllSources ? "expand_less" : "expand_more"}
+                  <Icon
+                    name={showAllSources ? "chevron-up" : "chevron-down"}
                     size={18}
                   />
                   {showAllSources
@@ -392,8 +392,8 @@ export function BriefDetailPage({ slug }: BriefDetailPageProps) {
           {/* Your Filters card */}
           <div className="rounded-xl bg-gradient-to-br from-[#1a242d] to-[#141c24] border border-[#283039] p-5">
             <div className="flex items-center gap-2 mb-4">
-              <MaterialIcon
-                name="tune"
+              <Icon
+                name="sliders-horizontal"
                 size={18}
                 className="text-[#137fec]"
               />
@@ -414,8 +414,8 @@ export function BriefDetailPage({ slug }: BriefDetailPageProps) {
           {/* Related Opportunities */}
           <div className="rounded-xl bg-[#1a242d] border border-[#283039] p-5">
             <div className="flex items-center gap-2 mb-4">
-              <MaterialIcon
-                name="explore"
+              <Icon
+                name="compass"
                 size={18}
                 className="text-[#137fec]"
               />
@@ -445,8 +445,8 @@ export function BriefDetailPage({ slug }: BriefDetailPageProps) {
                       |
                     </span>
                     <span className="flex items-center gap-1">
-                      <MaterialIcon
-                        name="trending_up"
+                      <Icon
+                        name="trending-up"
                         size={12}
                         className="text-emerald-400"
                       />
@@ -470,7 +470,7 @@ export function BriefDetailPage({ slug }: BriefDetailPageProps) {
               ].join(" ")}
             >
               View all related
-              <MaterialIcon name="arrow_forward" size={14} />
+              <Icon name="arrow-right" size={14} />
             </Link>
           </div>
         </aside>
@@ -500,7 +500,7 @@ function SourcePostCard({
   post: SourcePost;
   sourceNumber: number;
 }) {
-  const platformIcon = post.source === "reddit" ? "forum" : "phone_iphone";
+  const platformIcon = post.source === "reddit" ? "messages-square" : "smartphone";
   const platformColor =
     post.source === "reddit" ? "text-[#FF4500]" : "text-slate-400";
   const safeHref = isSafeUrl(post.originalUrl) ? post.originalUrl : undefined;
@@ -527,7 +527,7 @@ function SourcePostCard({
           <span
             className={`flex items-center justify-center size-8 rounded-full bg-slate-700/50 shrink-0 ${platformColor}`}
           >
-            <MaterialIcon name={platformIcon} size={16} />
+            <Icon name={platformIcon} size={16} />
           </span>
           <div className="flex items-center gap-1.5 min-w-0 text-sm">
             {post.username && (

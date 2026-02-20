@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback } from "react";
 import { Chip } from "@/src/shared/ui";
-import { MaterialIcon } from "@/src/shared/ui";
+import { Icon } from "@/src/shared/ui";
 
 /* --------------------------------------------------------------------------
    FilterChipBar
@@ -149,7 +149,7 @@ export function FilterChipBar({
             onClick={() => handleTagClick(filter.label)}
           >
             {filter.icon && (
-              <MaterialIcon
+              <Icon
                 name={filter.icon}
                 size={16}
                 className={filter.color}

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { MaterialIcon } from "@/src/shared/ui/material-icon";
+import { Icon } from "@/src/shared/ui/icon";
 import { Badge } from "@/src/shared/ui/badge";
 import { isSafeUrl } from "@/src/shared/lib/sanitize-url";
 
@@ -88,7 +88,7 @@ function SourceAvatar({ source }: { source: PostSource }) {
     case "appstore":
       return (
         <div className={`${baseClasses} bg-slate-600`}>
-          <MaterialIcon name="smartphone" size={16} />
+          <Icon name="smartphone" size={16} />
         </div>
       );
   }
@@ -215,12 +215,12 @@ export function PostCard({
         {/* Stats */}
         <div className="flex items-center gap-4">
           <span className="inline-flex items-center gap-1 text-sm text-slate-500 dark:text-slate-400">
-            <MaterialIcon name="arrow_upward" size={16} className="text-slate-400 dark:text-slate-500" />
+            <Icon name="arrow-up" size={16} className="text-slate-400 dark:text-slate-500" />
             <span className="tabular-nums">{upvotes.toLocaleString()}</span>
           </span>
           {commentCount !== undefined && (
             <span className="inline-flex items-center gap-1 text-sm text-slate-500 dark:text-slate-400">
-              <MaterialIcon name="chat_bubble" size={16} className="text-slate-400 dark:text-slate-500" />
+              <Icon name="message-circle" size={16} className="text-slate-400 dark:text-slate-500" />
               <span className="tabular-nums">{commentCount.toLocaleString()}</span>
             </span>
           )}
@@ -236,7 +236,7 @@ export function PostCard({
               className="inline-flex items-center gap-1 text-sm text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 transition-colors duration-150"
             >
               View Original
-              <MaterialIcon name="open_in_new" size={14} />
+              <Icon name="external-link" size={14} />
             </a>
           ) : (
             <span className="inline-flex items-center gap-1 text-sm text-slate-400 dark:text-slate-600">
@@ -251,7 +251,7 @@ export function PostCard({
                 href={`/briefs/${briefSlug}`}
                 className="inline-flex items-center gap-1 text-sm font-semibold text-[#137fec] hover:text-[#0f6bd0] transition-colors duration-150"
               >
-                <MaterialIcon name="bolt" size={16} />
+                <Icon name="zap" size={16} />
                 Related Brief
               </Link>
             </>

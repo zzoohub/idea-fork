@@ -47,8 +47,10 @@ describe("PostCard", () => {
     });
 
     it("renders appstore avatar for appstore source", () => {
-      render(<PostCard {...defaultProps} source="appstore" />);
-      expect(screen.getByText("smartphone")).toBeInTheDocument();
+      const { container } = render(<PostCard {...defaultProps} source="appstore" />);
+      /* appstore avatar now renders a Lucide Smartphone SVG icon */
+      const svg = container.querySelector("svg");
+      expect(svg).toBeInTheDocument();
     });
   });
 

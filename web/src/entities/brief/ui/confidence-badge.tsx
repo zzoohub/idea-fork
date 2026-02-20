@@ -1,4 +1,4 @@
-import { MaterialIcon } from "@/src/shared/ui/material-icon";
+import { Icon } from "@/src/shared/ui/icon";
 
 interface ConfidenceBadgeProps {
   level: "high" | "medium" | "low";
@@ -7,7 +7,7 @@ interface ConfidenceBadgeProps {
 
 const LEVEL_CONFIG = {
   high: {
-    icon: "check_circle",
+    icon: "circle-check",
     label: "High Confidence",
     containerClass:
       "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20",
@@ -21,7 +21,7 @@ const LEVEL_CONFIG = {
     iconClass: "text-amber-400",
   },
   low: {
-    icon: "warning",
+    icon: "triangle-alert",
     label: "Low Confidence",
     containerClass:
       "bg-red-500/10 text-red-400 border border-red-500/20",
@@ -48,7 +48,7 @@ export function ConfidenceBadge({ level, className }: ConfidenceBadgeProps) {
       role="status"
       aria-label={config.label}
     >
-      <MaterialIcon
+      <Icon
         name={config.icon}
         size={14}
         className={config.iconClass}

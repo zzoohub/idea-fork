@@ -1,4 +1,4 @@
-import { MaterialIcon } from "@/src/shared/ui/material-icon";
+import { Icon } from "@/src/shared/ui/icon";
 import { Badge } from "@/src/shared/ui/badge";
 
 export interface ComplaintTheme {
@@ -21,8 +21,8 @@ function TrendBadge({ value }: { value: number }) {
   return (
     <Badge variant={isPositive ? "positive" : "negative"}>
       <span className="inline-flex items-center gap-0.5">
-        <MaterialIcon
-          name={isPositive ? "trending_up" : "trending_down"}
+        <Icon
+          name={isPositive ? "trending-up" : "trending-down"}
           size={14}
         />
         {isPositive ? "+" : ""}
@@ -58,7 +58,7 @@ export function ComplaintSummary({
       {/* Total Mentions Card */}
       <div className="relative overflow-hidden p-5 rounded-2xl bg-white dark:bg-[#18212F] border border-slate-200 dark:border-[#283039]">
         <div className="absolute -right-2 -top-2 opacity-10" aria-hidden="true">
-          <MaterialIcon name="forum" size={64} className="text-blue-500" />
+          <Icon name="messages-square" size={64} className="text-blue-500" />
         </div>
         <div className="relative">
           <p className="text-sm text-slate-500 dark:text-slate-400">
@@ -79,7 +79,7 @@ export function ComplaintSummary({
       {/* Critical Complaints Card */}
       <div className="relative overflow-hidden p-5 rounded-2xl bg-white dark:bg-[#18212F] border border-slate-200 dark:border-[#283039]">
         <div className="absolute -right-2 -top-2 opacity-10" aria-hidden="true">
-          <MaterialIcon name="warning" size={64} className="text-orange-500" />
+          <Icon name="triangle-alert" size={64} className="text-orange-500" />
         </div>
         <div className="relative">
           <p className="text-sm text-slate-500 dark:text-slate-400">
@@ -102,7 +102,7 @@ export function ComplaintSummary({
       {/* Sentiment Score Card */}
       <div className="relative overflow-hidden p-5 rounded-2xl bg-white dark:bg-[#18212F] border border-slate-200 dark:border-[#283039]">
         <div className="absolute -right-2 -top-2 opacity-10" aria-hidden="true">
-          <MaterialIcon name="query_stats" size={64} className="text-purple-500" />
+          <Icon name="chart-line" size={64} className="text-purple-500" />
         </div>
         <div className="relative">
           <p className="text-sm text-slate-500 dark:text-slate-400">

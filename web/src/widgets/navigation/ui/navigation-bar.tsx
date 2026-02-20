@@ -3,16 +3,16 @@
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { MaterialIcon } from "@/src/shared/ui";
+import { Icon } from "@/src/shared/ui";
 import { SearchOverlay } from "@/src/features/search/ui/search-overlay";
 
 /* --------------------------------------------------------------------------
    Navigation items
    -------------------------------------------------------------------------- */
 const NAV_ITEMS = [
-  { label: "Feed", href: "/", icon: "home" },
-  { label: "Briefs", href: "/briefs", icon: "auto_awesome" },
-  { label: "Products", href: "/products", icon: "inventory_2" },
+  { label: "Feed", href: "/", icon: "house" },
+  { label: "Briefs", href: "/briefs", icon: "sparkles" },
+  { label: "Products", href: "/products", icon: "package" },
 ] as const;
 
 /* --------------------------------------------------------------------------
@@ -83,7 +83,7 @@ export function NavigationBar() {
             aria-label="idea-fork home"
           >
             <span className="flex items-center justify-center size-8 rounded-lg bg-primary text-white">
-              <MaterialIcon name="fork_right" size={20} />
+              <Icon name="git-fork" size={20} />
             </span>
             <span className="text-[15px] font-bold text-slate-900 dark:text-slate-100 tracking-tight">
               idea-fork
@@ -127,7 +127,7 @@ export function NavigationBar() {
         <div className="flex items-center gap-2">
           {/* Desktop search input (hidden on mobile) */}
           <div className="hidden sm:flex items-center relative">
-            <MaterialIcon
+            <Icon
               name="search"
               size={18}
               className="absolute left-2.5 text-slate-400 dark:text-slate-500 pointer-events-none"
@@ -162,7 +162,7 @@ export function NavigationBar() {
             ].join(" ")}
             aria-label="Open search"
           >
-            <MaterialIcon name="search" size={22} />
+            <Icon name="search" size={22} />
           </button>
 
           {/* Dark mode toggle */}
@@ -178,8 +178,8 @@ export function NavigationBar() {
             ].join(" ")}
             aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
           >
-            <MaterialIcon
-              name={isDark ? "light_mode" : "dark_mode"}
+            <Icon
+              name={isDark ? "sun" : "moon"}
               size={20}
             />
           </button>
@@ -196,7 +196,7 @@ export function NavigationBar() {
             ].join(" ")}
             aria-label="User menu"
           >
-            <MaterialIcon name="person" size={18} />
+            <Icon name="user" size={18} />
           </button>
         </div>
       </header>
@@ -232,7 +232,7 @@ export function NavigationBar() {
                       : "text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300",
                   ].join(" ")}
                 >
-                  <MaterialIcon
+                  <Icon
                     name={item.icon}
                     size={22}
                     filled={active}

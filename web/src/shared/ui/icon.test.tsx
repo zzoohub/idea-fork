@@ -4,14 +4,16 @@ import { Icon } from "./icon";
 
 describe("Icon", () => {
   describe("known icons", () => {
-    const fillIcons = ["reddit", "app-store"] as const;
+    /* Custom SVG icons (reddit, app-store) render fill="currentColor" with no stroke attribute */
+    const customFillIcons = ["reddit", "app-store"] as const;
+    /* Lucide stroke icons render fill="none" stroke="currentColor" by default */
     const strokeIcons = [
       "external-link",
       "thumbs-up",
       "thumbs-down",
       "search",
-      "sort",
-      "trending",
+      "arrow-up-down",
+      "trending-up",
       "arrow-left",
       "close",
       "warning",
@@ -20,13 +22,12 @@ describe("Icon", () => {
       "chevron-down",
     ] as const;
 
-    fillIcons.forEach((name) => {
+    customFillIcons.forEach((name) => {
       it(`renders fill icon: ${name}`, () => {
         const { container } = render(<Icon name={name} />);
         const svg = container.querySelector("svg");
         expect(svg).toBeInTheDocument();
         expect(svg).toHaveAttribute("fill", "currentColor");
-        expect(svg).toHaveAttribute("stroke", "none");
       });
     });
 
@@ -96,6 +97,30 @@ describe("Icon", () => {
       const path = container.querySelector("svg path");
       expect(path).toBeInTheDocument();
       expect(path?.getAttribute("d")).toBeTruthy();
+    });
+  });
+
+  describe("filled prop", () => {
+    it("applies fill=currentColor and strokeWidth=0 to Lucide icon when filled=true", () => {
+      const { container } = render(<Icon name="thumbs-up" filled />);
+      const svg = container.querySelector("svg");
+      expect(svg).toBeInTheDocument();
+      expect(svg).toHaveAttribute("fill", "currentColor");
+      expect(svg).toHaveAttribute("stroke-width", "0");
+    });
+
+    it("does not override fill on Lucide icon when filled=false (default)", () => {
+      const { container } = render(<Icon name="thumbs-up" filled={false} />);
+      const svg = container.querySelector("svg");
+      expect(svg).toBeInTheDocument();
+      expect(svg).toHaveAttribute("fill", "none");
+    });
+
+    it("custom SVG icons always render fill=currentColor regardless of filled prop", () => {
+      const { container } = render(<Icon name="reddit" filled={false} />);
+      const svg = container.querySelector("svg");
+      expect(svg).toBeInTheDocument();
+      expect(svg).toHaveAttribute("fill", "currentColor");
     });
   });
 });

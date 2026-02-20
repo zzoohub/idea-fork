@@ -1,6 +1,6 @@
 "use client";
 
-import { MaterialIcon } from "./material-icon";
+import { Icon } from "./icon";
 
 interface SortOption {
   label: string;
@@ -22,8 +22,8 @@ export function SortDropdown({
 }: SortDropdownProps) {
   return (
     <div className={`relative inline-flex items-center ${className}`}>
-      <MaterialIcon
-        name="sort"
+      <Icon
+        name="arrow-up-down"
         size={16}
         className="pointer-events-none absolute left-3 text-text-secondary"
       />
@@ -48,8 +48,8 @@ export function SortDropdown({
           </option>
         ))}
       </select>
-      <MaterialIcon
-        name="expand_more"
+      <Icon
+        name="chevron-down"
         size={16}
         className="pointer-events-none absolute right-2 text-text-secondary"
       />

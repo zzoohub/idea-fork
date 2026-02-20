@@ -13,4 +13,4 @@ export { Badge } from "./badge";
 export { RatingButtons } from "./rating-buttons";
 export { SourceSnippet } from "./source-snippet";
 export { Divider } from "./divider";
-export { MaterialIcon } from "./material-icon";
+
