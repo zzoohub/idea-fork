@@ -40,9 +40,6 @@ web-test-watch *args:
 web-test-cov:
     cd web && bun vitest run --coverage
 
-web-ui component:
-    cd web && bunx shadcn@latest add {{ component }}
-
 # ─── Quality ──────────────────────────────────────────────────────────────────
 
 web-check: web-typecheck web-lint web-test
