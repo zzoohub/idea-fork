@@ -40,6 +40,23 @@ web-test-watch *args:
 web-test-cov:
     cd web && bun vitest run --coverage
 
+# ─── API (FastAPI) ───────────────────────────────────────────────────────────
+
+api-install:
+    cd api && uv sync
+
+api-dev:
+    cd api && PYTHONPATH=src uv run uvicorn app.main:create_app --factory --reload --host 0.0.0.0 --port 8000
+
+api-start:
+    cd api && PYTHONPATH=src uv run python -m app.main
+
+api-test *args:
+    cd api && PYTHONPATH=src uv run pytest {{ args }}
+
+api-test-cov:
+    cd api && PYTHONPATH=src uv run pytest --cov=src --cov-report=term-missing
+
 # ─── Quality ──────────────────────────────────────────────────────────────────
 
 web-check: web-typecheck web-lint web-test
@@ -48,3 +65,6 @@ web-check: web-typecheck web-lint web-test
 
 web-clean:
     rm -rf web/.next web/coverage
+
+api-clean:
+    rm -rf api/.venv api/__pycache__
