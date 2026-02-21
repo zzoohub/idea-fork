@@ -1,0 +1,112 @@
+erDiagram
+    post ||--o{ post_tag : has
+    tag ||--o{ post_tag : applied_to
+    post ||--o{ cluster_post : belongs_to
+    cluster ||--o{ cluster_post : contains
+    cluster ||--o{ brief : generates
+    brief ||--o{ brief_source : cites
+    post ||--o{ brief_source : cited_in
+    brief ||--o{ rating : receives
+    product ||--o{ product_post : linked_to
+    post ||--o{ product_post : complaints_about
+
+    post {
+        bigint id PK
+        timestamptz created_at
+        timestamptz updated_at
+        timestamptz external_created_at
+        timestamptz deleted_at
+        integer score
+        integer num_comments
+        text source
+        text external_id UK
+        text subreddit
+        text title
+        text body
+        text external_url
+        text post_type
+        text sentiment
+        text tagging_status
+        tsvector search_vector
+    }
+
+    tag {
+        bigint id PK
+        text name UK
+        text slug UK
+        timestamptz created_at
+    }
+
+    post_tag {
+        bigint post_id PK_FK
+        bigint tag_id PK_FK
+    }
+
+    cluster {
+        bigint id PK
+        timestamptz created_at
+        timestamptz updated_at
+        integer post_count
+        text label
+        text summary
+        text status
+    }
+
+    cluster_post {
+        bigint cluster_id PK_FK
+        bigint post_id PK_FK
+    }
+
+    brief {
+        bigint id PK
+        timestamptz created_at
+        timestamptz updated_at
+        timestamptz published_at
+        bigint cluster_id FK
+        integer source_count
+        integer upvote_count
+        integer downvote_count
+        text title
+        text slug UK
+        text summary
+        text problem_statement
+        text opportunity
+        text status
+        jsonb demand_signals
+        jsonb solution_directions
+        jsonb source_snapshots
+    }
+
+    brief_source {
+        bigint brief_id PK_FK
+        bigint post_id PK_FK
+        text snippet
+    }
+
+    product {
+        bigint id PK
+        timestamptz created_at
+        timestamptz updated_at
+        integer complaint_count
+        numeric trending_score
+        text name
+        text slug UK
+        text description
+        text url
+        text image_url
+        text category
+    }
+
+    product_post {
+        bigint product_id PK_FK
+        bigint post_id PK_FK
+    }
+
+    rating {
+        bigint id PK
+        timestamptz created_at
+        bigint brief_id FK
+        boolean is_positive
+        text session_id
+        text feedback
+    }
