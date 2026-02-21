@@ -273,7 +273,7 @@ Developer ──push──▶ GitHub ──trigger──▶ GitHub Actions
 
 | Environment | Web | API | Database | Purpose |
 |---|---|---|---|---|
-| **Development** | localhost:3000 | localhost:8000 | Neon branch | Local dev |
+| **Development** | localhost:3000 | localhost:8080 | Neon branch | Local dev |
 | **Preview** | Vercel preview URL | — (uses prod API or staging) | Neon branch | PR review |
 | **Production** | Vercel production | Cloud Run (prod) | Neon main branch | Live |
 

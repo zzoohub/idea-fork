@@ -14,57 +14,117 @@ push branch="main" msg="update":
 # ─── Web (Next.js) ────────────────────────────────────────────────────────────
 
 web-install:
-    cd web && bun install
+    cd clients/web && bun install
 
 web-dev:
-    cd web && bun run dev
+    cd clients/web && bun run dev
 
 web-build:
-    cd web && bun run build
+    cd clients/web && bun run build
 
 web-start:
-    cd web && bun run start
+    cd clients/web && bun run start
 
 web-lint:
-    cd web && bun run lint
+    cd clients/web && bun run lint
 
 web-typecheck:
-    cd web && bun tsc --noEmit
+    cd clients/web && bun tsc --noEmit
 
 web-test *args:
-    cd web && bun vitest run {{ args }}
+    cd clients/web && bun vitest run {{ args }}
 
 web-test-watch *args:
-    cd web && bun vitest {{ args }}
+    cd clients/web && bun vitest {{ args }}
 
 web-test-cov:
-    cd web && bun vitest run --coverage
+    cd clients/web && bun vitest run --coverage
+
+web-clean:
+    rm -rf clients/web/.next clients/web/coverage
 
 # ─── API (FastAPI) ───────────────────────────────────────────────────────────
 
 api-install:
-    cd api && uv sync
+    cd services/api && uv sync
 
 api-dev:
-    cd api && PYTHONPATH=src uv run uvicorn app.main:create_app --factory --reload --host 0.0.0.0 --port 8000
+    cd services/api && PYTHONPATH=src uv run uvicorn app.main:create_app --factory --reload --host 0.0.0.0 --port 8080
 
 api-start:
-    cd api && PYTHONPATH=src uv run python -m app.main
+    cd services/api && PYTHONPATH=src uv run python -m app.main
 
 api-test *args:
-    cd api && PYTHONPATH=src uv run pytest {{ args }}
+    cd services/api && PYTHONPATH=src uv run pytest {{ args }}
 
 api-test-cov:
-    cd api && PYTHONPATH=src uv run pytest --cov=src --cov-report=term-missing
+    cd services/api && PYTHONPATH=src uv run pytest --cov=src --cov-report=term-missing
 
-# ─── Quality ──────────────────────────────────────────────────────────────────
+api-lint:
+    cd services/api && uv run ruff check src tests
+
+api-pipeline:
+    cd services/api && PYTHONPATH=src uv run python -m app.pipeline_cli
+
+api-clean:
+    rm -rf services/api/.venv services/api/__pycache__
+
+# ─── Database ────────────────────────────────────────────────────────────────
+
+db-migrate:
+    @echo "TODO: apply migrations from db/migrations/"
+
+db-seed:
+    @echo "TODO: run seed scripts from db/seeds/"
+
+db-reset:
+    @echo "TODO: drop + recreate + migrate + seed"
+
+# ─── Worker (Cloudflare Workers) ─────────────────────────────────────────────
+
+worker-dev:
+    @echo "TODO: wrangler dev"
+
+worker-test:
+    @echo "TODO: vitest run"
+
+# ─── Mobile (Expo) ───────────────────────────────────────────────────────────
+
+mobile-install:
+    cd clients/mobile && bun install
+
+mobile-dev:
+    cd clients/mobile && bun expo start
+
+mobile-ios:
+    cd clients/mobile && bun expo run:ios
+
+mobile-android:
+    cd clients/mobile && bun expo run:android
+
+mobile-lint:
+    cd clients/mobile && bun run lint
+
+mobile-typecheck:
+    cd clients/mobile && bun tsc --noEmit
+
+mobile-test *args:
+    cd clients/mobile && bun vitest run {{ args }}
+
+mobile-clean:
+    rm -rf clients/mobile/node_modules clients/mobile/.expo
+
+# ─── Quality (aggregated) ────────────────────────────────────────────────────
 
 web-check: web-typecheck web-lint web-test
 
-# ─── Clean ────────────────────────────────────────────────────────────────────
+lint: web-lint api-lint
 
-web-clean:
-    rm -rf web/.next web/coverage
+test: web-test api-test
 
-api-clean:
-    rm -rf api/.venv api/__pycache__
+check: lint web-typecheck test
+
+# ─── Build ───────────────────────────────────────────────────────────────────
+
+build:
+    @echo "TODO: docker build"
