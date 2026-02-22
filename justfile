@@ -3,7 +3,7 @@ set dotenv-load := false
 default:
     @just --list
 
-# ─── Git ────────────────────────────────────────────────────────────
+# ─── Git ──────────────────────────────────────────────────────────────────────
 
 log:
     git log --graph --oneline --all --decorate --color -20
@@ -11,7 +11,51 @@ log:
 push branch="main" msg="update":
     git add . && git commit -m "{{ msg }}" && git push origin {{ branch }}
 
-# ─── Web (Next.js) ────────────────────────────────────────────────────────────
+# ─── DB ───────────────────────────────────────────────────────────────────────
+
+db-migrate:
+    cd db && echo "TODO: run migrations"
+
+db-seed:
+    cd db && echo "TODO: run seeds"
+
+db-reset: db-migrate db-seed
+
+# ─── API (FastAPI) ────────────────────────────────────────────────────────────
+
+api-install:
+    cd services/api && uv sync
+
+api-dev:
+    cd services/api && PYTHONPATH=src uv run uvicorn app.main:create_app --factory --reload --host 0.0.0.0 --port 8080
+
+api-start:
+    cd services/api && PYTHONPATH=src uv run python -m app.main
+
+api-test *args:
+    cd services/api && PYTHONPATH=src uv run pytest {{ args }}
+
+api-test-cov:
+    cd services/api && PYTHONPATH=src uv run pytest --cov=src --cov-report=term-missing
+
+api-lint:
+    cd services/api && uv run ruff check src tests
+
+api-pipeline:
+    cd services/api && PYTHONPATH=src uv run python -m app.pipeline_cli
+
+api-clean:
+    rm -rf services/api/.venv services/api/__pycache__
+
+# ─── Worker ───────────────────────────────────────────────────────────────────
+
+worker-dev:
+    cd services/worker && echo "TODO: start worker"
+
+worker-test:
+    cd services/worker && echo "TODO: run worker tests"
+
+# ─── Web (Next.js) ───────────────────────────────────────────────────────────
 
 web-install:
     cd clients/web && bun install
@@ -43,64 +87,19 @@ web-test-cov:
 web-clean:
     rm -rf clients/web/.next clients/web/coverage
 
-# ─── API (FastAPI) ───────────────────────────────────────────────────────────
-
-api-install:
-    cd services/api && uv sync
-
-api-dev:
-    cd services/api && PYTHONPATH=src uv run uvicorn app.main:create_app --factory --reload --host 0.0.0.0 --port 8080
-
-api-start:
-    cd services/api && PYTHONPATH=src uv run python -m app.main
-
-api-test *args:
-    cd services/api && PYTHONPATH=src uv run pytest {{ args }}
-
-api-test-cov:
-    cd services/api && PYTHONPATH=src uv run pytest --cov=src --cov-report=term-missing
-
-api-lint:
-    cd services/api && uv run ruff check src tests
-
-api-pipeline:
-    cd services/api && PYTHONPATH=src uv run python -m app.pipeline_cli
-
-api-clean:
-    rm -rf services/api/.venv services/api/__pycache__
-
-# ─── Database ────────────────────────────────────────────────────────────────
-
-db-migrate:
-    @echo "TODO: apply migrations from db/migrations/"
-
-db-seed:
-    @echo "TODO: run seed scripts from db/seeds/"
-
-db-reset:
-    @echo "TODO: drop + recreate + migrate + seed"
-
-# ─── Worker (Cloudflare Workers) ─────────────────────────────────────────────
-
-worker-dev:
-    @echo "TODO: wrangler dev"
-
-worker-test:
-    @echo "TODO: vitest run"
-
-# ─── Mobile (Expo) ───────────────────────────────────────────────────────────
+# ─── Mobile (Expo React Native) ──────────────────────────────────────────────
 
 mobile-install:
     cd clients/mobile && bun install
 
 mobile-dev:
-    cd clients/mobile && bun expo start
+    cd clients/mobile && bunx expo start --dev-client
 
 mobile-ios:
-    cd clients/mobile && bun expo run:ios
+    cd clients/mobile && bunx expo run:ios
 
 mobile-android:
-    cd clients/mobile && bun expo run:android
+    cd clients/mobile && bunx expo run:android
 
 mobile-lint:
     cd clients/mobile && bun run lint
@@ -112,19 +111,17 @@ mobile-test *args:
     cd clients/mobile && bun vitest run {{ args }}
 
 mobile-clean:
-    rm -rf clients/mobile/node_modules clients/mobile/.expo
+    rm -rf clients/mobile/.expo clients/mobile/node_modules
 
-# ─── Quality (aggregated) ────────────────────────────────────────────────────
+# ─── Quality ──────────────────────────────────────────────────────────────────
 
-web-check: web-typecheck web-lint web-test
+lint: api-lint web-lint mobile-lint
 
-lint: web-lint api-lint
+test: api-test web-test mobile-test
 
-test: web-test api-test
+check: lint test
 
-check: lint web-typecheck test
+# ─── Build ────────────────────────────────────────────────────────────────────
 
-# ─── Build ───────────────────────────────────────────────────────────────────
-
-build:
-    @echo "TODO: docker build"
+build service:
+    docker build -t {{ service }} -f services/{{ service }}/Dockerfile .

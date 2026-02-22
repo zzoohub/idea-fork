@@ -18,13 +18,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 │       └── subscribers/
 ├── clients/
 │   ├── web/              # Next.js frontend
-│   └── mobile/           
+│   └── mobile/           # Expo React Native
 ├── db/
 │   ├── migrations/
 │   └── seeds/
 ├── infra/                # Pulumi IaC
-├── docs/                 # PRD, design docs, ux-design
-└── scripts/              # Dev utility scripts
+├── docs/                 # Product planning (what and how to build)
+├── biz/                  # Business operations (how to sell & grow)
+└── scripts/
 ```
 
 ## Environment
@@ -44,6 +45,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 2. After implementation, run these sub-agents in parallel:
    - **z-security-reviewer**: security audit → fix
    - **z-tester**: test changed code → fix
+3. Marketing content must reference `docs/product-brief.md` for consistent messaging.
+4. All user-facing events must be defined in `biz/analytics/tracking-plan.md` before implementation.
 
 ### MUST NOT
 - (project-specific anti-patterns here)
@@ -64,6 +67,9 @@ All commands are in `justfile`. Run `just --list` to see available recipes.
 ### API Conventions
 - `PYTHONPATH=src` is required when running API commands.
 
+## Worker
+<!-- TODO: If worker is needed -->
+
 ## Web
 ### Web Workflow (MUST FOLLOW)
 - UI components: **z-ui-engineer** Agent
@@ -74,6 +80,8 @@ All commands are in `justfile`. Run `just --list` to see available recipes.
 
 ### Web Conventions
 - **i18n**: Use `next-intl` for all UI text (Korean/English).
+- **Responsive**: Support all screen sizes.
+- **Dark mode**: Support light and dark themes.
 - **Path alias**: `@/*` maps to project root (`@/src/...`, `@/app/...`).
 - **Testing**: Vitest + React Testing Library + jsdom. Tests co-located as `*.test.tsx`. Coverage thresholds: 100% (excludes `src/app/`, `src/views/`, `src/widgets/`, barrel `index.ts` files).
 - **Styling**: Tailwind CSS v4 via `@tailwindcss/postcss`. Dark mode on by default (`<html class="dark">`).
