@@ -106,7 +106,7 @@ idea-fork is a web app that aggregates user complaints from multiple platforms, 
 - **[P1]** Filter feed by source platform
 - **[P1]** Sort feed by recency or trending (engagement-weighted)
 - **[P1]** Search feed by keyword
-- **[P2]** Add additional source platforms (app store reviews, forums)
+- **[P1]** Add additional source platforms (App Store reviews, Google Play reviews)
 
 ### AI Briefs
 
@@ -119,6 +119,7 @@ idea-fork is a web app that aggregates user complaints from multiple platforms, 
 
 ### Products
 
+- **[P1]** Ingest trending/recently launched products from Product Hunt API
 - **[P1]** Display a list of trending/recently launched products
 - **[P1]** Each product paired with aggregated user complaints from feed data
 - **[P1]** Product detail page showing: product info, complaint summary, linked source posts
@@ -132,7 +133,8 @@ idea-fork is a web app that aggregates user complaints from multiple platforms, 
 - **[P0]** Brief generation: synthesize briefs from post clusters using LLM with source attribution
 - **[P1]** Deduplication: detect and merge near-duplicate posts
 - **[P1]** Quality scoring: rank posts and clusters by signal strength (engagement, specificity, recency)
-- **[P2]** Ingest from additional platforms (App Store, Google Play, forums)
+- **[P1]** Ingest from App Store and Google Play (reviews/ratings)
+- **[P1]** Ingest trending products from Product Hunt API
 
 ### General
 
@@ -257,6 +259,8 @@ idea-fork is a web app that aggregates user complaints from multiple platforms, 
 ### Dependencies
 
 - Reddit API access (approved developer account)
+- Product Hunt API access (OAuth or developer token)
+- App Store / Google Play review data access (scraping or third-party API)
 - LLM API access (Anthropic and/or OpenAI)
 - Hosting infrastructure (Vercel for frontend, cloud provider for API and pipeline)
 

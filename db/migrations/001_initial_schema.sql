@@ -47,7 +47,7 @@ CREATE TABLE post (
     search_vector       tsvector,
 
     CONSTRAINT uq_post_source_external_id UNIQUE (source, external_id),
-    CONSTRAINT chk_post_source CHECK (source IN ('reddit', 'app_store', 'play_store', 'forum')),
+    CONSTRAINT chk_post_source CHECK (source IN ('reddit', 'app_store', 'play_store')),
     CONSTRAINT chk_post_type CHECK (post_type IS NULL OR post_type IN (
         'complaint', 'feature_request', 'question', 'discussion', 'other'
     )),
@@ -61,8 +61,8 @@ CREATE TRIGGER trg_post_updated_at
     BEFORE UPDATE ON post
     FOR EACH ROW EXECUTE FUNCTION fn_set_updated_at();
 
-COMMENT ON TABLE post IS 'Raw user complaints and needs ingested from external platforms (Reddit, app stores, forums)';
-COMMENT ON COLUMN post.source IS 'Source platform: reddit, app_store, play_store, forum';
+COMMENT ON TABLE post IS 'Raw user complaints and needs ingested from external platforms (Reddit, App Store, Google Play)';
+COMMENT ON COLUMN post.source IS 'Source platform: reddit, app_store, play_store';
 COMMENT ON COLUMN post.external_id IS 'Unique identifier on the source platform (e.g., Reddit post ID)';
 COMMENT ON COLUMN post.subreddit IS 'Reddit subreddit name (null for non-Reddit sources)';
 COMMENT ON COLUMN post.external_url IS 'Permalink to the original post on the source platform';
@@ -205,26 +205,40 @@ CREATE TABLE product (
     id              BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     created_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
+    launched_at     TIMESTAMPTZ,
     complaint_count INTEGER NOT NULL DEFAULT 0,
     trending_score  NUMERIC(10, 4) NOT NULL DEFAULT 0,
+    source          TEXT NOT NULL DEFAULT 'producthunt',
+    external_id     TEXT NOT NULL,
     name            TEXT NOT NULL,
     slug            TEXT NOT NULL,
+    tagline         TEXT,
     description     TEXT,
     url             TEXT,
     image_url       TEXT,
     category        TEXT,
 
     CONSTRAINT uq_product_slug UNIQUE (slug),
+    CONSTRAINT uq_product_source_external_id UNIQUE (source, external_id),
+    CONSTRAINT chk_product_source CHECK (source IN ('producthunt')),
     CONSTRAINT chk_product_slug_length CHECK (char_length(slug) BETWEEN 1 AND 200),
+    CONSTRAINT chk_product_external_id_length CHECK (char_length(external_id) BETWEEN 1 AND 500),
+    CONSTRAINT chk_product_name_length CHECK (char_length(name) BETWEEN 1 AND 500),
     CONSTRAINT chk_product_complaint_count CHECK (complaint_count >= 0),
-    CONSTRAINT chk_product_trending_score CHECK (trending_score >= 0)
+    CONSTRAINT chk_product_trending_score CHECK (trending_score >= 0 AND trending_score < 'Infinity'::NUMERIC),
+    CONSTRAINT chk_product_url_scheme CHECK (url IS NULL OR url ~ '^https?://'),
+    CONSTRAINT chk_product_image_url_scheme CHECK (image_url IS NULL OR image_url ~ '^https?://')
 );
 
 CREATE TRIGGER trg_product_updated_at
     BEFORE UPDATE ON product
     FOR EACH ROW EXECUTE FUNCTION fn_set_updated_at();
 
-COMMENT ON TABLE product IS 'Trending products paired with aggregated user complaints';
+COMMENT ON TABLE product IS 'Trending products ingested from Product Hunt, paired with aggregated user complaints';
+COMMENT ON COLUMN product.source IS 'Source platform: producthunt';
+COMMENT ON COLUMN product.external_id IS 'Unique identifier on the source platform (e.g., Product Hunt product ID)';
+COMMENT ON COLUMN product.launched_at IS 'Product launch date from Product Hunt';
+COMMENT ON COLUMN product.tagline IS 'Short product tagline from Product Hunt';
 COMMENT ON COLUMN product.complaint_count IS 'Denormalized count of linked complaint posts';
 COMMENT ON COLUMN product.trending_score IS 'Pipeline-computed trending score for sorting';
 
@@ -310,6 +324,10 @@ CREATE INDEX idx_product_trending ON product (trending_score DESC, id DESC);
 
 -- product: listing sorted by complaint count
 CREATE INDEX idx_product_complaints ON product (complaint_count DESC, id DESC);
+
+-- product: listing by launch date
+CREATE INDEX idx_product_launched ON product (launched_at DESC, id DESC)
+    WHERE launched_at IS NOT NULL;
 
 -- product_post: reverse lookup (find products for a post)
 CREATE INDEX idx_product_post_post_id ON product_post (post_id);

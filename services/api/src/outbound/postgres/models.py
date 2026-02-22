@@ -70,12 +70,16 @@ class ProductRow(Base):
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
     created_at: Mapped[datetime] = mapped_column(nullable=False)
     updated_at: Mapped[datetime] = mapped_column(nullable=False)
+    launched_at: Mapped[datetime | None] = mapped_column(default=None)
     complaint_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     trending_score: Mapped[Decimal] = mapped_column(
         Numeric(10, 4), nullable=False, default=0
     )
+    source: Mapped[str] = mapped_column(Text, nullable=False, default="producthunt")
+    external_id: Mapped[str] = mapped_column(Text, nullable=False)
     name: Mapped[str] = mapped_column(Text, nullable=False)
     slug: Mapped[str] = mapped_column(Text, nullable=False, unique=True)
+    tagline: Mapped[str | None] = mapped_column(Text, default=None)
     description: Mapped[str | None] = mapped_column(Text, default=None)
     url: Mapped[str | None] = mapped_column(Text, default=None)
     image_url: Mapped[str | None] = mapped_column(Text, default=None)

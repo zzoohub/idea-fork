@@ -10,10 +10,13 @@ class ProductListResponseData(BaseModel):
     id: int
     slug: str
     name: str
+    tagline: str | None
     description: str | None
     url: str | None
     image_url: str | None
     category: str | None
+    source: str
+    launched_at: datetime | None
     complaint_count: int
     trending_score: float
 
@@ -23,10 +26,13 @@ class ProductListResponseData(BaseModel):
             id=product.id,
             slug=product.slug,
             name=product.name,
+            tagline=product.tagline,
             description=product.description,
             url=product.url,
             image_url=product.image_url,
             category=product.category,
+            source=product.source,
+            launched_at=product.launched_at,
             complaint_count=product.complaint_count,
             trending_score=product.trending_score,
         )

@@ -124,11 +124,15 @@ erDiagram
         bigint id PK
         timestamptz created_at
         timestamptz updated_at
+        timestamptz launched_at
         integer complaint_count
         numeric trending_score
+        text source
+        text external_id UK
         text name
         text slug UK
         text description
+        text tagline
         text url
         text image_url
         text category
@@ -159,7 +163,7 @@ Full Mermaid source: [docs/erd.mermaid](/docs/erd.mermaid)
 
 Posts use `source` + `external_id` instead of Reddit-specific column names (`reddit_id`). This follows the SADD recommendation to "abstract data source layer for future platform additions" (Section 7, Risk Mitigation) with minimal overhead.
 
-- `source`: platform identifier (`reddit`, `app_store`, `play_store`, `forum`)
+- `source`: platform identifier (`reddit`, `app_store`, `play_store`)
 - `external_id`: unique ID on the source platform
 - `subreddit`: Reddit-specific metadata, nullable for non-Reddit sources
 - Unique constraint on `(source, external_id)` prevents duplicate ingestion across re-fetches
@@ -212,17 +216,29 @@ This follows the SADD explicitly: "Pre-computed source post references stored in
 }
 ```
 
-### 3.4 Brief Rating Counters
+### 3.4 Product: Product Hunt as Source
+
+Products are ingested from the Product Hunt API. The `product` table follows the same external source pattern as `post`:
+
+- `source`: platform identifier (`producthunt` for MVP). Extensible for future sources.
+- `external_id`: Product Hunt product ID. Unique constraint on `(source, external_id)` prevents duplicates.
+- `launched_at`: Product Hunt launch date, used for freshness ranking.
+- `tagline`: Short product description from Product Hunt (separate from longer `description`).
+- `url`: Product's own website URL (not the Product Hunt page).
+
+Product-to-post linking (`product_post`) is populated by the pipeline via product name/keyword matching against complaint posts.
+
+### 3.5 Brief Rating Counters
 
 `brief.upvote_count` and `brief.downvote_count` are denormalized counters updated on rating submission. This avoids a `COUNT(*)` query on the `rating` table for every brief card render.
 
 At MVP load (~50 ratings/day), updating these counters inline with the rating INSERT is sufficient. No need for async counter updates or materialized views.
 
-### 3.5 Soft Delete on Posts
+### 3.6 Soft Delete on Posts
 
 Posts use `deleted_at` timestamp for the 12-month archival policy (SADD Section 4.2). All read-path indexes are partial indexes with `WHERE deleted_at IS NULL` to exclude archived posts from active queries at zero cost.
 
-### 3.6 No i18n Columns
+### 3.7 No i18n Columns
 
 All user-facing text (UI labels, navigation) is handled by `next-intl` on the frontend. Database content (posts, briefs, tags) is sourced from English-language platforms in MVP. No multi-language columns needed. If translated briefs are added post-MVP, a `brief_translation` table can be introduced.
 
@@ -299,6 +315,7 @@ All post indexes are partial (`WHERE deleted_at IS NULL`) to exclude soft-delete
 |---|---|---|
 | `idx_product_trending` | B-tree | Product listing sorted by trending score |
 | `idx_product_complaints` | B-tree | Product listing sorted by complaint count |
+| `idx_product_source_external` | B-tree (unique) | Upsert on `(source, external_id)` for Product Hunt ingestion |
 | `idx_product_post_post_id` | B-tree | Reverse: find products linked to a post |
 
 ### Pipeline Performance

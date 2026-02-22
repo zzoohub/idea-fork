@@ -9,10 +9,14 @@ class Product:
     id: int
     slug: str
     name: str
+    source: str
+    external_id: str
+    tagline: str | None
     description: str | None
     url: str | None
     image_url: str | None
     category: str | None
+    launched_at: datetime | None
     complaint_count: int
     trending_score: float
 

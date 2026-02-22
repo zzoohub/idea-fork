@@ -80,5 +80,5 @@ async def main() -> int:
         await db.dispose()
 
 
-if __name__ == "__main__":
+if __name__ == "__main__":  # pragma: no cover
     sys.exit(asyncio.run(main()))

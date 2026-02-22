@@ -86,10 +86,14 @@ def test_product_row_tablename_and_columns():
         id=1,
         created_at=now,
         updated_at=now,
+        launched_at=now,
         complaint_count=20,
         trending_score=8.5,
+        source="producthunt",
+        external_id="notion-1",
         name="Notion",
         slug="notion",
+        tagline="One workspace. Every team.",
         description="A tool",
         url="https://notion.so",
         image_url=None,
@@ -98,11 +102,15 @@ def test_product_row_tablename_and_columns():
     assert row.id == 1
     assert row.name == "Notion"
     assert row.slug == "notion"
+    assert row.source == "producthunt"
+    assert row.external_id == "notion-1"
+    assert row.tagline == "One workspace. Every team."
     assert row.description == "A tool"
     assert row.url == "https://notion.so"
     assert row.image_url is None
     assert row.category == "Productivity"
     assert row.complaint_count == 20
+    assert row.launched_at == now
 
 
 def test_product_row_optional_fields_default_none():
@@ -111,9 +119,12 @@ def test_product_row_optional_fields_default_none():
         id=2,
         created_at=now,
         updated_at=now,
+        external_id="min-1",
         name="MinimalProduct",
         slug="minimal-product",
     )
+    assert row.launched_at is None
+    assert row.tagline is None
     assert row.description is None
     assert row.url is None
     assert row.image_url is None

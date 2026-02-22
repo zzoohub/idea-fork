@@ -15,10 +15,14 @@ def _make_product_row(
     id=1,
     slug="notion",
     name="Notion",
+    source="producthunt",
+    external_id="notion-1",
+    tagline="One workspace. Every team.",
     description="A tool",
     url="https://notion.so",
     image_url=None,
     category="Productivity",
+    launched_at=None,
     complaint_count=10,
     trending_score=Decimal("8.5000"),
 ):
@@ -26,10 +30,14 @@ def _make_product_row(
     row.id = id
     row.slug = slug
     row.name = name
+    row.source = source
+    row.external_id = external_id
+    row.tagline = tagline
     row.description = description
     row.url = url
     row.image_url = image_url
     row.category = category
+    row.launched_at = launched_at
     row.complaint_count = complaint_count
     row.trending_score = trending_score
     return row

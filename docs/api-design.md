@@ -146,7 +146,7 @@ List posts with filtering, sorting, keyword search, and keyset pagination.
 | `limit` | integer | 20 | Items per page (1–100) |
 | `sort` | string | `-external_created_at` | Sort field. Allowed: `-external_created_at`, `-score`, `-num_comments` |
 | `tag` | string | — | Filter by tag slug(s), comma-separated |
-| `source` | string | — | Filter by source platform (`reddit`) |
+| `source` | string | — | Filter by source platform (`reddit`, `app_store`, `play_store`) |
 | `subreddit` | string | — | Filter by subreddit |
 | `post_type` | string | — | Filter by type (`complaint`, `feature_request`, `question`) |
 | `sentiment` | string | — | Filter by sentiment (`positive`, `negative`, `neutral`, `mixed`) |
@@ -388,10 +388,13 @@ List products with sorting and keyset pagination.
       "id": 7,
       "slug": "notion",
       "name": "Notion",
+      "tagline": "One workspace. Every team.",
       "description": "All-in-one workspace for notes, docs, and project management.",
       "url": "https://notion.so",
       "image_url": "https://cdn.idea-fork.com/products/notion.png",
       "category": "Productivity",
+      "source": "producthunt",
+      "launched_at": "2016-08-15T00:00:00Z",
       "complaint_count": 156,
       "trending_score": 8.7
     }
@@ -415,10 +418,13 @@ Product detail with linked complaint posts.
     "id": 7,
     "slug": "notion",
     "name": "Notion",
+    "tagline": "One workspace. Every team.",
     "description": "All-in-one workspace for notes, docs, and project management.",
     "url": "https://notion.so",
     "image_url": "https://cdn.idea-fork.com/products/notion.png",
     "category": "Productivity",
+    "source": "producthunt",
+    "launched_at": "2016-08-15T00:00:00Z",
     "complaint_count": 156,
     "trending_score": 8.7,
     "posts": [

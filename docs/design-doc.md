@@ -39,18 +39,26 @@ Builders (indie hackers, early-stage founders, PMs) spend 5+ hours/week manually
                           │     External Services     │         │
                           │  ┌──────────┐  ┌──────────▼──────┐  │
                           │  │Reddit API│  │   LLM APIs      │  │
-                          │  │          │  │(Claude / OpenAI) │  │
-                          │  └──────────┘  └─────────────────┘  │
+                          │  └──────────┘  │(Claude / OpenAI) │  │
+                          │  ┌──────────┐  └─────────────────┘  │
+                          │  │PH API    │                       │
+                          │  └──────────┘                       │
+                          │  ┌──────────┐  ┌────────────────┐   │
+                          │  │App Store │  │ Google Play     │   │
+                          │  └──────────┘  └────────────────┘   │
                           └─────────────────────────────────────┘
 ```
 
 **Actors:**
 - **Anonymous users** — browse feed, read briefs, view products, rate briefs. No login required for MVP.
 - **Reddit API** — source of raw user complaints (ingestion target).
+- **Product Hunt API** — source of trending/new products (ingestion target).
+- **App Store / Google Play** — source of app reviews and ratings (P1 ingestion target).
 - **LLM APIs** (Anthropic Claude Haiku, OpenAI GPT-4o-mini) — tagging, clustering, brief generation.
 
 **Data flows:**
-- **Inbound**: Reddit API → Data Pipeline → PostgreSQL (raw posts, tags, clusters, briefs)
+- **Inbound (complaints)**: Reddit API, App Store, Google Play → Data Pipeline → PostgreSQL (raw posts, tags, clusters, briefs)
+- **Inbound (products)**: Product Hunt API → Data Pipeline → PostgreSQL (products)
 - **Read path**: User → Web App (Next.js SSR) → API Server → PostgreSQL → rendered page
 - **Write path (MVP)**: Brief ratings only — User → API → PostgreSQL
 
@@ -58,7 +66,7 @@ Builders (indie hackers, early-stage founders, PMs) spend 5+ hours/week manually
 
 | # | Assumption | If Wrong |
 |---|---|---|
-| 1 | Reddit alone provides enough signal for MVP launch | Need to accelerate multi-source ingestion (App Store, forums) before launch |
+| 1 | Reddit alone provides enough signal for MVP launch | Need to accelerate multi-source ingestion (App Store, Google Play) before launch |
 | 2 | LLM tagging accuracy ≥ 85% with few-shot prompting | Need human-in-the-loop review or fine-tuned model |
 | 3 | Read-heavy workload (100:1 read/write ratio in MVP) | May need write optimization earlier |
 | 4 | < 10K daily active users for first 6 months | Scaling strategy can remain simple |
@@ -147,6 +155,8 @@ The API has meaningful domain logic (not just CRUD) — tagging rules, clusterin
 
 External Services:
 - Reddit API — data source for user complaints (called by pipeline)
+- Product Hunt API — data source for trending/new products (called by pipeline)
+- App Store / Google Play — data source for app reviews (called by pipeline, P1)
 - LLM APIs (Anthropic, OpenAI) — tagging, clustering, brief generation (called by pipeline)
 - PostHog — user analytics (client-side + server-side events)
 - Sentry — error tracking (both web and API)
@@ -177,13 +187,23 @@ The API server is organized into domain modules following hexagonal architecture
 
 ### 4.1 Data Flow
 
-**Flow 1: Pipeline — Reddit → tagged posts → clusters → briefs**
+**Flow 1: Pipeline — Complaint sources → tagged posts → clusters → briefs**
 
 ```
-Reddit API ──fetch──▶ Raw posts ──LLM tag──▶ Tagged posts ──cluster──▶ Clusters ──LLM synthesize──▶ Briefs
-                          │                       │                        │                          │
+Reddit API ─────────┐
+App Store reviews ──┤──fetch──▶ Raw posts ──LLM tag──▶ Tagged posts ──cluster──▶ Clusters ──LLM synthesize──▶ Briefs
+Google Play reviews ┘     │                       │                        │                          │
                       store in DB             update DB               store in DB               store in DB
                      (posts table)         (tags on posts)        (clusters table)          (briefs table)
+```
+
+**Flow 1b: Pipeline — Product Hunt → products**
+
+```
+Product Hunt API ──fetch──▶ Trending/new products ──store in DB──▶ products table
+                                                         │
+                                              link to complaint posts
+                                              via product name matching
 ```
 
 Consistency: Pipeline runs as a single transaction per batch. Posts are tagged, then clustered, then briefs are generated — sequential within a pipeline run. Eventual consistency is acceptable (users see new data on next page load).
@@ -351,7 +371,9 @@ No distributed tracing in MVP — single service, no inter-service calls to trac
 
 | Service | Provides | Protocol | Failure Mode | Fallback |
 |---|---|---|---|---|
-| **Reddit API** | Raw posts (titles, bodies, subreddit, scores, timestamps) | REST (OAuth2) | Rate limits, downtime, policy changes | Retry with backoff. If down > 1 hour, skip batch. Abstract data source layer for future platform additions. |
+| **Reddit API** | Raw posts (titles, bodies, subreddit, scores, timestamps) | REST (OAuth2) | Rate limits, downtime, policy changes | Retry with backoff. If down > 1 hour, skip batch. Abstract data source layer for platform additions. |
+| **Product Hunt API** | Trending/new products (name, description, URL, category, launch date) | REST (OAuth2 / API token) | Rate limits, downtime | Retry with backoff. If down, skip batch. Products are P1 — feed still works independently. |
+| **App Store / Google Play** | App reviews and ratings | Scraping or third-party API (TBD) | Blocking, API changes | Retry with backoff. If unavailable, skip batch. P1 — Reddit feed works independently. |
 | **Anthropic API** (Claude Haiku) | Post tagging, brief synthesis | REST (API key) | Rate limits, downtime, cost overruns | Retry with backoff. Swap to OpenAI as fallback. Budget circuit breaker stops pipeline if daily cost > threshold. |
 | **OpenAI API** (GPT-4o-mini) | Post tagging (fallback), clustering embeddings | REST (API key) | Same as above | Swap to Anthropic. Embeddings can fall back to local sentence-transformers if cost is an issue. |
 | **Neon** | PostgreSQL database | PostgreSQL wire protocol (asyncpg) | Connection limits, maintenance windows | Connection pooling (Neon's built-in pgbouncer). Cloud Run retries failed connections. |
