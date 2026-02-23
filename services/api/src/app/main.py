@@ -7,6 +7,7 @@ from slowapi.errors import RateLimitExceeded
 from starlette.responses import JSONResponse, Response
 
 from domain.brief.service import BriefService
+from domain.pipeline.service import PipelineService
 from domain.post.service import PostService
 from domain.product.service import ProductService
 from domain.rating.service import RatingService
@@ -14,16 +15,23 @@ from domain.tag.service import TagService
 from inbound.http.brief.router import router as brief_router
 from inbound.http.errors import register_exception_handlers
 from inbound.http.limiter import limiter
+from inbound.http.pipeline.router import router as pipeline_router
 from inbound.http.post.router import router as post_router
 from inbound.http.product.router import router as product_router
 from inbound.http.rating.router import router as rating_router
 from inbound.http.tag.router import router as tag_router
+from outbound.llm.client import GeminiLlmClient
 from outbound.postgres.brief_repository import PostgresBriefRepository
 from outbound.postgres.database import Database
+from outbound.postgres.pipeline_repository import PostgresPipelineRepository
 from outbound.postgres.post_repository import PostgresPostRepository
 from outbound.postgres.product_repository import PostgresProductRepository
 from outbound.postgres.rating_repository import PostgresRatingRepository
 from outbound.postgres.tag_repository import PostgresTagRepository
+from outbound.producthunt.client import ProductHuntApiClient
+from outbound.reddit.client import RedditApiClient
+from outbound.rss.client import RssFeedClient
+from outbound.trends.client import GoogleTrendsClient
 from shared.config import get_settings
 
 
@@ -44,6 +52,33 @@ def create_app() -> FastAPI:
     product_service = ProductService(product_repo)
     rating_service = RatingService(rating_repo, brief_repo)
 
+    pipeline_repo = PostgresPipelineRepository(db)
+    reddit_client = RedditApiClient(user_agent=settings.REDDIT_USER_AGENT)
+    llm_client = GeminiLlmClient(
+        api_key=settings.GOOGLE_API_KEY,
+        model=settings.LLM_MODEL,
+        lite_model=settings.LLM_LITE_MODEL,
+        brief_temperature=settings.LLM_BRIEF_TEMPERATURE,
+    )
+    rss_client = RssFeedClient()
+    trends_client = GoogleTrendsClient()
+    producthunt_client = ProductHuntApiClient(
+        api_token=settings.PRODUCTHUNT_API_TOKEN,
+    )
+    subreddits = [s.strip() for s in settings.PIPELINE_SUBREDDITS.split(",")]
+    rss_feeds = [f.strip() for f in settings.PIPELINE_RSS_FEEDS.split(",") if f.strip()]
+    pipeline_service = PipelineService(
+        repo=pipeline_repo,
+        reddit=reddit_client,
+        llm=llm_client,
+        rss=rss_client,
+        trends=trends_client,
+        producthunt=producthunt_client,
+        subreddits=subreddits,
+        rss_feeds=rss_feeds,
+        fetch_limit=settings.PIPELINE_FETCH_LIMIT,
+    )
+
     @asynccontextmanager
     async def lifespan(_app: FastAPI) -> AsyncIterator[dict]:
         yield {
@@ -52,6 +87,7 @@ def create_app() -> FastAPI:
             "brief_service": brief_service,
             "product_service": product_service,
             "rating_service": rating_service,
+            "pipeline_service": pipeline_service,
         }
         await db.dispose()
 
@@ -110,6 +146,13 @@ def create_app() -> FastAPI:
     app.include_router(brief_router, prefix=v1_router_prefix)
     app.include_router(product_router, prefix=v1_router_prefix)
     app.include_router(rating_router, prefix=v1_router_prefix)
+
+    app.include_router(pipeline_router, prefix="/internal")
+
+    if settings.API_DEBUG:
+        from inbound.http.admin.router import router as admin_router
+
+        app.include_router(admin_router)
 
     @app.get("/health")
     async def health():

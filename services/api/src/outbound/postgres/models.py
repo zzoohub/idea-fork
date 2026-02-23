@@ -64,6 +64,17 @@ class ProductPostRow(Base):
     )
 
 
+class ProductTagRow(Base):
+    __tablename__ = "product_tag"
+
+    product_id: Mapped[int] = mapped_column(
+        BigInteger, ForeignKey("product.id"), primary_key=True
+    )
+    tag_id: Mapped[int] = mapped_column(
+        BigInteger, ForeignKey("tag.id"), primary_key=True
+    )
+
+
 class ProductRow(Base):
     __tablename__ = "product"
 
@@ -84,6 +95,10 @@ class ProductRow(Base):
     url: Mapped[str | None] = mapped_column(Text, default=None)
     image_url: Mapped[str | None] = mapped_column(Text, default=None)
     category: Mapped[str | None] = mapped_column(Text, default=None)
+
+    tags: Mapped[list[TagRow]] = relationship(
+        "TagRow", secondary="product_tag", lazy="selectin"
+    )
 
 
 class BriefRow(Base):

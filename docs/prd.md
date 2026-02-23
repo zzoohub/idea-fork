@@ -26,7 +26,7 @@ Builders — indie hackers, early-stage founders, and product managers — need 
 | "I spend hours on Reddit and still can't tell if a need is real" | Common indie hacker sentiment (Reddit, Indie Hackers forum) |
 | Gummysearch, SparkToro popular but limited | Competitor usage — neither provides synthesis or opportunity framing |
 | ChatGPT brainstorming lacks grounding | Users resort to LLMs but outputs aren't backed by real data |
-| LLM costs dropped enough for full pipeline | GPT-4o-mini, Claude Haiku make tagging/clustering affordable at scale |
+| LLM costs dropped enough for full pipeline | Gemini Flash makes tagging/synthesis affordable at scale; embedding clustering reduces LLM cost further |
 
 ### Why Now
 
@@ -101,12 +101,14 @@ idea-fork is a web app that aggregates user complaints from multiple platforms, 
 ### Feed
 
 - **[P0]** Display a paginated stream of user complaints/needs aggregated from at least one platform (Reddit)
-- **[P0]** Each post shows: title/snippet, source platform, original post date, tags (category, sentiment, need type), and link to original source
-- **[P0]** Filter feed by tag/category
+- **[P0]** Each post shows: title/snippet, source platform, original post date, tags (category, sentiment, post type), and link to original source
+- **[P0]** Classify each post into one of 10 post types via LLM pipeline: `need`, `complaint`, `feature_request`, `alternative_seeking`, `comparison`, `question`, `review`, `general_discussion`, `praise`, `showcase`. The first 7 are actionable types exposed as filter tabs in the feed UI
+- **[P0]** Filter feed by post type (tab bar: All + 7 actionable types)
+- **[P0]** Filter feed by tag/category (independent of post type filter)
 - **[P1]** Filter feed by source platform
 - **[P1]** Sort feed by recency or trending (engagement-weighted)
 - **[P1]** Search feed by keyword
-- **[P1]** Add additional source platforms (App Store reviews, Google Play reviews)
+- **[P0]** Add additional source platforms (App Store reviews, Google Play reviews)
 
 ### AI Briefs
 
@@ -119,22 +121,24 @@ idea-fork is a web app that aggregates user complaints from multiple platforms, 
 
 ### Products
 
-- **[P1]** Ingest trending/recently launched products from Product Hunt API
-- **[P1]** Display a list of trending/recently launched products
-- **[P1]** Each product paired with aggregated user complaints from feed data
-- **[P1]** Product detail page showing: product info, complaint summary, linked source posts
+- **[P0]** Ingest trending/recently launched products from Product Hunt API
+- **[P0]** Display a list of trending/recently launched products
+- **[P0]** Each product paired with aggregated user complaints from feed data
+- **[P0]** Product detail page showing: product info, complaint summary, linked source posts
 - **[P2]** Product comparison view (side-by-side complaints for competing products)
 
 ### Data Pipeline (backend)
 
 - **[P0]** Ingest posts from Reddit API on a scheduled basis
-- **[P0]** LLM-based tagging: categorize each post by type (complaint, feature request, question), topic, and sentiment
-- **[P0]** Clustering: group similar posts by theme/need
-- **[P0]** Brief generation: synthesize briefs from post clusters using LLM with source attribution
+- **[P0]** Ingest tech news from RSS feeds (Hacker News, TechCrunch, etc.)
+- **[P0]** Gemini LLM-based tagging: classify each post by `post_type` (10 types — 7 actionable + 3 non-actionable), topic tags, and sentiment
+- **[P0]** Embedding-based clustering: Gemini Embedding API + HDBSCAN for automatic thematic grouping (replaces LLM clustering for scalability)
+- **[P0]** Brief generation: synthesize briefs from post clusters using Gemini LLM with source attribution
+- **[P0]** Google Trends integration: include search trend data as demand signals in briefs
+- **[P0]** Product Hunt API: fetch recent products for competitive landscape analysis in briefs
 - **[P1]** Deduplication: detect and merge near-duplicate posts
 - **[P1]** Quality scoring: rank posts and clusters by signal strength (engagement, specificity, recency)
-- **[P1]** Ingest from App Store and Google Play (reviews/ratings)
-- **[P1]** Ingest trending products from Product Hunt API
+- **[P0]** Ingest from App Store and Google Play (reviews/ratings)
 
 ### General
 
@@ -211,7 +215,7 @@ idea-fork is a web app that aggregates user complaints from multiple platforms, 
 
 ### In Scope (MVP)
 
-- Feed of aggregated user complaints (Reddit as first source)
+- Feed of aggregated user complaints (Reddit, App Store, Google Play)
 - LLM-powered tagging, clustering, and brief generation
 - AI Briefs listing and detail pages with source attribution
 - Products listing and detail pages with complaint pairing
@@ -247,7 +251,7 @@ idea-fork is a web app that aggregates user complaints from multiple platforms, 
 | Builders spend 5+ hours/week on manual need discovery | Interview 10 target users |
 | LLM can reliably tag posts by type with ≥ 85% accuracy | Tag 1,000 posts, measure against human labels |
 | AI-generated briefs are actionable enough to influence build decisions | Generate 10 sample briefs, get feedback from 5 users |
-| Reddit alone provides sufficient signal for MVP launch | Analyze volume and quality of complaints in top 50 subreddits |
+| Multi-source ingestion (Reddit, App Store, Google Play, Product Hunt) provides strong signal for MVP launch | Analyze volume and quality across platforms; compare coverage vs Reddit-only |
 
 ### Constraints
 
@@ -261,7 +265,8 @@ idea-fork is a web app that aggregates user complaints from multiple platforms, 
 - Reddit API access (approved developer account)
 - Product Hunt API access (OAuth or developer token)
 - App Store / Google Play review data access (scraping or third-party API)
-- LLM API access (Anthropic and/or OpenAI)
+- Google Gemini API access (tagging, embedding, synthesis)
+- Google Trends API (via pytrends)
 - Hosting infrastructure (Vercel for frontend, cloud provider for API and pipeline)
 
 ### Risks
@@ -280,9 +285,8 @@ idea-fork is a web app that aggregates user complaints from multiple platforms, 
 
 | Phase | Milestone | Target |
 |-------|-----------|--------|
-| **Phase 1: Foundation** | Data pipeline (Reddit ingestion + LLM tagging + clustering) working end-to-end. Feed page live with real data. | 4 weeks |
-| **Phase 2: Briefs & Products** | AI Brief generation live. Products page live. Full MVP deployed. | +4 weeks |
-| **Phase 3: Validate & Iterate** | Collect user feedback, measure retention and brief ratings. Decide on paid tier direction. | +4 weeks |
+| **Phase 1: MVP** | Data pipeline (Reddit, App Store, Google Play ingestion + Product Hunt products + LLM tagging + clustering) working end-to-end. Feed, Products, AI Briefs pages all live. Full MVP deployed. | 8 weeks |
+| **Phase 2: Validate & Iterate** | Collect user feedback, measure retention and brief ratings. Decide on paid tier direction. | +4 weeks |
 
 ---
 

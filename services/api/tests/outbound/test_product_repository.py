@@ -6,7 +6,7 @@ from unittest.mock import AsyncMock, MagicMock
 import pytest
 
 from domain.post.models import Post
-from domain.product.models import Product, ProductListParams
+from domain.product.models import Product, ProductListParams, ProductMetrics
 from outbound.postgres.product_repository import PostgresProductRepository
 from shared.pagination import encode_cursor
 
@@ -25,6 +25,7 @@ def _make_product_row(
     launched_at=None,
     complaint_count=10,
     trending_score=Decimal("8.5000"),
+    tags=None,
 ):
     row = MagicMock()
     row.id = id
@@ -40,7 +41,32 @@ def _make_product_row(
     row.launched_at = launched_at
     row.complaint_count = complaint_count
     row.trending_score = trending_score
+    row.tags = tags if tags is not None else []
     return row
+
+
+def _make_metrics_result(total=5, negative=3, positive=1):
+    """Build a mock row returned by the aggregation query for get_product_metrics."""
+    row = MagicMock()
+    row.total = total
+    row.negative = negative
+    row.positive = positive
+
+    result = MagicMock()
+    result.one.return_value = row
+    return result
+
+
+def _make_mock_db_for_metrics(metrics_result):
+    """Mock Database whose session executes and returns a metrics aggregate row."""
+    mock_session = AsyncMock()
+    mock_session.execute = AsyncMock(return_value=metrics_result)
+    mock_session.__aenter__ = AsyncMock(return_value=mock_session)
+    mock_session.__aexit__ = AsyncMock(return_value=False)
+
+    mock_db = MagicMock()
+    mock_db.session.return_value = mock_session
+    return mock_db
 
 
 def _make_post_row(
@@ -225,3 +251,80 @@ def test_apply_cursor_with_value_calls_where():
     cursor = encode_cursor({"v": "8.5", "id": 10})
     result = repo._apply_cursor(stmt, cursor, ProductRow.trending_score)
     stmt.where.assert_called_once()
+
+
+# ---------------------------------------------------------------------------
+# get_product_metrics
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_get_product_metrics_returns_correct_values():
+    """Standard case: total=5, negative=3, positive=1 → sentiment_score=round(1/4*100)=25."""
+    metrics_result = _make_metrics_result(total=5, negative=3, positive=1)
+    mock_db = _make_mock_db_for_metrics(metrics_result)
+    repo = PostgresProductRepository(mock_db)
+
+    result = await repo.get_product_metrics(product_id=1)
+
+    assert isinstance(result, ProductMetrics)
+    assert result.total_mentions == 5
+    assert result.negative_count == 3
+    assert result.sentiment_score == 25  # round(1 / max(1+3, 1) * 100) = round(25.0)
+
+
+@pytest.mark.asyncio
+async def test_get_product_metrics_all_positive_gives_score_100():
+    """When all posts are positive, sentiment_score should be 100."""
+    metrics_result = _make_metrics_result(total=4, negative=0, positive=4)
+    mock_db = _make_mock_db_for_metrics(metrics_result)
+    repo = PostgresProductRepository(mock_db)
+
+    result = await repo.get_product_metrics(product_id=2)
+
+    assert result.total_mentions == 4
+    assert result.negative_count == 0
+    assert result.sentiment_score == 100  # round(4 / max(4+0, 1) * 100)
+
+
+@pytest.mark.asyncio
+async def test_get_product_metrics_all_negative_gives_score_0():
+    """When all posts are negative, sentiment_score should be 0."""
+    metrics_result = _make_metrics_result(total=3, negative=3, positive=0)
+    mock_db = _make_mock_db_for_metrics(metrics_result)
+    repo = PostgresProductRepository(mock_db)
+
+    result = await repo.get_product_metrics(product_id=3)
+
+    assert result.total_mentions == 3
+    assert result.negative_count == 3
+    assert result.sentiment_score == 0  # round(0 / max(0+3, 1) * 100)
+
+
+@pytest.mark.asyncio
+async def test_get_product_metrics_zero_posts_avoids_division_by_zero():
+    """When both positive and negative are 0, max(0+0,1)=1 prevents ZeroDivisionError.
+    sentiment_score should be 0 (round(0/1*100))."""
+    metrics_result = _make_metrics_result(total=0, negative=0, positive=0)
+    mock_db = _make_mock_db_for_metrics(metrics_result)
+    repo = PostgresProductRepository(mock_db)
+
+    result = await repo.get_product_metrics(product_id=4)
+
+    assert result.total_mentions == 0
+    assert result.negative_count == 0
+    assert result.sentiment_score == 0  # round(0 / max(0+0, 1) * 100)
+
+
+@pytest.mark.asyncio
+async def test_get_product_metrics_mixed_sentiment_rounds_correctly():
+    """Verify rounding: positive=1, negative=1 → score=round(1/2*100)=50."""
+    metrics_result = _make_metrics_result(total=2, negative=1, positive=1)
+    mock_db = _make_mock_db_for_metrics(metrics_result)
+    repo = PostgresProductRepository(mock_db)
+
+    result = await repo.get_product_metrics(product_id=5)
+
+    assert result.total_mentions == 2
+    assert result.negative_count == 1
+    assert result.sentiment_score == 50  # round(1 / max(1+1, 1) * 100)

@@ -1,10 +1,15 @@
-from sqlalchemy import and_, or_, select
+from sqlalchemy import and_, func, or_, select
 
 from domain.post.models import Post
-from domain.product.models import Product, ProductListParams
+from domain.product.models import Product, ProductListParams, ProductMetrics
 from outbound.postgres.database import Database
-from outbound.postgres.mapper import post_to_domain_no_tags, product_to_domain
-from outbound.postgres.models import PostRow, ProductPostRow, ProductRow
+from outbound.postgres.mapper import post_to_domain, product_to_domain
+from outbound.postgres.models import (
+    PostRow,
+    PostTagRow,
+    ProductRow,
+    ProductTagRow,
+)
 from shared.pagination import decode_cursor
 
 SORT_COLUMN_MAP = {
@@ -41,11 +46,18 @@ class PostgresProductRepository:
     async def get_product_posts(
         self, product_id: int, limit: int = 10
     ) -> list[Post]:
+        tag_ids_subq = select(ProductTagRow.tag_id).where(
+            ProductTagRow.product_id == product_id
+        )
+        post_ids_subq = (
+            select(PostTagRow.post_id)
+            .where(PostTagRow.tag_id.in_(tag_ids_subq))
+            .distinct()
+        )
         stmt = (
             select(PostRow)
-            .join(ProductPostRow, ProductPostRow.post_id == PostRow.id)
             .where(
-                ProductPostRow.product_id == product_id,
+                PostRow.id.in_(post_ids_subq),
                 PostRow.deleted_at.is_(None),
             )
             .order_by(PostRow.id.desc())
@@ -53,7 +65,43 @@ class PostgresProductRepository:
         )
         async with self._db.session() as session:
             result = await session.execute(stmt)
-            return [post_to_domain_no_tags(row) for row in result.scalars().all()]
+            return [post_to_domain(row) for row in result.scalars().all()]
+
+    async def get_product_metrics(self, product_id: int) -> ProductMetrics:
+        tag_ids_subq = select(ProductTagRow.tag_id).where(
+            ProductTagRow.product_id == product_id
+        )
+        matching_posts_subq = (
+            select(PostTagRow.post_id)
+            .where(PostTagRow.tag_id.in_(tag_ids_subq))
+            .distinct()
+        )
+
+        stmt = select(
+            func.count().label("total"),
+            func.count()
+            .filter(PostRow.sentiment == "negative")
+            .label("negative"),
+            func.count()
+            .filter(PostRow.sentiment == "positive")
+            .label("positive"),
+        ).where(
+            PostRow.id.in_(matching_posts_subq),
+            PostRow.deleted_at.is_(None),
+        )
+
+        async with self._db.session() as session:
+            result = await session.execute(stmt)
+            row = result.one()
+            total = row.total
+            negative = row.negative
+            positive = row.positive
+            score = round(positive / max(positive + negative, 1) * 100)
+            return ProductMetrics(
+                total_mentions=total,
+                negative_count=negative,
+                sentiment_score=score,
+            )
 
     def _apply_cursor(self, stmt, cursor: str | None, sort_col):
         if cursor is None:

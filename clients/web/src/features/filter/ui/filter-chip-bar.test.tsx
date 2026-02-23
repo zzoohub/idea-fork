@@ -4,13 +4,13 @@ import userEvent from "@testing-library/user-event";
 import { FilterChipBar } from "./filter-chip-bar";
 
 const TAGS = [
-  { label: "JavaScript" },
-  { label: "React" },
-  { label: "Node.js" },
-  { label: "Python" },
-  { label: "Go" },
-  { label: "Rust" },
-  { label: "TypeScript" },
+  { label: "JavaScript", value: "javascript" },
+  { label: "React", value: "react" },
+  { label: "Node.js", value: "node-js" },
+  { label: "Python", value: "python" },
+  { label: "Go", value: "go" },
+  { label: "Rust", value: "rust" },
+  { label: "TypeScript", value: "typescript" },
 ];
 
 describe("FilterChipBar", () => {
@@ -55,7 +55,7 @@ describe("FilterChipBar", () => {
     it("does not render overflow trigger when tags <= visibleCount", () => {
       render(
         <FilterChipBar
-          tags={[{ label: "A" }, { label: "B" }, { label: "C" }]}
+          tags={[{ label: "A", value: "a" }, { label: "B", value: "b" }, { label: "C", value: "c" }]}
           activeTag={null}
           onTagChange={vi.fn()}
         />
@@ -75,7 +75,7 @@ describe("FilterChipBar", () => {
 
     it("tag chip is active when its tag matches activeTag", () => {
       render(
-        <FilterChipBar tags={TAGS} activeTag="React" onTagChange={vi.fn()} />
+        <FilterChipBar tags={TAGS} activeTag="react" onTagChange={vi.fn()} />
       );
       expect(
         screen.getByRole("button", { name: "React" })
@@ -84,7 +84,7 @@ describe("FilterChipBar", () => {
 
     it("All chip is inactive when a tag is active", () => {
       render(
-        <FilterChipBar tags={TAGS} activeTag="React" onTagChange={vi.fn()} />
+        <FilterChipBar tags={TAGS} activeTag="react" onTagChange={vi.fn()} />
       );
       expect(
         screen.getByRole("button", { name: "All" })
@@ -93,7 +93,7 @@ describe("FilterChipBar", () => {
   });
 
   describe("tag selection", () => {
-    it("calls onTagChange with tag name when a visible tag is clicked", async () => {
+    it("calls onTagChange with tag value (slug) when a visible tag is clicked", async () => {
       const user = userEvent.setup();
       const handleChange = vi.fn();
       render(
@@ -104,7 +104,7 @@ describe("FilterChipBar", () => {
         />
       );
       await user.click(screen.getByRole("button", { name: "JavaScript" }));
-      expect(handleChange).toHaveBeenCalledWith("JavaScript");
+      expect(handleChange).toHaveBeenCalledWith("javascript");
     });
 
     it("calls onTagChange with null when clicking the active tag (deselect)", async () => {
@@ -113,7 +113,7 @@ describe("FilterChipBar", () => {
       render(
         <FilterChipBar
           tags={TAGS}
-          activeTag="React"
+          activeTag="react"
           onTagChange={handleChange}
         />
       );
@@ -127,7 +127,7 @@ describe("FilterChipBar", () => {
       render(
         <FilterChipBar
           tags={TAGS}
-          activeTag="React"
+          activeTag="react"
           onTagChange={handleChange}
         />
       );
@@ -168,7 +168,7 @@ describe("FilterChipBar", () => {
       );
       await user.click(screen.getByRole("button", { name: "+1" }));
       await user.click(screen.getByRole("menuitem", { name: "TypeScript" }));
-      expect(handleChange).toHaveBeenCalledWith("TypeScript");
+      expect(handleChange).toHaveBeenCalledWith("typescript");
       expect(screen.queryByRole("menu")).not.toBeInTheDocument();
     });
 
@@ -227,7 +227,7 @@ describe("FilterChipBar", () => {
       render(
         <FilterChipBar
           tags={TAGS}
-          activeTag="TypeScript"
+          activeTag="typescript"
           onTagChange={vi.fn()}
         />
       );
@@ -261,11 +261,11 @@ describe("FilterChipBar", () => {
       render(
         <FilterChipBar
           tags={[
-            { label: "A" },
-            { label: "B" },
-            { label: "C" },
-            { label: "D" },
-            { label: "E" },
+            { label: "A", value: "a" },
+            { label: "B", value: "b" },
+            { label: "C", value: "c" },
+            { label: "D", value: "d" },
+            { label: "E", value: "e" },
           ]}
           activeTag={null}
           onTagChange={vi.fn()}
@@ -284,7 +284,7 @@ describe("FilterChipBar", () => {
       render(
         <FilterChipBar
           tags={TAGS}
-          activeTag="TypeScript"
+          activeTag="typescript"
           onTagChange={handleChange}
         />
       );
@@ -294,131 +294,43 @@ describe("FilterChipBar", () => {
     });
   });
 
-  describe("typeFilters prop", () => {
-    const TYPE_FILTERS = [
-      { label: "Bug", icon: "flame", color: "text-red-500" },
-      { label: "Feature", icon: "zap", color: "text-blue-500" },
-    ];
-
-    it("renders type filter chips when typeFilters prop is provided", () => {
+  describe("without typeFilters prop", () => {
+    it("renders only the All chip and visible tag chips (no type filter chips)", () => {
       render(
         <FilterChipBar
-          tags={[{ label: "A" }]}
+          tags={[{ label: "A", value: "a" }, { label: "B", value: "b" }]}
           activeTag={null}
           onTagChange={vi.fn()}
-          typeFilters={TYPE_FILTERS}
         />
       );
-      expect(screen.getByRole("button", { name: /Bug/i })).toBeInTheDocument();
-      expect(screen.getByRole("button", { name: /Feature/i })).toBeInTheDocument();
+      // All + A + B buttons present, nothing else
+      expect(screen.getByRole("button", { name: "All" })).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "A" })).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "B" })).toBeInTheDocument();
     });
 
-    it("renders divider when typeFilters are provided", () => {
+    it("does not render any divider element when typeFilters is not provided", () => {
       const { container } = render(
         <FilterChipBar
-          tags={[{ label: "A" }]}
+          tags={[{ label: "A", value: "a" }]}
           activeTag={null}
           onTagChange={vi.fn()}
-          typeFilters={TYPE_FILTERS}
         />
       );
-      const divider = container.querySelector("[aria-hidden='true']");
-      expect(divider).toBeInTheDocument();
-    });
-
-    it("does not render divider when typeFilters is empty", () => {
-      const { container } = render(
-        <FilterChipBar
-          tags={[{ label: "A" }]}
-          activeTag={null}
-          onTagChange={vi.fn()}
-          typeFilters={[]}
-        />
-      );
-      // There should be no divider element (no aria-hidden div)
       const dividers = container.querySelectorAll("div[aria-hidden='true']");
       expect(dividers.length).toBe(0);
     });
 
-    it("calls onTagChange when a type filter chip is clicked", async () => {
-      const user = userEvent.setup();
-      const handleChange = vi.fn();
-      render(
-        <FilterChipBar
-          tags={[{ label: "A" }]}
-          activeTag={null}
-          onTagChange={handleChange}
-          typeFilters={TYPE_FILTERS}
-        />
-      );
-      await user.click(screen.getByRole("button", { name: /Bug/i }));
-      expect(handleChange).toHaveBeenCalledWith("Bug");
-    });
-
-    it("renders icon inside type filter chip when icon prop is present", () => {
-      const { container } = render(
-        <FilterChipBar
-          tags={[{ label: "A" }]}
-          activeTag={null}
-          onTagChange={vi.fn()}
-          typeFilters={[{ label: "Bug", icon: "flame", color: "text-red-500" }]}
-        />
-      );
-      // The Icon renders an SVG (flame is in the Lucide icon map)
-      expect(container.querySelector("svg")).toBeInTheDocument();
-    });
-
-    it("renders type filter chip without icon when icon prop is absent", () => {
+    it("renders an empty tag list with only the All chip", () => {
       render(
         <FilterChipBar
           tags={[]}
           activeTag={null}
           onTagChange={vi.fn()}
-          typeFilters={[{ label: "NoIcon" }]}
         />
       );
-      expect(screen.getByRole("button", { name: "NoIcon" })).toBeInTheDocument();
-    });
-
-    it("type filter chip shows active variant when its label matches activeTag", () => {
-      render(
-        <FilterChipBar
-          tags={[{ label: "A" }]}
-          activeTag="Bug"
-          onTagChange={vi.fn()}
-          typeFilters={TYPE_FILTERS}
-        />
-      );
-      const bugBtn = screen.getByRole("button", { name: /Bug/i });
-      expect(bugBtn).toHaveAttribute("aria-pressed", "true");
-    });
-
-    it("type filter chip shows inactive variant when its label does not match activeTag", () => {
-      render(
-        <FilterChipBar
-          tags={[{ label: "A" }]}
-          activeTag={null}
-          onTagChange={vi.fn()}
-          typeFilters={TYPE_FILTERS}
-        />
-      );
-      const bugBtn = screen.getByRole("button", { name: /Bug/i });
-      expect(bugBtn).toHaveAttribute("aria-pressed", "false");
-    });
-
-    it("calls onTagChange with null when active type filter chip is clicked (deselect)", async () => {
-      const user = userEvent.setup();
-      const handleChange = vi.fn();
-      render(
-        <FilterChipBar
-          tags={[{ label: "A" }]}
-          activeTag="Bug"
-          onTagChange={handleChange}
-          typeFilters={TYPE_FILTERS}
-        />
-      );
-      await user.click(screen.getByRole("button", { name: /Bug/i }));
-      expect(handleChange).toHaveBeenCalledWith(null);
+      expect(screen.getByRole("button", { name: "All" })).toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: /^\+/ })).not.toBeInTheDocument();
     });
   });
 });

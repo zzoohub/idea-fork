@@ -11,22 +11,28 @@ class Settings(BaseSettings):
     API_DATABASE_URL: str = "postgresql+asyncpg://localhost:5432/idea_fork"
     API_CORS_ALLOWED_ORIGINS: str = "https://idea-fork.com"
     API_DEBUG: bool = False
+    API_INTERNAL_SECRET: str = ""
 
     # Reddit API
-    REDDIT_CLIENT_ID: str = ""
-    REDDIT_CLIENT_SECRET: str = ""
     REDDIT_USER_AGENT: str = "idea-fork/0.1.0"
 
     # Pipeline
-    PIPELINE_SUBREDDITS: str = "SaaS,startups,webdev,selfhosted,smallbusiness"
-    PIPELINE_FETCH_LIMIT: int = 100
+    PIPELINE_SUBREDDITS: str = "SaaS,SideProject,AskReddit,healthcare,BlockchainStartups,Web3,FinancialPlanning,ContentCreators,mentalhealth,Supplements,MealPrepSunday,personalfinance,CryptoCurrency,ecommerce,smallbusiness"
+    PIPELINE_FETCH_LIMIT: int = 30
 
-    # Anthropic
-    ANTHROPIC_API_KEY: str = ""
-    LLM_TAGGING_MODEL: str = "claude-haiku-4-5-20251001"
-    LLM_SYNTHESIS_MODEL: str = "claude-sonnet-4-5-20250514"
+    # RSS
+    PIPELINE_RSS_FEEDS: str = "https://hnrss.org/newest?points=50,https://techcrunch.com/feed/"
 
-    model_config = {"env_prefix": "", "case_sensitive": True}
+    # Gemini
+    GOOGLE_API_KEY: str = ""
+    LLM_MODEL: str = "gemini-2.5-flash"
+    LLM_LITE_MODEL: str = "gemini-2.5-flash-lite"
+    LLM_BRIEF_TEMPERATURE: float = 0.9
+
+    # Product Hunt
+    PRODUCTHUNT_API_TOKEN: str = ""
+
+    model_config = {"env_file": ".env", "env_prefix": "", "case_sensitive": True}
 
     @model_validator(mode="after")
     def validate_subreddit_names(self) -> "Settings":

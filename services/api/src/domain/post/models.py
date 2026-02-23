@@ -1,6 +1,16 @@
 from dataclasses import dataclass, field
 from datetime import datetime
 
+VALID_POST_TYPES = {
+    "need", "complaint", "feature_request", "alternative_seeking",
+    "comparison", "question", "review",
+    "showcase", "discussion", "other",
+}
+ACTIONABLE_POST_TYPES = {
+    "need", "complaint", "feature_request", "alternative_seeking",
+    "comparison", "question", "review",
+}
+
 
 @dataclass(frozen=True)
 class PostTag:
@@ -19,8 +29,8 @@ class Post:
     external_created_at: datetime
     score: int
     num_comments: int
-    post_type: str | None
     sentiment: str | None
+    post_type: str | None = None
     tags: list[PostTag] = field(default_factory=list)
 
 
@@ -32,7 +42,7 @@ class PostListParams:
     tag: str | None = None
     source: str | None = None
     subreddit: str | None = None
-    post_type: str | None = None
     sentiment: str | None = None
     q: str | None = None
     product: str | None = None
+    post_type: str | None = None

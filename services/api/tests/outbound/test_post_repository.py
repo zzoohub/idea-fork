@@ -162,17 +162,6 @@ async def test_list_posts_filter_by_subreddit():
 
 
 @pytest.mark.asyncio
-async def test_list_posts_filter_by_post_type():
-    rows = [_make_post_row(1)]
-    mock_db = _make_mock_db(rows)
-    repo = PostgresPostRepository(mock_db)
-
-    params = PostListParams(post_type="complaint")
-    result = await repo.list_posts(params)
-    assert len(result) == 1
-
-
-@pytest.mark.asyncio
 async def test_list_posts_filter_by_sentiment():
     rows = [_make_post_row(1)]
     mock_db = _make_mock_db(rows)
@@ -206,6 +195,19 @@ async def test_list_posts_filter_by_q():
 
 
 @pytest.mark.asyncio
+async def test_list_posts_filter_by_post_type():
+    """Passing post_type should apply a post_type equality filter."""
+    rows = [_make_post_row(1, post_type="complaint")]
+    mock_db = _make_mock_db(rows)
+    repo = PostgresPostRepository(mock_db)
+
+    params = PostListParams(post_type="complaint")
+    result = await repo.list_posts(params)
+    assert len(result) == 1
+    assert result[0].post_type == "complaint"
+
+
+@pytest.mark.asyncio
 async def test_list_posts_all_filters_combined():
     rows = [_make_post_row(1)]
     mock_db = _make_mock_db(rows)
@@ -217,7 +219,6 @@ async def test_list_posts_all_filters_combined():
         tag="saas",
         source="reddit",
         subreddit="python",
-        post_type="complaint",
         sentiment="negative",
         product="notion",
         q="search",

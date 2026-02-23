@@ -47,6 +47,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
    - **z-tester**: test changed code → fix
 3. Marketing content must reference `docs/product-brief.md` for consistent messaging.
 4. All user-facing events must be defined in `biz/analytics/tracking-plan.md` before implementation.
+5. Any change to architecture or feature specs must update the relevant docs in `docs/`.
 
 ### MUST NOT
 - (project-specific anti-patterns here)

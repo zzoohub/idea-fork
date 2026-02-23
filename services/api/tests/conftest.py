@@ -8,7 +8,7 @@ from domain.brief.models import Brief
 from domain.brief.service import BriefService
 from domain.post.models import Post, PostTag
 from domain.post.service import PostService
-from domain.product.models import Product
+from domain.product.models import Product, ProductMetrics
 from domain.product.service import ProductService
 from domain.rating.service import RatingService
 from domain.tag.models import Tag
@@ -38,6 +38,9 @@ def _stub_repos():
     product_repo.list_products = AsyncMock(return_value=[])
     product_repo.get_product_by_slug = AsyncMock(return_value=None)
     product_repo.get_product_posts = AsyncMock(return_value=[])
+    product_repo.get_product_metrics = AsyncMock(
+        return_value=ProductMetrics(total_mentions=0, negative_count=0, sentiment_score=0)
+    )
 
     rating_repo = AsyncMock()
     rating_repo.create_rating = AsyncMock(return_value=None)
@@ -117,7 +120,6 @@ def make_post(
     external_url="https://reddit.com/r/test/1",
     score=10,
     num_comments=5,
-    post_type="complaint",
     sentiment="negative",
     tags=None,
 ):
@@ -133,7 +135,6 @@ def make_post(
         external_created_at=datetime(2026, 2, 18, 14, 22, tzinfo=timezone.utc),
         score=score,
         num_comments=num_comments,
-        post_type=post_type,
         sentiment=sentiment,
         tags=tags or [PostTag(slug="saas", name="SaaS")],
     )
@@ -178,6 +179,7 @@ def make_product(
     category="Productivity",
     complaint_count=10,
     trending_score=8.5,
+    tags=None,
 ):
     return Product(
         id=id,
@@ -193,4 +195,5 @@ def make_product(
         launched_at=None,
         complaint_count=complaint_count,
         trending_score=trending_score,
+        tags=tags or [],
     )

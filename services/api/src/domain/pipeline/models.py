@@ -4,22 +4,35 @@ from typing import Any
 
 
 @dataclass(frozen=True)
-class RawRedditPost:
+class RawPost:
+    source: str  # "reddit" | "rss"
     external_id: str
-    subreddit: str
     title: str
     body: str | None
     external_url: str
     external_created_at: datetime
     score: int
     num_comments: int
+    subreddit: str | None = None
+
+
+@dataclass(frozen=True)
+class RawProduct:
+    external_id: str
+    name: str
+    slug: str
+    tagline: str | None
+    description: str | None
+    url: str | None
+    category: str | None
+    launched_at: datetime | None
 
 
 @dataclass(frozen=True)
 class TaggingResult:
     post_id: int
-    post_type: str
     sentiment: str
+    post_type: str
     tag_slugs: list[str]
 
 

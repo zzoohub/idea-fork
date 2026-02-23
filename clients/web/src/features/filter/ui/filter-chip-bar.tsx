@@ -2,19 +2,16 @@
 
 import { useState, useRef, useEffect, useCallback } from "react";
 import { Chip } from "@/src/shared/ui";
-import { Icon } from "@/src/shared/ui";
 
 /* --------------------------------------------------------------------------
    FilterChipBar
-   Horizontal scrollable chip row with icon support, type filter divider,
-   and overflow "+N" dropdown.
+   Horizontal scrollable chip row with icon support and overflow "+N" dropdown.
    -------------------------------------------------------------------------- */
 
 interface FilterChipBarProps {
-  tags: Array<{ label: string; icon?: string }>;
+  tags: Array<{ label: string; value: string; icon?: string }>;
   activeTag: string | null;
   onTagChange: (tag: string | null) => void;
-  typeFilters?: Array<{ label: string; icon?: string; color?: string }>;
   visibleCount?: number;
 }
 
@@ -22,7 +19,6 @@ export function FilterChipBar({
   tags,
   activeTag,
   onTagChange,
-  typeFilters,
   visibleCount = 6,
 }: FilterChipBarProps) {
   const [overflowOpen, setOverflowOpen] = useState(false);
@@ -80,7 +76,7 @@ export function FilterChipBar({
   /* Is a tag in the overflow set currently active? */
   const overflowHasActive =
     activeTag !== null &&
-    overflowTags.some((t) => t.label === activeTag);
+    overflowTags.some((t) => t.value === activeTag);
 
   return (
     <div
@@ -109,11 +105,11 @@ export function FilterChipBar({
         {/* Visible category tags */}
         {visibleTags.map((tag) => (
           <Chip
-            key={tag.label}
-            variant={activeTag === tag.label ? "active" : "inactive"}
-            aria-pressed={activeTag === tag.label}
+            key={tag.value}
+            variant={activeTag === tag.value ? "active" : "inactive"}
+            aria-pressed={activeTag === tag.value}
             icon={tag.icon}
-            onClick={() => handleTagClick(tag.label)}
+            onClick={() => handleTagClick(tag.value)}
           >
             {tag.label}
           </Chip>
@@ -132,32 +128,6 @@ export function FilterChipBar({
           </Chip>
         )}
 
-        {/* Vertical divider between categories and type filters */}
-        {typeFilters && typeFilters.length > 0 && (
-          <div
-            className="w-px h-6 bg-slate-300 dark:bg-[#283039] shrink-0 mx-1"
-            aria-hidden="true"
-          />
-        )}
-
-        {/* Type filter chips */}
-        {typeFilters?.map((filter) => (
-          <Chip
-            key={filter.label}
-            variant={activeTag === filter.label ? "active" : "inactive"}
-            aria-pressed={activeTag === filter.label}
-            onClick={() => handleTagClick(filter.label)}
-          >
-            {filter.icon && (
-              <Icon
-                name={filter.icon}
-                size={16}
-                className={filter.color}
-              />
-            )}
-            {filter.label}
-          </Chip>
-        ))}
       </div>
 
       {/* Overflow dropdown */}
@@ -175,11 +145,11 @@ export function FilterChipBar({
         >
           {overflowTags.map((tag) => (
             <Chip
-              key={tag.label}
-              variant={activeTag === tag.label ? "active" : "inactive"}
-              aria-pressed={activeTag === tag.label}
+              key={tag.value}
+              variant={activeTag === tag.value ? "active" : "inactive"}
+              aria-pressed={activeTag === tag.value}
               icon={tag.icon}
-              onClick={() => handleTagClick(tag.label)}
+              onClick={() => handleTagClick(tag.value)}
               role="menuitem"
             >
               {tag.label}

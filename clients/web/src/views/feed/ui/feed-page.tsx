@@ -11,13 +11,22 @@ import type { Post, Tag } from "@/src/shared/api";
 import { formatRelativeTime } from "@/src/shared/lib/format-relative-time";
 
 /* --------------------------------------------------------------------------
-   Static type filters (not from API)
+   Post type tabs
    -------------------------------------------------------------------------- */
-const TYPE_FILTERS = [
-  { label: "Complaint", icon: "frown", color: "text-amber-500" },
-  { label: "Feature Request", icon: "lightbulb", color: "text-emerald-500" },
-  { label: "Question", icon: "help-circle", color: "text-blue-400" },
-];
+const POST_TYPE_TABS = [
+  { key: null, label: "All" },
+  { key: "need", label: "Need" },
+  { key: "complaint", label: "Complaint" },
+  { key: "feature_request", label: "Feature Request" },
+  { key: "alternative_seeking", label: "Alternative" },
+  { key: "comparison", label: "Comparison" },
+  { key: "question", label: "Question" },
+  { key: "review", label: "Review" },
+] as const;
+
+const VALID_POST_TYPES = new Set(
+  POST_TYPE_TABS.map((t) => t.key).filter(Boolean),
+);
 
 /* --------------------------------------------------------------------------
    Map API source string to PostCard source type
@@ -40,16 +49,6 @@ function mapSourceName(post: Post): string {
   return post.source;
 }
 
-function mapSentiment(sentiment: string | null) {
-  if (!sentiment) return undefined;
-  const s = sentiment.toLowerCase();
-  if (s === "frustrated" || s === "negative") return "frustrated" as const;
-  if (s === "request" || s === "feature_request") return "request" as const;
-  if (s === "question") return "question" as const;
-  if (s === "bug_report" || s === "bug") return "bug_report" as const;
-  return undefined;
-}
-
 /* --------------------------------------------------------------------------
    Map API sort param to backend sort field
    -------------------------------------------------------------------------- */
@@ -68,10 +67,12 @@ function FeedPageInner() {
   const router = useRouter();
 
   const activeTag = searchParams.get("tag");
+  const rawPostType = searchParams.get("post_type");
+  const activePostType = VALID_POST_TYPES.has(rawPostType) ? rawPostType : null;
 
   /* State */
   const [posts, setPosts] = useState<Post[]>([]);
-  const [tags, setTags] = useState<Array<{ label: string }>>([]);
+  const [tags, setTags] = useState<Array<{ label: string; value: string }>>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [hasNext, setHasNext] = useState(false);
@@ -98,6 +99,11 @@ function FeedPageInner() {
     [updateParam],
   );
 
+  const handlePostTypeChange = useCallback(
+    (postType: string | null) => updateParam("post_type", postType),
+    [updateParam],
+  );
+
   const handleTagClick = useCallback(
     (tag: string) => updateParam("tag", tag === activeTag ? null : tag),
     [updateParam, activeTag],
@@ -109,7 +115,7 @@ function FeedPageInner() {
     fetchTags()
       .then((res) => {
         if (!cancelled) {
-          setTags(res.data.map((t: Tag) => ({ label: t.name })));
+          setTags(res.data.map((t: Tag) => ({ label: t.name, value: t.slug })));
         }
       })
       .catch(() => {
@@ -124,6 +130,7 @@ function FeedPageInner() {
 
     fetchPosts({
       tag: activeTag ?? undefined,
+      post_type: activePostType ?? undefined,
       sort: SORT_MAP["recent"],
     })
       .then((res) => {
@@ -143,7 +150,7 @@ function FeedPageInner() {
       });
 
     return () => { cancelled = true; };
-  }, [activeTag]);
+  }, [activeTag, activePostType]);
 
   /* Load more */
   const handleLoadMore = useCallback(() => {
@@ -152,6 +159,7 @@ function FeedPageInner() {
 
     fetchPosts({
       tag: activeTag ?? undefined,
+      post_type: activePostType ?? undefined,
       sort: SORT_MAP["recent"],
       cursor: nextCursor,
     })
@@ -164,19 +172,50 @@ function FeedPageInner() {
       .catch(() => {
         setLoadingMore(false);
       });
-  }, [nextCursor, loadingMore, activeTag]);
+  }, [nextCursor, loadingMore, activeTag, activePostType]);
 
   if (loading) return <FeedSkeleton />;
   if (error) return <ErrorState message={error} onRetry={() => window.location.reload()} />;
 
   return (
     <div className="flex flex-col gap-5 w-full max-w-3xl mx-auto pb-10">
-      {/* Filter ribbon */}
+      {/* Post type tabs */}
+      <div
+        className="flex items-center overflow-x-auto border-b border-slate-200 dark:border-[#283039] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        role="tablist"
+        aria-label="Filter by post type"
+      >
+        {POST_TYPE_TABS.map((tab) => {
+          const isActive = activePostType === tab.key;
+          return (
+            <button
+              key={tab.label}
+              type="button"
+              role="tab"
+              aria-selected={isActive}
+              onClick={() => handlePostTypeChange(tab.key)}
+              className={[
+                "relative shrink-0 px-3 pb-2.5 pt-1 text-sm font-medium transition-colors duration-150",
+                "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#137fec]",
+                isActive
+                  ? "text-[#137fec]"
+                  : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300",
+              ].join(" ")}
+            >
+              {tab.label}
+              {isActive && (
+                <span className="absolute inset-x-0 bottom-0 h-0.5 bg-[#137fec] rounded-full" />
+              )}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Tag filter */}
       <FilterChipBar
         tags={tags}
         activeTag={activeTag}
         onTagChange={handleTagChange}
-        typeFilters={TYPE_FILTERS}
       />
 
       {/* Feed cards */}
@@ -194,9 +233,8 @@ function FeedPageInner() {
               date={formatRelativeTime(post.external_created_at)}
               title={post.title}
               snippet={post.body ?? ""}
-              sentiment={mapSentiment(post.sentiment)}
-              category={post.tags[0]?.name}
-              tags={post.tags.map((t) => t.name)}
+              postType={post.post_type ?? undefined}
+              tags={post.tags.map((t) => ({ label: t.name, value: t.slug }))}
               upvotes={post.score}
               commentCount={post.num_comments}
               originalUrl={post.external_url}
@@ -253,7 +291,16 @@ function FeedSkeleton() {
       aria-busy="true"
       aria-label="Loading posts"
     >
-      {/* Chip bar skeleton */}
+      {/* Post type tab skeleton */}
+      <div className="flex gap-0 border-b border-slate-200 dark:border-[#283039]">
+        {Array.from({ length: 5 }).map((_, i) => (
+          <div key={i} className="px-3 pb-2.5 pt-1">
+            <Skeleton variant="text" className="h-4 w-16" />
+          </div>
+        ))}
+      </div>
+
+      {/* Tag chip bar skeleton */}
       <div className="flex gap-2">
         {Array.from({ length: 5 }).map((_, i) => (
           <Skeleton key={i} variant="chip" />

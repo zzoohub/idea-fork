@@ -5,11 +5,12 @@ from datetime import UTC, datetime
 import httpx
 from tenacity import retry, stop_after_attempt, wait_exponential
 
-from domain.pipeline.models import RawRedditPost
+from domain.pipeline.models import RawPost
 
 logger = logging.getLogger(__name__)
 
 _PERMALINK_RE = re.compile(r"^/r/[A-Za-z0-9_]+/comments/[A-Za-z0-9_/]+$")
+_SUBREDDIT_RE = re.compile(r"^[A-Za-z0-9_]{1,50}$")
 
 
 def _safe_permalink(permalink: str) -> str:
@@ -17,27 +18,25 @@ def _safe_permalink(permalink: str) -> str:
         return f"https://www.reddit.com{permalink}"
     return f"https://www.reddit.com/r/unknown/comments/{permalink.strip('/')}"
 
-REDDIT_AUTH_URL = "https://www.reddit.com/api/v1/access_token"
-REDDIT_API_BASE = "https://oauth.reddit.com"
+
+REDDIT_PUBLIC_BASE = "https://www.reddit.com"
 
 
 class RedditApiClient:
-    def __init__(self, client_id: str, client_secret: str, user_agent: str) -> None:
-        self._client_id = client_id
-        self._client_secret = client_secret
+    def __init__(self, user_agent: str) -> None:
         self._user_agent = user_agent
-        self._access_token: str | None = None
 
     async def fetch_posts(
         self,
         subreddits: list[str],
         limit: int = 100,
         time_filter: str = "week",
-    ) -> list[RawRedditPost]:
+    ) -> list[RawPost]:
+        for name in subreddits:
+            if not _SUBREDDIT_RE.match(name):
+                raise ValueError(f"Invalid subreddit name: {name!r}")
         async with httpx.AsyncClient(timeout=30) as http:
-            await self._authenticate(http)
-
-            posts: list[RawRedditPost] = []
+            posts: list[RawPost] = []
             for subreddit in subreddits:
                 sub_posts = await self._fetch_subreddit(
                     http, subreddit, limit, time_filter
@@ -48,41 +47,27 @@ class RedditApiClient:
             return posts
 
     @retry(stop=stop_after_attempt(3), wait=wait_exponential(min=1, max=10))
-    async def _authenticate(self, http: httpx.AsyncClient) -> None:
-        resp = await http.post(
-            REDDIT_AUTH_URL,
-            auth=(self._client_id, self._client_secret),
-            data={"grant_type": "client_credentials"},
-            headers={"User-Agent": self._user_agent},
-        )
-        resp.raise_for_status()
-        self._access_token = resp.json()["access_token"]
-
-    @retry(stop=stop_after_attempt(3), wait=wait_exponential(min=1, max=10))
     async def _fetch_subreddit(
         self,
         http: httpx.AsyncClient,
         subreddit: str,
         limit: int,
         time_filter: str,
-    ) -> list[RawRedditPost]:
+    ) -> list[RawPost]:
         resp = await http.get(
-            f"{REDDIT_API_BASE}/r/{subreddit}/new",
+            f"{REDDIT_PUBLIC_BASE}/r/{subreddit}/new.json",
             params={"limit": min(limit, 100), "t": time_filter},
-            headers={
-                "Authorization": f"Bearer {self._access_token}",
-                "User-Agent": self._user_agent,
-            },
+            headers={"User-Agent": self._user_agent},
         )
         resp.raise_for_status()
 
-        posts: list[RawRedditPost] = []
+        posts: list[RawPost] = []
         for child in resp.json().get("data", {}).get("children", []):
             data = child.get("data", {})
             posts.append(
-                RawRedditPost(
+                RawPost(
+                    source="reddit",
                     external_id=data["id"],
-                    subreddit=data.get("subreddit", subreddit),
                     title=data.get("title", ""),
                     body=data.get("selftext") or None,
                     external_url=_safe_permalink(data.get("permalink", "")),
@@ -91,6 +76,7 @@ class RedditApiClient:
                     ),
                     score=data.get("score", 0),
                     num_comments=data.get("num_comments", 0),
+                    subreddit=data.get("subreddit", subreddit),
                 )
             )
         return posts

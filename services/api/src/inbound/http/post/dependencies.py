@@ -11,6 +11,19 @@ class PostSortField(str, Enum):
     NUM_COMMENTS_DESC = "-num_comments"
 
 
+class PostTypeFilter(str, Enum):
+    NEED = "need"
+    COMPLAINT = "complaint"
+    FEATURE_REQUEST = "feature_request"
+    ALTERNATIVE_SEEKING = "alternative_seeking"
+    COMPARISON = "comparison"
+    QUESTION = "question"
+    REVIEW = "review"
+    SHOWCASE = "showcase"
+    DISCUSSION = "discussion"
+    OTHER = "other"
+
+
 def get_post_list_params(
     cursor: str | None = Query(None, max_length=2048),
     limit: int = Query(20, ge=1, le=100),
@@ -18,10 +31,10 @@ def get_post_list_params(
     tag: str | None = Query(None, max_length=500),
     source: str | None = Query(None, max_length=100),
     subreddit: str | None = Query(None, max_length=100),
-    post_type: str | None = Query(None, max_length=100),
     sentiment: str | None = Query(None, max_length=100),
     q: str | None = Query(None, max_length=200),
     product: str | None = Query(None, max_length=200),
+    post_type: PostTypeFilter | None = Query(None),
 ) -> PostListParams:
     return PostListParams(
         cursor=cursor,
@@ -30,8 +43,8 @@ def get_post_list_params(
         tag=tag,
         source=source,
         subreddit=subreddit,
-        post_type=post_type,
         sentiment=sentiment,
         q=q,
         product=product,
+        post_type=post_type.value if post_type else None,
     )

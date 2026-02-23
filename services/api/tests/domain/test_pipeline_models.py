@@ -7,29 +7,32 @@ from domain.pipeline.models import (
     BriefDraft,
     ClusteringResult,
     PipelineRunResult,
-    RawRedditPost,
+    RawPost,
+    RawProduct,
     TaggingResult,
 )
 
 
 # ---------------------------------------------------------------------------
-# RawRedditPost
+# RawPost
 # ---------------------------------------------------------------------------
 
 
-def test_raw_reddit_post_construction():
+def test_raw_post_construction():
     now = datetime(2026, 2, 18, 10, 0, tzinfo=timezone.utc)
-    post = RawRedditPost(
+    post = RawPost(
+        source="reddit",
         external_id="abc123",
-        subreddit="python",
         title="My complaint",
         body="The body text",
         external_url="https://reddit.com/r/python/abc123",
         external_created_at=now,
         score=42,
         num_comments=7,
+        subreddit="python",
     )
 
+    assert post.source == "reddit"
     assert post.external_id == "abc123"
     assert post.subreddit == "python"
     assert post.title == "My complaint"
@@ -40,27 +43,28 @@ def test_raw_reddit_post_construction():
     assert post.num_comments == 7
 
 
-def test_raw_reddit_post_body_none():
+def test_raw_post_body_none():
     now = datetime(2026, 2, 18, tzinfo=timezone.utc)
-    post = RawRedditPost(
+    post = RawPost(
+        source="reddit",
         external_id="xyz",
-        subreddit="saas",
         title="Title only",
         body=None,
         external_url="https://reddit.com/r/saas/xyz",
         external_created_at=now,
         score=0,
         num_comments=0,
+        subreddit="saas",
     )
 
     assert post.body is None
 
 
-def test_raw_reddit_post_is_frozen():
+def test_raw_post_is_frozen():
     now = datetime(2026, 2, 18, tzinfo=timezone.utc)
-    post = RawRedditPost(
+    post = RawPost(
+        source="reddit",
         external_id="id1",
-        subreddit="test",
         title="Test",
         body=None,
         external_url="https://reddit.com",
@@ -73,19 +77,106 @@ def test_raw_reddit_post_is_frozen():
         post.external_id = "changed"  # type: ignore[misc]
 
 
-def test_raw_reddit_post_equality():
+def test_raw_post_equality():
     now = datetime(2026, 2, 18, tzinfo=timezone.utc)
     kwargs = dict(
+        source="reddit",
         external_id="id1",
-        subreddit="test",
         title="Test",
         body=None,
         external_url="https://reddit.com",
         external_created_at=now,
         score=5,
         num_comments=2,
+        subreddit="test",
     )
-    assert RawRedditPost(**kwargs) == RawRedditPost(**kwargs)
+    assert RawPost(**kwargs) == RawPost(**kwargs)
+
+
+def test_raw_post_subreddit_optional():
+    now = datetime(2026, 2, 18, tzinfo=timezone.utc)
+    post = RawPost(
+        source="rss",
+        external_id="rss1",
+        title="RSS post",
+        body=None,
+        external_url="https://example.com",
+        external_created_at=now,
+        score=0,
+        num_comments=0,
+    )
+    assert post.subreddit is None
+
+
+def test_raw_post_rss_source():
+    now = datetime(2026, 2, 18, tzinfo=timezone.utc)
+    post = RawPost(
+        source="rss",
+        external_id="rss123",
+        title="News Article",
+        body="Summary text",
+        external_url="https://news.example.com/article",
+        external_created_at=now,
+        score=0,
+        num_comments=0,
+    )
+    assert post.source == "rss"
+    assert post.subreddit is None
+
+
+# ---------------------------------------------------------------------------
+# RawProduct
+# ---------------------------------------------------------------------------
+
+
+def test_raw_product_construction():
+    now = datetime(2026, 2, 18, 10, 0, tzinfo=timezone.utc)
+    product = RawProduct(
+        external_id="ph-123",
+        name="TestApp",
+        slug="testapp",
+        tagline="A test app",
+        description="Detailed description",
+        url="https://testapp.com",
+        category="Productivity",
+        launched_at=now,
+    )
+    assert product.external_id == "ph-123"
+    assert product.name == "TestApp"
+    assert product.slug == "testapp"
+    assert product.tagline == "A test app"
+    assert product.category == "Productivity"
+    assert product.launched_at == now
+
+
+def test_raw_product_optional_fields():
+    product = RawProduct(
+        external_id="ph-456",
+        name="MinimalApp",
+        slug="minimal",
+        tagline=None,
+        description=None,
+        url=None,
+        category=None,
+        launched_at=None,
+    )
+    assert product.tagline is None
+    assert product.launched_at is None
+
+
+def test_raw_product_is_frozen():
+    product = RawProduct(
+        external_id="ph-1",
+        name="App",
+        slug="app",
+        tagline=None,
+        description=None,
+        url=None,
+        category=None,
+        launched_at=None,
+    )
+    with pytest.raises((AttributeError, TypeError)):
+        product.name = "changed"  # type: ignore[misc]
 
 
 # ---------------------------------------------------------------------------
@@ -96,22 +187,22 @@ def test_raw_reddit_post_equality():
 def test_tagging_result_construction():
     result = TaggingResult(
         post_id=10,
-        post_type="complaint",
         sentiment="negative",
+        post_type="complaint",
         tag_slugs=["saas", "developer-tools"],
     )
 
     assert result.post_id == 10
-    assert result.post_type == "complaint"
     assert result.sentiment == "negative"
+    assert result.post_type == "complaint"
     assert result.tag_slugs == ["saas", "developer-tools"]
 
 
 def test_tagging_result_empty_tag_slugs():
     result = TaggingResult(
         post_id=5,
-        post_type="question",
         sentiment="neutral",
+        post_type="other",
         tag_slugs=[],
     )
 
@@ -121,8 +212,8 @@ def test_tagging_result_empty_tag_slugs():
 def test_tagging_result_is_frozen():
     result = TaggingResult(
         post_id=1,
-        post_type="other",
         sentiment="positive",
+        post_type="need",
         tag_slugs=["ai-ml"],
     )
 
@@ -131,7 +222,7 @@ def test_tagging_result_is_frozen():
 
 
 def test_tagging_result_equality():
-    kwargs = dict(post_id=1, post_type="complaint", sentiment="negative", tag_slugs=["saas"])
+    kwargs = dict(post_id=1, sentiment="negative", post_type="complaint", tag_slugs=["saas"])
     assert TaggingResult(**kwargs) == TaggingResult(**kwargs)
 
 

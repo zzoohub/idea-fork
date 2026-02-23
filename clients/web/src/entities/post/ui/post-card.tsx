@@ -10,7 +10,6 @@ import { isSafeUrl } from "@/src/shared/lib/sanitize-url";
    -------------------------------------------------------------------------- */
 
 type PostSource = "reddit" | "twitter" | "linkedin" | "appstore";
-type PostSentiment = "frustrated" | "request" | "question" | "bug_report";
 
 interface PostCardProps {
   source: PostSource;
@@ -19,9 +18,8 @@ interface PostCardProps {
   username?: string;
   title?: string;
   snippet: string;
-  sentiment?: PostSentiment;
-  category?: string;
-  tags: string[];
+  postType?: string;
+  tags: Array<{ label: string; value: string }>;
   upvotes: number;
   commentCount?: number;
   originalUrl: string;
@@ -33,11 +31,20 @@ interface PostCardProps {
    Sentiment badge label mapping
    -------------------------------------------------------------------------- */
 
-const SENTIMENT_LABEL: Record<PostSentiment, string> = {
-  frustrated: "Frustrated",
-  request: "Request",
+const POST_TYPE_LABEL: Record<string, string> = {
+  need: "Need",
+  complaint: "Complaint",
+  feature_request: "Feature Request",
+  alternative_seeking: "Alternative",
+  comparison: "Comparison",
   question: "Question",
-  bug_report: "Bug Report",
+  review: "Review",
+};
+
+const POST_TYPE_BADGE_VARIANT: Record<string, string> = {
+  complaint: "frustrated",
+  feature_request: "request",
+  question: "question",
 };
 
 /* --------------------------------------------------------------------------
@@ -105,8 +112,7 @@ export function PostCard({
   username,
   title,
   snippet,
-  sentiment,
-  category,
+  postType,
   tags,
   upvotes,
   commentCount,
@@ -152,10 +158,11 @@ export function PostCard({
 
         {/* Right: Badges */}
         <div className="flex items-center gap-1.5 shrink-0">
-          {sentiment && (
-            <Badge variant={sentiment}>{SENTIMENT_LABEL[sentiment]}</Badge>
+          {postType && POST_TYPE_LABEL[postType] && (
+            <Badge variant={POST_TYPE_BADGE_VARIANT[postType] ?? "default"}>
+              {POST_TYPE_LABEL[postType]}
+            </Badge>
           )}
-          {category && <Badge variant="default">{category}</Badge>}
         </div>
       </div>
 
@@ -188,19 +195,19 @@ export function PostCard({
             if (onTagClick) {
               return (
                 <button
-                  key={tag}
+                  key={tag.value}
                   type="button"
                   className={`${tagClasses} hover:bg-slate-200 dark:hover:bg-[#2f3a47] cursor-pointer transition-colors duration-150`}
-                  onClick={() => onTagClick(tag)}
+                  onClick={() => onTagClick(tag.value)}
                 >
-                  {tag}
+                  {tag.label}
                 </button>
               );
             }
 
             return (
-              <span key={tag} className={tagClasses}>
-                {tag}
+              <span key={tag.value} className={tagClasses}>
+                {tag.label}
               </span>
             );
           })}

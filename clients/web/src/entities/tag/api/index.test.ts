@@ -20,9 +20,9 @@ describe("fetchTags", () => {
     mockApiFetch.mockResolvedValue({ data: FAKE_TAGS });
   });
 
-  it("calls apiFetch with /tags", async () => {
+  it("calls apiFetch with /tags/trending?limit=50", async () => {
     await fetchTags();
-    expect(mockApiFetch).toHaveBeenCalledWith("/tags");
+    expect(mockApiFetch).toHaveBeenCalledWith("/tags/trending?limit=60");
   });
 
   it("returns the response from apiFetch", async () => {

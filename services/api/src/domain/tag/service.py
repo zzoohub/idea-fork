@@ -8,3 +8,8 @@ class TagService:
 
     async def list_tags(self) -> list[Tag]:
         return await self._repo.list_tags()
+
+    async def list_trending_tags(
+        self, days: int = 7, limit: int = 10
+    ) -> list[Tag]:
+        return await self._repo.list_trending_tags(days, limit)

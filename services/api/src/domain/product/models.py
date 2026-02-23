@@ -1,7 +1,14 @@
 from dataclasses import dataclass, field
 from datetime import datetime
 
-from domain.post.models import Post
+from domain.post.models import Post, PostTag
+
+
+@dataclass(frozen=True)
+class ProductMetrics:
+    total_mentions: int
+    negative_count: int
+    sentiment_score: int
 
 
 @dataclass(frozen=True)
@@ -19,6 +26,7 @@ class Product:
     launched_at: datetime | None
     complaint_count: int
     trending_score: float
+    tags: list[PostTag] = field(default_factory=list)
 
 
 @dataclass(frozen=True)

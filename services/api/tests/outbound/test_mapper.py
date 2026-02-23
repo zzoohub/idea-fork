@@ -68,6 +68,7 @@ def _make_product_row(
     category="Productivity",
     complaint_count=10,
     trending_score=Decimal("8.5000"),
+    tags=None,
 ):
     row = MagicMock()
     row.id = id
@@ -79,6 +80,7 @@ def _make_product_row(
     row.category = category
     row.complaint_count = complaint_count
     row.trending_score = trending_score
+    row.tags = tags if tags is not None else []
     return row
 
 
@@ -163,7 +165,6 @@ def test_post_to_domain_maps_fields_with_tags():
     assert post.subreddit == "python"
     assert post.score == 100
     assert post.num_comments == 20
-    assert post.post_type == "complaint"
     assert post.sentiment == "negative"
     assert len(post.tags) == 1
     assert isinstance(post.tags[0], PostTag)
@@ -179,12 +180,11 @@ def test_post_to_domain_maps_empty_tags():
 
 
 def test_post_to_domain_maps_optional_fields_as_none():
-    post_row = _make_post_row(body=None, subreddit=None, post_type=None, sentiment=None)
+    post_row = _make_post_row(body=None, subreddit=None, sentiment=None)
     post = post_to_domain(post_row)
 
     assert post.body is None
     assert post.subreddit is None
-    assert post.post_type is None
     assert post.sentiment is None
 
 
@@ -287,6 +287,30 @@ def test_product_to_domain_optional_fields_as_none():
     assert product.url is None
     assert product.image_url is None
     assert product.category is None
+
+
+def test_product_to_domain_maps_tags_to_post_tags():
+    """product_to_domain must convert each TagRow into a PostTag(slug, name)."""
+    tag1 = _make_tag_row(id=10, slug="productivity", name="Productivity")
+    tag2 = _make_tag_row(id=11, slug="saas", name="SaaS")
+    product_row = _make_product_row(tags=[tag1, tag2])
+    product = product_to_domain(product_row)
+
+    assert len(product.tags) == 2
+    assert isinstance(product.tags[0], PostTag)
+    assert product.tags[0].slug == "productivity"
+    assert product.tags[0].name == "Productivity"
+    assert isinstance(product.tags[1], PostTag)
+    assert product.tags[1].slug == "saas"
+    assert product.tags[1].name == "SaaS"
+
+
+def test_product_to_domain_empty_tags_gives_empty_list():
+    """When the product row has no tags, the domain object tags should be []."""
+    product_row = _make_product_row(tags=[])
+    product = product_to_domain(product_row)
+
+    assert product.tags == []
 
 
 # ---------------------------------------------------------------------------

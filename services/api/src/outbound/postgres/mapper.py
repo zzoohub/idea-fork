@@ -27,8 +27,8 @@ def post_to_domain(row: PostRow) -> Post:
         external_created_at=row.external_created_at,
         score=row.score,
         num_comments=row.num_comments,
-        post_type=row.post_type,
         sentiment=row.sentiment,
+        post_type=row.post_type,
         tags=[PostTag(slug=t.slug, name=t.name) for t in row.tags],
     )
 
@@ -44,8 +44,8 @@ def post_to_domain_no_tags(row: PostRow) -> Post:
         external_created_at=row.external_created_at,
         score=row.score,
         num_comments=row.num_comments,
-        post_type=row.post_type,
         sentiment=row.sentiment,
+        post_type=row.post_type,
         tags=[],
     )
 
@@ -84,6 +84,7 @@ def product_to_domain(row: ProductRow) -> Product:
         launched_at=row.launched_at,
         complaint_count=row.complaint_count,
         trending_score=float(row.trending_score),
+        tags=[PostTag(slug=t.slug, name=t.name) for t in row.tags],
     )
 
 

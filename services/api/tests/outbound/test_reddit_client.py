@@ -1,14 +1,12 @@
 """Tests for outbound/reddit/client.py — RedditApiClient and helpers."""
-import json
 from datetime import UTC, datetime
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from domain.pipeline.models import RawRedditPost
+from domain.pipeline.models import RawPost
 from outbound.reddit.client import (
-    REDDIT_API_BASE,
-    REDDIT_AUTH_URL,
+    REDDIT_PUBLIC_BASE,
     RedditApiClient,
     _safe_permalink,
 )
@@ -49,23 +47,16 @@ def test_safe_permalink_with_slashes_stripped():
 # RedditApiClient — fetch_posts
 # ---------------------------------------------------------------------------
 
-def _make_http_client(auth_response=None, listing_response=None):
+def _make_http_client(listing_response=None):
     """Build a mock httpx.AsyncClient that returns pre-set responses."""
     http = AsyncMock()
     http.__aenter__ = AsyncMock(return_value=http)
     http.__aexit__ = AsyncMock(return_value=False)
 
-    # Default auth response
-    auth_resp = MagicMock()
-    auth_resp.raise_for_status = MagicMock()
-    auth_resp.json = MagicMock(return_value=auth_response or {"access_token": "tok-123"})
-
-    # Default listing response
     listing_resp = MagicMock()
     listing_resp.raise_for_status = MagicMock()
     listing_resp.json = MagicMock(return_value=listing_response or {"data": {"children": []}})
 
-    http.post = AsyncMock(return_value=auth_resp)
     http.get = AsyncMock(return_value=listing_resp)
 
     return http
@@ -101,14 +92,15 @@ async def test_fetch_posts_returns_raw_posts():
     listing = {"data": {"children": [child]}}
     http = _make_http_client(listing_response=listing)
 
-    reddit = RedditApiClient("cid", "csecret", "ua/0.1")
+    reddit = RedditApiClient("ua/0.1")
 
     with patch("outbound.reddit.client.httpx.AsyncClient", return_value=http):
         posts = await reddit.fetch_posts(["SaaS"], limit=5)
 
     assert len(posts) == 1
     post = posts[0]
-    assert isinstance(post, RawRedditPost)
+    assert isinstance(post, RawPost)
+    assert post.source == "reddit"
     assert post.external_id == "abc"
     assert post.subreddit == "SaaS"
     assert post.title == "Test Title"
@@ -124,7 +116,7 @@ async def test_fetch_posts_empty_selftext_becomes_none():
     listing = {"data": {"children": [child]}}
     http = _make_http_client(listing_response=listing)
 
-    reddit = RedditApiClient("cid", "csecret", "ua/0.1")
+    reddit = RedditApiClient("ua/0.1")
 
     with patch("outbound.reddit.client.httpx.AsyncClient", return_value=http):
         posts = await reddit.fetch_posts(["SaaS"])
@@ -138,7 +130,7 @@ async def test_fetch_posts_multiple_subreddits():
     listing = {"data": {"children": [child]}}
     http = _make_http_client(listing_response=listing)
 
-    reddit = RedditApiClient("cid", "csecret", "ua/0.1")
+    reddit = RedditApiClient("ua/0.1")
 
     with patch("outbound.reddit.client.httpx.AsyncClient", return_value=http):
         posts = await reddit.fetch_posts(["SaaS", "startups"])
@@ -151,7 +143,7 @@ async def test_fetch_posts_multiple_subreddits():
 async def test_fetch_posts_empty_subreddit_list():
     http = _make_http_client()
 
-    reddit = RedditApiClient("cid", "csecret", "ua/0.1")
+    reddit = RedditApiClient("ua/0.1")
 
     with patch("outbound.reddit.client.httpx.AsyncClient", return_value=http):
         posts = await reddit.fetch_posts([])
@@ -160,35 +152,36 @@ async def test_fetch_posts_empty_subreddit_list():
 
 
 @pytest.mark.asyncio
-async def test_fetch_posts_authenticates_before_fetching():
-    """The client must POST to the auth URL before making GET requests."""
+async def test_fetch_posts_uses_public_json_endpoint():
+    """The client must GET the public .json endpoint (no OAuth)."""
     listing = {"data": {"children": []}}
     http = _make_http_client(listing_response=listing)
 
-    reddit = RedditApiClient("cid", "csecret", "ua/0.1")
+    reddit = RedditApiClient("ua/0.1")
 
     with patch("outbound.reddit.client.httpx.AsyncClient", return_value=http):
         await reddit.fetch_posts(["SaaS"])
 
-    http.post.assert_called_once()
-    call_args = http.post.call_args
-    assert REDDIT_AUTH_URL in call_args.args or call_args.args[0] == REDDIT_AUTH_URL
+    http.get.assert_called_once()
+    call_args = http.get.call_args
+    assert call_args.args[0] == f"{REDDIT_PUBLIC_BASE}/r/SaaS/new.json"
 
 
 @pytest.mark.asyncio
-async def test_fetch_posts_uses_bearer_token_in_get_request():
-    """The GET request must include the Authorization: Bearer header."""
+async def test_fetch_posts_sends_user_agent_header():
+    """The GET request must include a User-Agent header."""
     listing = {"data": {"children": []}}
     http = _make_http_client(listing_response=listing)
 
-    reddit = RedditApiClient("cid", "csecret", "ua/0.1")
+    reddit = RedditApiClient("ua/0.1")
 
     with patch("outbound.reddit.client.httpx.AsyncClient", return_value=http):
         await reddit.fetch_posts(["SaaS"])
 
     http.get.assert_called_once()
     get_kwargs = http.get.call_args.kwargs
-    assert get_kwargs["headers"]["Authorization"] == "Bearer tok-123"
+    assert get_kwargs["headers"]["User-Agent"] == "ua/0.1"
+    assert "Authorization" not in get_kwargs["headers"]
 
 
 @pytest.mark.asyncio
@@ -197,7 +190,7 @@ async def test_fetch_posts_limit_capped_at_100():
     listing = {"data": {"children": []}}
     http = _make_http_client(listing_response=listing)
 
-    reddit = RedditApiClient("cid", "csecret", "ua/0.1")
+    reddit = RedditApiClient("ua/0.1")
 
     with patch("outbound.reddit.client.httpx.AsyncClient", return_value=http):
         await reddit.fetch_posts(["SaaS"], limit=500)
@@ -207,13 +200,25 @@ async def test_fetch_posts_limit_capped_at_100():
 
 
 @pytest.mark.asyncio
+async def test_fetch_posts_rejects_invalid_subreddit_name():
+    """Subreddit names with path-traversal characters must be rejected."""
+    http = _make_http_client()
+
+    reddit = RedditApiClient("ua/0.1")
+
+    with patch("outbound.reddit.client.httpx.AsyncClient", return_value=http):
+        with pytest.raises(ValueError, match="Invalid subreddit name"):
+            await reddit.fetch_posts(["../../etc"])
+
+
+@pytest.mark.asyncio
 async def test_fetch_posts_uses_missing_data_defaults():
     """Children with missing data fields should use safe defaults."""
     child = {"data": {"id": "x"}}  # most fields missing
     listing = {"data": {"children": [child]}}
     http = _make_http_client(listing_response=listing)
 
-    reddit = RedditApiClient("cid", "csecret", "ua/0.1")
+    reddit = RedditApiClient("ua/0.1")
 
     with patch("outbound.reddit.client.httpx.AsyncClient", return_value=http):
         posts = await reddit.fetch_posts(["SaaS"])
@@ -232,7 +237,7 @@ async def test_fetch_posts_external_url_from_valid_permalink():
     listing = {"data": {"children": [child]}}
     http = _make_http_client(listing_response=listing)
 
-    reddit = RedditApiClient("cid", "csecret", "ua/0.1")
+    reddit = RedditApiClient("ua/0.1")
 
     with patch("outbound.reddit.client.httpx.AsyncClient", return_value=http):
         posts = await reddit.fetch_posts(["SaaS"])
@@ -246,7 +251,7 @@ async def test_fetch_posts_external_created_at_from_utc_timestamp():
     listing = {"data": {"children": [child]}}
     http = _make_http_client(listing_response=listing)
 
-    reddit = RedditApiClient("cid", "csecret", "ua/0.1")
+    reddit = RedditApiClient("ua/0.1")
 
     with patch("outbound.reddit.client.httpx.AsyncClient", return_value=http):
         posts = await reddit.fetch_posts(["SaaS"])

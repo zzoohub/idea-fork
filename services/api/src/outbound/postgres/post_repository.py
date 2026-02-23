@@ -58,9 +58,6 @@ class PostgresPostRepository:
         if params.subreddit:
             stmt = stmt.where(PostRow.subreddit == params.subreddit)
 
-        if params.post_type:
-            stmt = stmt.where(PostRow.post_type == params.post_type)
-
         if params.sentiment:
             stmt = stmt.where(PostRow.sentiment == params.sentiment)
 
@@ -72,6 +69,9 @@ class PostgresPostRepository:
             ).join(
                 ProductRow, ProductRow.id == ProductPostRow.product_id
             ).where(ProductRow.slug == params.product)
+
+        if params.post_type:
+            stmt = stmt.where(PostRow.post_type == params.post_type)
 
         if params.q:
             stmt = stmt.where(

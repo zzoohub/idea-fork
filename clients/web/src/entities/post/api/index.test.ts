@@ -104,6 +104,29 @@ describe("fetchPosts", () => {
     });
   });
 
+  describe("post_type param", () => {
+    it("appends post_type to query string", async () => {
+      await fetchPosts({ post_type: "complaint" });
+      expect(mockApiFetch).toHaveBeenCalledWith("/posts?post_type=complaint");
+    });
+
+    it("does not append post_type when not provided", async () => {
+      await fetchPosts({ tag: "crash" });
+      const url = mockApiFetch.mock.calls[0][0] as string;
+      expect(url).not.toContain("post_type=");
+    });
+
+    it("appends post_type=need correctly", async () => {
+      await fetchPosts({ post_type: "need" });
+      expect(mockApiFetch).toHaveBeenCalledWith("/posts?post_type=need");
+    });
+
+    it("appends post_type=feature_request correctly", async () => {
+      await fetchPosts({ post_type: "feature_request" });
+      expect(mockApiFetch).toHaveBeenCalledWith("/posts?post_type=feature_request");
+    });
+  });
+
   describe("multiple params", () => {
     it("appends all provided params", async () => {
       await fetchPosts({ tag: "bug", sort: "hot", limit: 10, source: "reddit", sentiment: "negative", q: "crash", cursor: "xyz" });
@@ -115,6 +138,13 @@ describe("fetchPosts", () => {
       expect(url).toContain("sentiment=negative");
       expect(url).toContain("q=crash");
       expect(url).toContain("cursor=xyz");
+    });
+
+    it("appends post_type together with other params", async () => {
+      await fetchPosts({ tag: "bug", post_type: "complaint" });
+      const url = mockApiFetch.mock.calls[0][0] as string;
+      expect(url).toContain("tag=bug");
+      expect(url).toContain("post_type=complaint");
     });
 
     it("starts the query string with '?'", async () => {

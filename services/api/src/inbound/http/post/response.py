@@ -20,8 +20,8 @@ class PostResponseData(BaseModel):
     external_created_at: datetime
     score: int
     num_comments: int
-    post_type: str | None
     sentiment: str | None
+    post_type: str | None
     tags: list[PostTagResponseData]
 
     @classmethod
@@ -36,7 +36,7 @@ class PostResponseData(BaseModel):
             external_created_at=post.external_created_at,
             score=post.score,
             num_comments=post.num_comments,
-            post_type=post.post_type,
             sentiment=post.sentiment,
+            post_type=post.post_type,
             tags=[PostTagResponseData(slug=t.slug, name=t.name) for t in post.tags],
         )

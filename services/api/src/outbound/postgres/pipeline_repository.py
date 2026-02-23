@@ -6,8 +6,8 @@ from sqlalchemy import select, text, update
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from domain.pipeline.models import BriefDraft, ClusteringResult, RawRedditPost, TaggingResult
-from domain.post.models import Post
+from domain.pipeline.models import BriefDraft, ClusteringResult, RawPost, RawProduct, TaggingResult
+from domain.post.models import ACTIONABLE_POST_TYPES, Post
 from outbound.postgres.database import Database
 from outbound.postgres.mapper import post_to_domain
 from outbound.postgres.models import (
@@ -17,6 +17,8 @@ from outbound.postgres.models import (
     ClusterRow,
     PostRow,
     PostTagRow,
+    ProductRow,
+    ProductTagRow,
     TagRow,
 )
 
@@ -62,18 +64,20 @@ class PostgresPipelineRepository:
                 logger.exception("Failed to close lock session")
             self._lock_session = None
 
-    async def upsert_posts(self, posts: list[RawRedditPost]) -> int:
+    async def upsert_posts(self, posts: list[RawPost]) -> int:
         if not posts:
             return 0
 
         async with self._db.session() as session:
-            now = datetime.now(UTC)
+            now = datetime.now(UTC).replace(tzinfo=None)
             rows = [
                 {
                     "created_at": now,
                     "updated_at": now,
-                    "external_created_at": p.external_created_at,
-                    "source": "reddit",
+                    "external_created_at": p.external_created_at.replace(tzinfo=None)
+                    if p.external_created_at.tzinfo
+                    else p.external_created_at,
+                    "source": p.source,
                     "external_id": p.external_id,
                     "subreddit": p.subreddit,
                     "title": p.title,
@@ -98,7 +102,7 @@ class PostgresPipelineRepository:
             await session.commit()
             return result.rowcount
 
-    async def get_pending_posts(self, limit: int = 100) -> list[Post]:
+    async def get_pending_posts(self, limit: int = 1000) -> list[Post]:
         stmt = (
             select(PostRow)
             .where(PostRow.tagging_status == "pending", PostRow.deleted_at.is_(None))
@@ -117,6 +121,7 @@ class PostgresPipelineRepository:
                 PostRow.tagging_status == "tagged",
                 PostRow.deleted_at.is_(None),
                 PostRow.id.not_in(subq),
+                PostRow.post_type.in_(ACTIONABLE_POST_TYPES),
             )
             .order_by(PostRow.created_at.asc())
         )
@@ -132,8 +137,8 @@ class PostgresPipelineRepository:
                     update(PostRow)
                     .where(PostRow.id == tr.post_id)
                     .values(
-                        post_type=tr.post_type,
                         sentiment=tr.sentiment,
+                        post_type=tr.post_type,
                         tagging_status="tagged",
                     )
                 )
@@ -162,6 +167,11 @@ class PostgresPipelineRepository:
 
             await session.commit()
 
+    async def get_existing_tag_slugs(self) -> list[str]:
+        async with self._db.session() as session:
+            result = await session.execute(select(TagRow.slug).order_by(TagRow.slug))
+            return [r for (r,) in result]
+
     async def mark_tagging_failed(self, post_ids: list[int]) -> None:
         async with self._db.session() as session:
             await session.execute(
@@ -173,7 +183,7 @@ class PostgresPipelineRepository:
 
     async def save_clusters(self, clusters: list[ClusteringResult]) -> None:
         async with self._db.session() as session:
-            now = datetime.now(UTC)
+            now = datetime.now(UTC).replace(tzinfo=None)
             for cluster in clusters:
                 stmt = (
                     pg_insert(ClusterRow)
@@ -235,7 +245,7 @@ class PostgresPipelineRepository:
 
     async def save_brief(self, cluster_id: int, draft: BriefDraft) -> None:
         async with self._db.session() as session:
-            now = datetime.now(UTC)
+            now = datetime.now(UTC).replace(tzinfo=None)
 
             # Ensure slug uniqueness by appending cluster_id
             slug = f"{_slugify(draft.slug)}-{cluster_id}"
@@ -276,3 +286,103 @@ class PostgresPipelineRepository:
                     await session.execute(source_stmt)
 
             await session.commit()
+
+    async def upsert_products(self, products: list[RawProduct]) -> int:
+        if not products:
+            return 0
+
+        async with self._db.session() as session:
+            now = datetime.now(UTC).replace(tzinfo=None)
+            rows = [
+                {
+                    "created_at": now,
+                    "updated_at": now,
+                    "source": "producthunt",
+                    "external_id": p.external_id,
+                    "name": p.name,
+                    "slug": p.slug,
+                    "tagline": p.tagline,
+                    "description": p.description,
+                    "url": p.url,
+                    "category": p.category,
+                    "launched_at": p.launched_at.replace(tzinfo=None)
+                    if p.launched_at and p.launched_at.tzinfo
+                    else p.launched_at,
+                }
+                for p in products
+            ]
+
+            stmt = pg_insert(ProductRow).values(rows)
+            stmt = stmt.on_conflict_do_update(
+                constraint="uq_product_source_external_id",
+                set_={
+                    "name": stmt.excluded.name,
+                    "tagline": stmt.excluded.tagline,
+                    "description": stmt.excluded.description,
+                    "updated_at": now,
+                },
+            )
+            result = await session.execute(stmt)
+
+            for p in products:
+                if p.category:
+                    product_row = await session.execute(
+                        select(ProductRow).where(ProductRow.slug == p.slug)
+                    )
+                    prod = product_row.scalars().first()
+                    if prod:
+                        await self._link_product_tags(session, prod.id, p.category)
+
+            await session.commit()
+            return result.rowcount
+
+    async def _link_product_tags(
+        self, session: AsyncSession, product_id: int, category: str
+    ) -> None:
+        slug = _slugify(category)
+        tag_name = category.strip().title()
+
+        tag_stmt = pg_insert(TagRow).values(name=tag_name, slug=slug)
+        tag_stmt = tag_stmt.on_conflict_do_nothing(constraint="uq_tag_slug")
+        await session.execute(tag_stmt)
+
+        tag_result = await session.execute(
+            select(TagRow).where(TagRow.slug == slug)
+        )
+        tag = tag_result.scalars().first()
+        if tag:
+            link_stmt = pg_insert(ProductTagRow).values(
+                product_id=product_id, tag_id=tag.id
+            )
+            link_stmt = link_stmt.on_conflict_do_nothing()
+            await session.execute(link_stmt)
+
+    async def find_related_products(self, keyword: str) -> list[RawProduct]:
+        async with self._db.session() as session:
+            # Escape LIKE metacharacters to prevent wildcard injection
+            escaped = keyword.lower().replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+            kw = f"%{escaped}%"
+            stmt = (
+                select(ProductRow)
+                .where(
+                    ProductRow.name.ilike(kw)
+                    | ProductRow.tagline.ilike(kw)
+                    | ProductRow.description.ilike(kw)
+                )
+                .limit(10)
+            )
+            result = await session.execute(stmt)
+            rows = result.scalars().all()
+            return [
+                RawProduct(
+                    external_id=r.external_id,
+                    name=r.name,
+                    slug=r.slug,
+                    tagline=r.tagline,
+                    description=r.description,
+                    url=r.url,
+                    category=r.category,
+                    launched_at=r.launched_at,
+                )
+                for r in rows
+            ]

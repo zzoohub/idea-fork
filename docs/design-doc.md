@@ -38,27 +38,31 @@ Builders (indie hackers, early-stage founders, PMs) spend 5+ hours/week manually
                           ┌───────────────────────────┼─────────┐
                           │     External Services     │         │
                           │  ┌──────────┐  ┌──────────▼──────┐  │
-                          │  │Reddit API│  │   LLM APIs      │  │
-                          │  └──────────┘  │(Claude / OpenAI) │  │
+                          │  │Reddit API│  │  Gemini API     │  │
+                          │  └──────────┘  │(LLM + Embedding)│  │
                           │  ┌──────────┐  └─────────────────┘  │
-                          │  │PH API    │                       │
-                          │  └──────────┘                       │
-                          │  ┌──────────┐  ┌────────────────┐   │
-                          │  │App Store │  │ Google Play     │   │
-                          │  └──────────┘  └────────────────┘   │
+                          │  │PH API    │  ┌─────────────────┐  │
+                          │  └──────────┘  │  Google Trends   │  │
+                          │  ┌──────────┐  └─────────────────┘  │
+                          │  │RSS Feeds │  ┌────────────────┐   │
+                          │  └──────────┘  │ App Store / GP  │   │
+                          │                └────────────────┘   │
                           └─────────────────────────────────────┘
 ```
 
 **Actors:**
 - **Anonymous users** — browse feed, read briefs, view products, rate briefs. No login required for MVP.
 - **Reddit API** — source of raw user complaints (ingestion target).
-- **Product Hunt API** — source of trending/new products (ingestion target).
-- **App Store / Google Play** — source of app reviews and ratings (P1 ingestion target).
-- **LLM APIs** (Anthropic Claude Haiku, OpenAI GPT-4o-mini) — tagging, clustering, brief generation.
+- **RSS Feeds** — tech news from Hacker News, TechCrunch, etc. (ingestion target).
+- **Product Hunt API** — source of trending/new products (ingestion target + competitive context for briefs).
+- **Google Trends** — search interest data included as demand signals in briefs.
+- **App Store / Google Play** — source of app reviews and ratings (ingestion target).
+- **Google Gemini API** — tagging (Gemini Flash), embedding (Gemini Embedding), brief synthesis (Gemini Flash). HDBSCAN for clustering (local, no API call).
 
 **Data flows:**
-- **Inbound (complaints)**: Reddit API, App Store, Google Play → Data Pipeline → PostgreSQL (raw posts, tags, clusters, briefs)
-- **Inbound (products)**: Product Hunt API → Data Pipeline → PostgreSQL (products)
+- **Inbound (complaints)**: Reddit API, RSS Feeds, App Store, Google Play → Data Pipeline → PostgreSQL (raw posts, tags, clusters, briefs)
+- **Inbound (products)**: Product Hunt API → Data Pipeline → PostgreSQL (products + competitive context in briefs)
+- **Inbound (trends)**: Google Trends → Data Pipeline → demand signals in briefs
 - **Read path**: User → Web App (Next.js SSR) → API Server → PostgreSQL → rendered page
 - **Write path (MVP)**: Brief ratings only — User → API → PostgreSQL
 
@@ -66,7 +70,7 @@ Builders (indie hackers, early-stage founders, PMs) spend 5+ hours/week manually
 
 | # | Assumption | If Wrong |
 |---|---|---|
-| 1 | Reddit alone provides enough signal for MVP launch | Need to accelerate multi-source ingestion (App Store, Google Play) before launch |
+| 1 | Multi-source ingestion (Reddit, App Store, Google Play, Product Hunt) provides strong signal for MVP launch | Need to evaluate per-platform signal quality and adjust source weights |
 | 2 | LLM tagging accuracy ≥ 85% with few-shot prompting | Need human-in-the-loop review or fine-tuned model |
 | 3 | Read-heavy workload (100:1 read/write ratio in MVP) | May need write optimization earlier |
 | 4 | < 10K daily active users for first 6 months | Scaling strategy can remain simple |
@@ -79,7 +83,7 @@ Builders (indie hackers, early-stage founders, PMs) spend 5+ hours/week manually
 ### 2.1 Goals
 
 - Serve feed pages with < 200ms TTFB (p95) for SEO and user experience
-- Ingest and tag 10K+ Reddit posts/day with ≤ $5/day LLM cost
+- Ingest and tag 10K+ posts/day across all sources (Reddit, App Store, Google Play, Product Hunt) with ≤ $5/day LLM cost
 - Generate briefs from post clusters with full source attribution (every claim → source post)
 - Support 500 WAU within 3 months with zero-login browsing
 - Deploy and operate as a solo developer with < 2 hours/week ops overhead
@@ -156,7 +160,7 @@ The API has meaningful domain logic (not just CRUD) — tagging rules, clusterin
 External Services:
 - Reddit API — data source for user complaints (called by pipeline)
 - Product Hunt API — data source for trending/new products (called by pipeline)
-- App Store / Google Play — data source for app reviews (called by pipeline, P1)
+- App Store / Google Play — data source for app reviews (called by pipeline)
 - LLM APIs (Anthropic, OpenAI) — tagging, clustering, brief generation (called by pipeline)
 - PostHog — user analytics (client-side + server-side events)
 - Sentry — error tracking (both web and API)
@@ -172,7 +176,7 @@ The API server is organized into domain modules following hexagonal architecture
 |---|---|---|
 | **post** | Raw user complaints. CRUD, filtering, search, tagging state. | Yes — feed is the landing page |
 | **brief** | AI-generated opportunity briefs. Brief lifecycle, source attribution, ratings. | Yes — core value proposition |
-| **product** | Trending products paired with complaints. Product info, complaint aggregation. | No — P1 feature |
+| **product** | Trending products paired with complaints. Product info, complaint aggregation. | Yes — MVP feature |
 | **pipeline** | Data ingestion + LLM processing. Reddit fetching, tagging, clustering, brief generation. | No — runs offline, not user-facing |
 
 **Module relationships:**
@@ -180,6 +184,14 @@ The API server is organized into domain modules following hexagonal architecture
 - `product` depends on `post` (products are paired with complaints)
 - `pipeline` writes to `post`, `brief`, and `product` — it's the data producer
 - Feed/Brief/Product read APIs are independent of each other (no cross-module queries on the read path)
+
+**Frontend Feed Structure:**
+
+The feed page uses a two-tier filter system:
+1. **Post type tabs** — Horizontal tab bar (All + 7 actionable types). Maps to `?post_type=` URL param and `GET /v1/posts?post_type=` API query.
+2. **Tag filter chips** — Independent tag-based filter (`?tag=`). Both filters can be combined (`?post_type=complaint&tag=saas`).
+
+Each post card displays a `post_type` badge alongside sentiment and category badges.
 
 ---
 
@@ -191,11 +203,19 @@ The API server is organized into domain modules following hexagonal architecture
 
 ```
 Reddit API ─────────┐
-App Store reviews ──┤──fetch──▶ Raw posts ──LLM tag──▶ Tagged posts ──cluster──▶ Clusters ──LLM synthesize──▶ Briefs
-Google Play reviews ┘     │                       │                        │                          │
-                      store in DB             update DB               store in DB               store in DB
-                     (posts table)         (tags on posts)        (clusters table)          (briefs table)
+RSS Feeds ──────────┤──fetch──▶ Raw posts ──Gemini tag──▶ Tagged posts ──embed+HDBSCAN──▶ Clusters ──Gemini synthesize──▶ Briefs
+App Store reviews ──┤     │                        │                              │       (+ Trends + PH)        │
+Google Play reviews ┘  store in DB         update DB (tags +              store in DB                    store in DB
+                      (posts table)     post_type + sentiment)         (clusters table)               (briefs table)
+
+Tagging assigns each post a `post_type` from 10 categories:
+- **Actionable** (7): `need`, `complaint`, `feature_request`, `alternative_seeking`, `comparison`, `question`, `review`
+- **Non-actionable** (3): `general_discussion`, `praise`, `showcase`
+
+Only actionable post types are included as clustering input (ACTIONABLE_POST_TYPES filter). Non-actionable posts remain in the feed but are excluded from brief generation.
 ```
+
+Clustering uses Gemini Embedding API for vectorization + HDBSCAN (scikit-learn) for automatic cluster detection. Each cluster is then labeled by a lightweight Gemini LLM call. This replaces the previous approach of sending all posts to the LLM for grouping, improving scalability and cost.
 
 **Flow 1b: Pipeline — Product Hunt → products**
 
@@ -326,6 +346,8 @@ No distributed tracing in MVP — single service, no inter-service calls to trac
 | Concern | Strategy |
 |---|---|
 | **Reddit API failures** | Retry with exponential backoff (3 attempts, 1s/2s/4s). If persistent, skip batch and alert. Pipeline doesn't block user-facing API. |
+| **Product Hunt API failures** | Retry with backoff (3 attempts). If persistent, skip batch. Products page shows stale data until next successful fetch. |
+| **App Store / Google Play failures** | Retry with backoff (3 attempts). If scraping blocked or API unavailable, skip batch and alert. Other sources continue independently. |
 | **LLM API failures** | Retry with backoff (3 attempts). If persistent, store untagged posts and retry in next pipeline run. Briefs with failed synthesis marked as "pending." |
 | **Database connection failures** | SQLAlchemy connection pool with retry. Cloud Run auto-restarts unhealthy instances. |
 | **Rate limiting** | Reddit API: respect rate limit headers, throttle requests. LLM APIs: budget-based throttling (stop pipeline if daily cost exceeds threshold). |
@@ -349,7 +371,7 @@ No distributed tracing in MVP — single service, no inter-service calls to trac
 **Expected load (MVP):**
 - 500 WAU → ~100 DAU → ~10 concurrent users peak
 - ~50 req/s peak (page loads + API calls)
-- 10K posts/day ingested, ~100 briefs/week generated
+- 10K+ posts/day ingested across all sources (Reddit, App Store, Google Play, Product Hunt), ~100 briefs/week generated
 
 **Bottleneck analysis:**
 
@@ -371,11 +393,12 @@ No distributed tracing in MVP — single service, no inter-service calls to trac
 
 | Service | Provides | Protocol | Failure Mode | Fallback |
 |---|---|---|---|---|
-| **Reddit API** | Raw posts (titles, bodies, subreddit, scores, timestamps) | REST (OAuth2) | Rate limits, downtime, policy changes | Retry with backoff. If down > 1 hour, skip batch. Abstract data source layer for platform additions. |
-| **Product Hunt API** | Trending/new products (name, description, URL, category, launch date) | REST (OAuth2 / API token) | Rate limits, downtime | Retry with backoff. If down, skip batch. Products are P1 — feed still works independently. |
-| **App Store / Google Play** | App reviews and ratings | Scraping or third-party API (TBD) | Blocking, API changes | Retry with backoff. If unavailable, skip batch. P1 — Reddit feed works independently. |
-| **Anthropic API** (Claude Haiku) | Post tagging, brief synthesis | REST (API key) | Rate limits, downtime, cost overruns | Retry with backoff. Swap to OpenAI as fallback. Budget circuit breaker stops pipeline if daily cost > threshold. |
-| **OpenAI API** (GPT-4o-mini) | Post tagging (fallback), clustering embeddings | REST (API key) | Same as above | Swap to Anthropic. Embeddings can fall back to local sentence-transformers if cost is an issue. |
+| **Reddit API** | Raw posts (titles, bodies, subreddit, scores, timestamps) | REST (public JSON) | Rate limits, downtime, policy changes | Retry with backoff. If down > 1 hour, skip batch. Abstract data source layer for platform additions. |
+| **RSS Feeds** | Tech news articles (HN, TechCrunch, etc.) | HTTP + feedparser | Feed down, format changes | Retry per-feed. Skip failed feeds, continue with others. |
+| **Product Hunt API** | Trending/new products + competitive context for briefs | GraphQL (API token) | Rate limits, downtime | Retry with backoff. If down, skip batch. Briefs generated without competitive data. |
+| **Google Trends** (pytrends) | Keyword interest, related queries, trend direction | REST (unofficial) | Rate limits, blocking | Graceful degradation. If unavailable, briefs generated without trend data. |
+| **App Store / Google Play** | App reviews and ratings | Scraping or third-party API (TBD) | Blocking, API changes | Retry with backoff. If unavailable, skip batch. Other sources continue independently. |
+| **Google Gemini API** | Post tagging (Flash), embeddings (Embedding model), brief synthesis (Flash) | REST (API key) | Rate limits, downtime, cost overruns | Retry with backoff. Budget circuit breaker stops pipeline if daily cost > threshold. |
 | **Neon** | PostgreSQL database | PostgreSQL wire protocol (asyncpg) | Connection limits, maintenance windows | Connection pooling (Neon's built-in pgbouncer). Cloud Run retries failed connections. |
 | **PostHog** | User analytics | Client-side JS SDK + REST API | Downtime | Non-blocking. Analytics failures don't affect user experience. Fire-and-forget. |
 | **Sentry** | Error tracking | SDK (async) | Downtime | Non-blocking. Errors still logged to Cloud Logging. |
@@ -387,14 +410,12 @@ No distributed tracing in MVP — single service, no inter-service calls to trac
 Not applicable — greenfield project. No existing system to migrate from.
 
 **MVP rollout plan:**
-1. Phase 1 (Foundation): Deploy pipeline + feed page with real Reddit data
-2. Phase 2 (Briefs & Products): Deploy brief generation + products page
-3. Phase 3 (Validate): Collect feedback, measure retention, decide on paid tier
+1. Phase 1 (MVP): Deploy pipeline (Reddit, App Store, Google Play ingestion + Product Hunt products) + feed, products, AI briefs pages all live. Full MVP deployed.
+2. Phase 2 (Validate): Collect feedback, measure retention, decide on paid tier
 
 Feature flags (via PostHog) for:
 - New brief generation algorithm rollout
-- Products page visibility (P1 feature, can be hidden initially)
-- New data source ingestion (when adding platforms beyond Reddit)
+- New data source ingestion (when adding platforms beyond MVP sources)
 
 ---
 
@@ -415,7 +436,7 @@ Feature flags (via PostHog) for:
 
 | # | Question | Options | Info Needed | Owner |
 |---|---|---|---|---|
-| 1 | Clustering algorithm — embeddings-based (k-means on LLM embeddings) vs. LLM-based (ask LLM to group posts)? | A: Embedding clustering (cheaper, scalable) B: LLM clustering (more accurate, costly) | Benchmark both on 1K posts for quality and cost | zzoo |
+| ~~1~~ | ~~Clustering algorithm~~ — **Resolved**: Embedding clustering (Gemini Embedding + HDBSCAN). Cheaper, scalable, automatic cluster count. LLM used only for labeling each cluster. | — | — | zzoo |
 | 2 | Brief generation — one LLM call per brief or chain-of-thought with multiple calls? | A: Single call (cheaper, faster) B: Multi-step (research → outline → write, higher quality) | Test both, compare quality ratings | zzoo |
 | 3 | Feed search — PostgreSQL full-text search (pg_trgm + tsvector) vs. external search service? | A: PostgreSQL built-in (simpler, no extra infra) B: Typesense/Meilisearch (better relevance, more ops) | Evaluate pg FTS quality on sample data | zzoo |
 | 4 | Pipeline scheduling — hourly vs. daily? | A: Hourly (fresher data, higher LLM cost) B: Daily (cheaper, acceptable for MVP) | Estimate LLM cost per run, user expectations for freshness | zzoo |
@@ -488,7 +509,18 @@ Feature flags (via PostHog) for:
   - **SPA (Vite + React)**: No SSR, poor SEO. Rejected — SEO is a P0 requirement.
 - **Consequences**: (+) Best-in-class SSR/SSG, zero-config deployment, preview deploys, fast iteration. (-) Vercel cost scales with traffic (plan migration to Cloudflare if costs grow). Vendor-coupled to Vercel's deployment model (mitigated by OpenNext escape hatch).
 
-### ADR-7: Anonymous Sessions for Brief Ratings (No Auth in MVP)
+### ADR-7: Embedding Clustering (Gemini + HDBSCAN) over LLM Clustering
+
+- **Status**: Accepted
+- **Context**: The pipeline clusters posts by theme to generate briefs. The original approach sent all posts to the LLM for grouping — expensive, slow, and limited by context window size.
+- **Decision**: Replace LLM clustering with Gemini Embedding API (vectorize posts) + HDBSCAN (density-based clustering). LLM is used only for labeling each cluster (short, cheap call).
+- **Alternatives Considered**:
+  - **Full LLM clustering**: Send all posts + prompt to group them. Rejected — O(n) token cost, limited by context window (~50 posts max per call), and grouping accuracy degrades with volume.
+  - **K-means on embeddings**: Requires specifying cluster count upfront. Rejected — HDBSCAN automatically determines cluster count and handles noise points.
+  - **Sentence-transformers (local embeddings)**: No API cost. Rejected — Gemini embeddings are higher quality and the API cost is negligible compared to the synthesis LLM calls.
+- **Consequences**: (+) Handles thousands of posts efficiently, automatic cluster count, noise detection (unclustered outliers). (-) Requires `scikit-learn` + `numpy` dependencies; HDBSCAN may produce many small clusters on sparse data.
+
+### ADR-8: Anonymous Sessions for Brief Ratings (No Auth in MVP)
 
 - **Status**: Accepted
 - **Context**: PRD requires no-login browsing as P0. The only "write" action in MVP is rating briefs (thumbs up/down). Need to prevent vote spam without requiring accounts.

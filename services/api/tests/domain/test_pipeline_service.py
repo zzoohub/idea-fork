@@ -23,13 +23,16 @@ def make_repo(*, locked: bool = True) -> AsyncMock:
     repo.acquire_advisory_lock = AsyncMock(return_value=locked)
     repo.release_advisory_lock = AsyncMock(return_value=None)
     repo.upsert_posts = AsyncMock(return_value=0)
+    repo.upsert_products = AsyncMock(return_value=0)
     repo.get_pending_posts = AsyncMock(return_value=[])
+    repo.get_existing_tag_slugs = AsyncMock(return_value=[])
     repo.get_tagged_posts_without_cluster = AsyncMock(return_value=[])
     repo.get_clusters_without_briefs = AsyncMock(return_value=[])
     repo.save_tagging_results = AsyncMock(return_value=None)
     repo.mark_tagging_failed = AsyncMock(return_value=None)
     repo.save_clusters = AsyncMock(return_value=None)
     repo.save_brief = AsyncMock(return_value=None)
+    repo.find_related_products = AsyncMock(return_value=[])
     return repo
 
 
@@ -47,11 +50,29 @@ def make_llm() -> AsyncMock:
     return llm
 
 
+def make_rss(*, posts=None) -> AsyncMock:
+    rss = AsyncMock()
+    rss.fetch_posts = AsyncMock(return_value=posts if posts is not None else [])
+    return rss
+
+
+def make_trends(*, data=None) -> AsyncMock:
+    trends = AsyncMock()
+    trends.get_interest = AsyncMock(return_value=data if data is not None else {})
+    return trends
+
+
+def make_producthunt(*, products=None) -> AsyncMock:
+    ph = AsyncMock()
+    ph.fetch_recent_products = AsyncMock(return_value=products if products is not None else [])
+    return ph
+
+
 def make_tagging_result(post_id: int) -> TaggingResult:
     return TaggingResult(
         post_id=post_id,
-        post_type="complaint",
         sentiment="negative",
+        post_type="complaint",
         tag_slugs=["saas"],
     )
 
@@ -74,11 +95,17 @@ def make_brief_draft(title: str = "Test Brief") -> BriefDraft:
     )
 
 
-def make_service(repo=None, reddit=None, llm=None, subreddits=None) -> PipelineService:
+def make_service(
+    repo=None, reddit=None, llm=None, rss=None,
+    trends=None, producthunt=None, subreddits=None,
+) -> PipelineService:
     return PipelineService(
         repo=repo or make_repo(),
         reddit=reddit or make_reddit(),
         llm=llm or make_llm(),
+        rss=rss or make_rss(),
+        trends=trends or make_trends(),
+        producthunt=producthunt or make_producthunt(),
         subreddits=subreddits or ["saas", "startups"],
         fetch_limit=50,
     )
@@ -119,11 +146,6 @@ async def test_run_acquires_and_releases_lock_on_success():
 async def test_run_releases_lock_even_when_stage_raises():
     """Lock must be released in the finally block even if a stage crashes hard."""
     repo = make_repo(locked=True)
-    # Make get_pending_posts raise an unexpected exception beyond normal stage error
-    # We test by making upsert_posts raise — this is caught inside _stage_fetch,
-    # so it does NOT propagate out of try. To test the finally path we need
-    # to make acquire_advisory_lock succeed but one of the awaited top-level calls
-    # fail with an unexpected exception. Patch get_clusters_without_briefs to raise.
     repo.get_clusters_without_briefs = AsyncMock(side_effect=RuntimeError("db down"))
     svc = make_service(repo=repo)
 
@@ -140,18 +162,19 @@ async def test_run_releases_lock_even_when_stage_raises():
 
 @pytest.mark.asyncio
 async def test_stage_fetch_records_fetched_count():
-    from domain.pipeline.models import RawRedditPost
+    from domain.pipeline.models import RawPost
     from datetime import datetime, timezone
 
-    raw_post = RawRedditPost(
+    raw_post = RawPost(
+        source="reddit",
         external_id="id1",
-        subreddit="saas",
         title="Complaint",
         body=None,
         external_url="https://reddit.com/r/saas/id1",
         external_created_at=datetime(2026, 2, 18, tzinfo=timezone.utc),
         score=10,
         num_comments=2,
+        subreddit="saas",
     )
     reddit = make_reddit(posts=[raw_post, raw_post])
     repo = make_repo()
@@ -193,6 +216,54 @@ async def test_stage_fetch_error_recorded_continues_pipeline():
     repo.get_pending_posts.assert_called_once()
 
 
+@pytest.mark.asyncio
+async def test_stage_fetch_includes_rss_posts():
+    from domain.pipeline.models import RawPost
+    from datetime import datetime, timezone
+
+    reddit_post = RawPost(
+        source="reddit",
+        external_id="r1",
+        title="Reddit post",
+        body=None,
+        external_url="https://reddit.com/r/saas/r1",
+        external_created_at=datetime(2026, 2, 18, tzinfo=timezone.utc),
+        score=10,
+        num_comments=2,
+        subreddit="saas",
+    )
+    rss_post = RawPost(
+        source="rss",
+        external_id="rss1",
+        title="RSS post",
+        body=None,
+        external_url="https://hn.example.com/1",
+        external_created_at=datetime(2026, 2, 18, tzinfo=timezone.utc),
+        score=0,
+        num_comments=0,
+    )
+    reddit = make_reddit(posts=[reddit_post])
+    rss = make_rss(posts=[rss_post])
+    repo = make_repo()
+    repo.upsert_posts = AsyncMock(return_value=2)
+
+    svc = PipelineService(
+        repo=repo,
+        reddit=reddit,
+        llm=make_llm(),
+        rss=rss,
+        trends=make_trends(),
+        producthunt=make_producthunt(),
+        subreddits=["saas"],
+        rss_feeds=["https://hnrss.org/newest"],
+        fetch_limit=50,
+    )
+
+    result = await svc.run()
+
+    assert result.posts_fetched == 2
+
+
 # ---------------------------------------------------------------------------
 # Stage tag
 # ---------------------------------------------------------------------------
@@ -224,7 +295,7 @@ async def test_stage_tag_single_batch():
     result = await svc.run()
 
     assert result.posts_tagged == 3
-    llm.tag_posts.assert_called_once_with(posts)
+    llm.tag_posts.assert_called_once_with(posts, existing_tags=[])
     repo.save_tagging_results.assert_called_once_with(tagging_results)
 
 
@@ -242,7 +313,7 @@ async def test_stage_tag_multiple_batches():
     def make_results(batch):
         return [make_tagging_result(p.id) for p in batch]
 
-    llm.tag_posts = AsyncMock(side_effect=lambda batch: make_results(batch))
+    llm.tag_posts = AsyncMock(side_effect=lambda batch, **kw: make_results(batch))
 
     svc = make_service(repo=repo, llm=llm)
 
@@ -273,6 +344,47 @@ async def test_stage_tag_batch_error_marks_failed_and_records_error():
 
 
 @pytest.mark.asyncio
+async def test_stage_tag_batch_error_message_includes_exception_type_and_message():
+    """Error string must include exception class name and message for diagnostics."""
+    posts = [make_post(id=1), make_post(id=2)]
+    repo = make_repo()
+    repo.get_pending_posts = AsyncMock(return_value=posts)
+
+    llm = make_llm()
+    llm.tag_posts = AsyncMock(side_effect=ValueError("bad json from llm"))
+
+    svc = make_service(repo=repo, llm=llm)
+
+    result = await svc.run()
+
+    assert result.has_errors is True
+    # New format: "Tag batch failed (N posts): ExceptionType: message"
+    error = next(e for e in result.errors if "Tag batch" in e)
+    assert "ValueError" in error
+    assert "bad json from llm" in error
+    assert "2 posts" in error
+
+
+@pytest.mark.asyncio
+async def test_stage_tag_batch_error_message_includes_batch_size():
+    """Error message must include the number of posts in the failed batch."""
+    batch_size = TAGGING_BATCH_SIZE
+    posts = [make_post(id=i) for i in range(1, batch_size + 1)]
+    repo = make_repo()
+    repo.get_pending_posts = AsyncMock(return_value=posts)
+
+    llm = make_llm()
+    llm.tag_posts = AsyncMock(side_effect=RuntimeError("timeout"))
+
+    svc = make_service(repo=repo, llm=llm)
+
+    result = await svc.run()
+
+    error = next(e for e in result.errors if "Tag batch" in e)
+    assert f"{batch_size} posts" in error
+
+
+@pytest.mark.asyncio
 async def test_stage_tag_second_batch_succeeds_first_fails():
     """First batch fails, second succeeds — both are counted correctly."""
     first_batch = [make_post(id=i) for i in range(1, TAGGING_BATCH_SIZE + 1)]
@@ -284,7 +396,7 @@ async def test_stage_tag_second_batch_succeeds_first_fails():
 
     call_count = 0
 
-    async def tag_side_effect(batch):
+    async def tag_side_effect(batch, **kw):
         nonlocal call_count
         call_count += 1
         if call_count == 1:
@@ -301,7 +413,53 @@ async def test_stage_tag_second_batch_succeeds_first_fails():
     assert result.posts_tagged == 1
     assert result.has_errors is True
     assert any("Tag batch" in e for e in result.errors)
+    # New format: exception class and message must appear in the error string
+    error = next(e for e in result.errors if "Tag batch" in e)
+    assert "RuntimeError" in error
+    assert "first batch error" in error
     repo.mark_tagging_failed.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_stage_tag_sleeps_after_each_batch():
+    """asyncio.sleep(1) must be called once per batch, even on success."""
+    from unittest.mock import patch as mock_patch
+
+    posts = [make_post(id=i) for i in range(1, TAGGING_BATCH_SIZE + 6)]  # 2 batches
+    repo = make_repo()
+    repo.get_pending_posts = AsyncMock(return_value=posts)
+
+    llm = make_llm()
+    llm.tag_posts = AsyncMock(side_effect=lambda batch, **kw: [make_tagging_result(p.id) for p in batch])
+
+    svc = make_service(repo=repo, llm=llm)
+
+    with mock_patch("domain.pipeline.service.asyncio.sleep", new_callable=AsyncMock) as mock_sleep:
+        await svc.run()
+
+    # 2 batches → 2 sleep calls
+    assert mock_sleep.call_count == 2
+    mock_sleep.assert_called_with(1)
+
+
+@pytest.mark.asyncio
+async def test_stage_tag_sleeps_after_failed_batch():
+    """asyncio.sleep(1) must be called even when a batch raises an exception."""
+    from unittest.mock import patch as mock_patch
+
+    posts = [make_post(id=1)]
+    repo = make_repo()
+    repo.get_pending_posts = AsyncMock(return_value=posts)
+
+    llm = make_llm()
+    llm.tag_posts = AsyncMock(side_effect=RuntimeError("fail"))
+
+    svc = make_service(repo=repo, llm=llm)
+
+    with mock_patch("domain.pipeline.service.asyncio.sleep", new_callable=AsyncMock) as mock_sleep:
+        await svc.run()
+
+    mock_sleep.assert_called_once_with(1)
 
 
 @pytest.mark.asyncio
@@ -442,7 +600,11 @@ async def test_stage_brief_generates_brief_per_cluster():
     result = await svc.run()
 
     assert result.briefs_generated == 1
-    llm.synthesize_brief.assert_called_once_with("SaaS Pain", "Cluster summary", posts)
+    llm.synthesize_brief.assert_called_once()
+    call_kwargs = llm.synthesize_brief.call_args
+    assert call_kwargs.args[0] == "SaaS Pain"
+    assert call_kwargs.args[1] == "Cluster summary"
+    assert call_kwargs.args[2] == posts
     repo.save_brief.assert_called_once_with(42, draft)
 
 
@@ -517,18 +679,19 @@ async def test_stage_brief_outer_error_recorded():
 
 @pytest.mark.asyncio
 async def test_full_pipeline_run_happy_path():
-    from domain.pipeline.models import RawRedditPost
+    from domain.pipeline.models import RawPost
     from datetime import datetime, timezone
 
-    raw_post = RawRedditPost(
+    raw_post = RawPost(
+        source="reddit",
         external_id="id1",
-        subreddit="saas",
         title="Pain",
         body="It hurts",
         external_url="https://reddit.com/r/saas/id1",
         external_created_at=datetime(2026, 2, 18, tzinfo=timezone.utc),
         score=50,
         num_comments=10,
+        subreddit="saas",
     )
     post = make_post(id=1)
     cluster_posts = [post]
@@ -576,6 +739,9 @@ def test_pipeline_service_constructor_stores_config():
         repo=repo,
         reddit=reddit,
         llm=llm,
+        rss=make_rss(),
+        trends=make_trends(),
+        producthunt=make_producthunt(),
         subreddits=subreddits,
         fetch_limit=200,
     )
@@ -589,7 +755,171 @@ def test_pipeline_service_default_fetch_limit():
         repo=make_repo(),
         reddit=make_reddit(),
         llm=make_llm(),
+        rss=make_rss(),
+        trends=make_trends(),
+        producthunt=make_producthunt(),
         subreddits=["saas"],
     )
 
     assert svc._fetch_limit == 100
+
+
+def test_pipeline_service_rss_feeds_defaults_to_empty():
+    svc = PipelineService(
+        repo=make_repo(),
+        reddit=make_reddit(),
+        llm=make_llm(),
+        rss=make_rss(),
+        trends=make_trends(),
+        producthunt=make_producthunt(),
+        subreddits=["saas"],
+        rss_feeds=None,
+    )
+
+    assert svc._rss_feeds == []
+
+
+# ---------------------------------------------------------------------------
+# Stage fetch — Product Hunt sub-paths
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_stage_fetch_upserts_producthunt_products():
+    """When Product Hunt returns products, upsert_products should be called."""
+    from domain.pipeline.models import RawProduct
+    from datetime import datetime, timezone
+
+    product = RawProduct(
+        external_id="ph-1",
+        name="TestApp",
+        slug="testapp",
+        tagline="A cool app",
+        description=None,
+        url=None,
+        category=None,
+        launched_at=None,
+    )
+    repo = make_repo()
+    repo.upsert_products = AsyncMock(return_value=1)
+    ph = make_producthunt(products=[product])
+
+    svc = make_service(repo=repo, producthunt=ph)
+    await svc.run()
+
+    repo.upsert_products.assert_called_once_with([product])
+
+
+@pytest.mark.asyncio
+async def test_stage_fetch_skips_upsert_when_producthunt_returns_empty():
+    """No upsert_products call when Product Hunt returns empty list."""
+    repo = make_repo()
+    ph = make_producthunt(products=[])
+
+    svc = make_service(repo=repo, producthunt=ph)
+    await svc.run()
+
+    repo.upsert_products.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_stage_fetch_producthunt_error_recorded_continues():
+    """Product Hunt failure should add error and let pipeline continue."""
+    repo = make_repo()
+    ph = make_producthunt()
+    ph.fetch_recent_products = AsyncMock(side_effect=RuntimeError("PH API down"))
+
+    svc = make_service(repo=repo, producthunt=ph)
+    result = await svc.run()
+
+    assert result.has_errors is True
+    assert any("Product Hunt" in e for e in result.errors)
+    # Pipeline should continue — subsequent stages should still be attempted
+    repo.get_pending_posts.assert_called_once()
+
+
+# ---------------------------------------------------------------------------
+# Stage brief — trends and related-products exception paths
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_stage_brief_trends_error_logs_and_continues():
+    """When trends.get_interest raises, brief generation should still proceed."""
+    posts = [make_post(id=1)]
+    clusters_data = [(10, "SaaS", "Summary", posts)]
+    draft = make_brief_draft("SaaS Brief")
+
+    repo = make_repo()
+    repo.get_clusters_without_briefs = AsyncMock(return_value=clusters_data)
+    repo.find_related_products = AsyncMock(return_value=[])
+
+    trends = make_trends()
+    trends.get_interest = AsyncMock(side_effect=RuntimeError("trends API down"))
+
+    llm = make_llm()
+    llm.synthesize_brief = AsyncMock(return_value=draft)
+
+    svc = make_service(repo=repo, trends=trends, llm=llm)
+    result = await svc.run()
+
+    # Brief should still be generated even without trends data
+    assert result.briefs_generated == 1
+    # synthesize_brief should have been called with trends_data=None
+    call_args = llm.synthesize_brief.call_args
+    assert call_args.kwargs.get("trends_data") is None
+
+
+@pytest.mark.asyncio
+async def test_stage_brief_related_products_error_logs_and_continues():
+    """When find_related_products raises, brief generation should still proceed."""
+    posts = [make_post(id=1)]
+    clusters_data = [(10, "SaaS", "Summary", posts)]
+    draft = make_brief_draft("SaaS Brief")
+
+    repo = make_repo()
+    repo.get_clusters_without_briefs = AsyncMock(return_value=clusters_data)
+    repo.find_related_products = AsyncMock(side_effect=RuntimeError("DB error"))
+
+    llm = make_llm()
+    llm.synthesize_brief = AsyncMock(return_value=draft)
+
+    svc = make_service(repo=repo, llm=llm)
+    result = await svc.run()
+
+    # Brief should still be generated even without related products
+    assert result.briefs_generated == 1
+    call_args = llm.synthesize_brief.call_args
+    assert call_args.kwargs.get("related_products") is None
+
+
+# ---------------------------------------------------------------------------
+# Stage brief — keyword extraction stop-word fallback
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_stage_brief_keywords_fallback_to_label_when_all_words_are_stop_words():
+    """When every word in label+summary is a stop word or too short, the label
+    itself is used as the sole keyword (service.py line 188 fallback branch)."""
+    posts = [make_post(id=1)]
+    # All words here are stop words from _TRENDS_STOP_WORDS or length <= 2:
+    # "is", "in", "the", "or", "it", "on" are all in the stop-word set.
+    clusters_data = [(10, "is", "in the or it on", posts)]
+    draft = make_brief_draft("Fallback Brief")
+
+    repo = make_repo()
+    repo.get_clusters_without_briefs = AsyncMock(return_value=clusters_data)
+    repo.find_related_products = AsyncMock(return_value=[])
+
+    trends = make_trends()
+    llm = make_llm()
+    llm.synthesize_brief = AsyncMock(return_value=draft)
+
+    svc = make_service(repo=repo, trends=trends, llm=llm)
+    result = await svc.run()
+
+    # Brief should still be generated using the label as the fallback keyword
+    assert result.briefs_generated == 1
+    # trends.get_interest should have been called with the label as the sole keyword
+    trends.get_interest.assert_called_once_with(["is"])

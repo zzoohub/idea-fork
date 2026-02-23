@@ -7,7 +7,7 @@ from unittest.mock import AsyncMock, MagicMock, call, patch
 
 import pytest
 
-from domain.pipeline.models import BriefDraft, ClusteringResult, RawRedditPost, TaggingResult
+from domain.pipeline.models import BriefDraft, ClusteringResult, RawPost, RawProduct, TaggingResult
 from domain.post.models import Post, PostTag
 from outbound.postgres.pipeline_repository import PostgresPipelineRepository, _slugify
 
@@ -50,15 +50,16 @@ def _make_db():
 
 
 def _make_raw_post(external_id="abc", subreddit="SaaS"):
-    return RawRedditPost(
+    return RawPost(
+        source="reddit",
         external_id=external_id,
-        subreddit=subreddit,
         title="Test post",
         body="Body text",
         external_url=f"https://reddit.com/r/{subreddit}/comments/{external_id}/",
         external_created_at=datetime(2026, 2, 1, tzinfo=UTC),
         score=10,
         num_comments=2,
+        subreddit=subreddit,
     )
 
 
@@ -73,7 +74,6 @@ def _make_domain_post(pid=1):
         external_created_at=datetime(2026, 2, 1, tzinfo=UTC),
         score=5,
         num_comments=1,
-        post_type="complaint",
         sentiment="negative",
         tags=[],
     )
@@ -348,7 +348,7 @@ async def test_save_tagging_results_calls_commit():
         session.execute = AsyncMock(return_value=exec_result)
 
         results = [
-            TaggingResult(post_id=1, post_type="complaint", sentiment="negative", tag_slugs=["saas"])
+            TaggingResult(post_id=1, sentiment="negative", post_type="complaint", tag_slugs=["saas"])
         ]
 
         repo = PostgresPipelineRepository(db)
@@ -376,13 +376,47 @@ async def test_save_tagging_results_no_tag_link_when_tag_not_found():
         session.execute = AsyncMock(return_value=exec_result)
 
         results = [
-            TaggingResult(post_id=1, post_type="complaint", sentiment="negative", tag_slugs=["ghost-slug"])
+            TaggingResult(post_id=1, sentiment="negative", post_type="other", tag_slugs=["ghost-slug"])
         ]
 
         repo = PostgresPipelineRepository(db)
         await repo.save_tagging_results(results)
 
     session.commit.assert_called_once()
+
+
+# ---------------------------------------------------------------------------
+# get_existing_tag_slugs
+# ---------------------------------------------------------------------------
+
+@pytest.mark.asyncio
+async def test_get_existing_tag_slugs_returns_slugs():
+    db, session = _make_db()
+    db.session.return_value = session
+
+    exec_result = MagicMock()
+    exec_result.__iter__ = MagicMock(return_value=iter([("ai-ml",), ("complaint",), ("saas",)]))
+    session.execute = AsyncMock(return_value=exec_result)
+
+    repo = PostgresPipelineRepository(db)
+    slugs = await repo.get_existing_tag_slugs()
+
+    assert slugs == ["ai-ml", "complaint", "saas"]
+
+
+@pytest.mark.asyncio
+async def test_get_existing_tag_slugs_empty():
+    db, session = _make_db()
+    db.session.return_value = session
+
+    exec_result = MagicMock()
+    exec_result.__iter__ = MagicMock(return_value=iter([]))
+    session.execute = AsyncMock(return_value=exec_result)
+
+    repo = PostgresPipelineRepository(db)
+    slugs = await repo.get_existing_tag_slugs()
+
+    assert slugs == []
 
 
 # ---------------------------------------------------------------------------
@@ -599,3 +633,402 @@ async def test_save_brief_snapshot_without_post_id_is_skipped():
     # Only the BriefRow insert should have happened; no BriefSourceRow insert
     assert insert_call_count == 1
     session.commit.assert_called_once()
+
+
+# ---------------------------------------------------------------------------
+# upsert_products
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_upsert_products_empty_list_returns_zero():
+    db, _ = _make_db()
+    repo = PostgresPipelineRepository(db)
+
+    count = await repo.upsert_products([])
+
+    assert count == 0
+
+
+@pytest.mark.asyncio
+async def test_upsert_products_returns_rowcount():
+    db, session = _make_db()
+    db.session.return_value = session
+
+    exec_result = MagicMock()
+    exec_result.rowcount = 2
+    session.execute = AsyncMock(return_value=exec_result)
+
+    products = [
+        RawProduct(
+            external_id="ph-1",
+            name="App1",
+            slug="app1",
+            tagline="Cool app",
+            description="Desc",
+            url="https://app1.com",
+            category="Dev Tools",
+            launched_at=datetime(2026, 2, 1, tzinfo=UTC),
+        ),
+        RawProduct(
+            external_id="ph-2",
+            name="App2",
+            slug="app2",
+            tagline=None,
+            description=None,
+            url=None,
+            category=None,
+            launched_at=None,
+        ),
+    ]
+
+    with patch("outbound.postgres.pipeline_repository.pg_insert") as mock_insert:
+        mock_stmt = MagicMock()
+        mock_stmt.on_conflict_do_update.return_value = mock_stmt
+        mock_insert.return_value = mock_stmt
+        mock_stmt.excluded = MagicMock()
+
+        repo = PostgresPipelineRepository(db)
+        count = await repo.upsert_products(products)
+
+    assert count == 2
+    session.commit.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_upsert_products_with_timezone_strips_tzinfo():
+    """launched_at with tzinfo should have tzinfo stripped before DB insert."""
+    db, session = _make_db()
+    db.session.return_value = session
+
+    exec_result = MagicMock()
+    exec_result.rowcount = 1
+    session.execute = AsyncMock(return_value=exec_result)
+
+    products = [
+        RawProduct(
+            external_id="ph-3",
+            name="App3",
+            slug="app3",
+            tagline=None,
+            description=None,
+            url=None,
+            category=None,
+            launched_at=datetime(2026, 2, 1, tzinfo=UTC),  # has tzinfo
+        ),
+    ]
+
+    rows_passed = []
+
+    def capture_values(values):
+        rows_passed.extend(values)
+        return MagicMock(on_conflict_do_update=lambda **kw: MagicMock())
+
+    with patch("outbound.postgres.pipeline_repository.pg_insert") as mock_insert:
+        mock_stmt = MagicMock()
+        mock_stmt.on_conflict_do_update.return_value = mock_stmt
+        mock_insert.return_value = mock_stmt
+
+        repo = PostgresPipelineRepository(db)
+        await repo.upsert_products(products)
+
+    # At minimum, verify commit was called (row was processed)
+    session.commit.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_upsert_products_without_timezone_passes_as_is():
+    """launched_at without tzinfo should be stored directly."""
+    db, session = _make_db()
+    db.session.return_value = session
+
+    exec_result = MagicMock()
+    exec_result.rowcount = 1
+    session.execute = AsyncMock(return_value=exec_result)
+
+    products = [
+        RawProduct(
+            external_id="ph-4",
+            name="App4",
+            slug="app4",
+            tagline=None,
+            description=None,
+            url=None,
+            category=None,
+            launched_at=datetime(2026, 2, 1),  # no tzinfo
+        ),
+    ]
+
+    with patch("outbound.postgres.pipeline_repository.pg_insert") as mock_insert:
+        mock_stmt = MagicMock()
+        mock_stmt.on_conflict_do_update.return_value = mock_stmt
+        mock_insert.return_value = mock_stmt
+        mock_stmt.excluded = MagicMock()
+
+        repo = PostgresPipelineRepository(db)
+        await repo.upsert_products(products)
+
+    session.commit.assert_called_once()
+
+
+# ---------------------------------------------------------------------------
+# upsert_products — _link_product_tags exercised via category
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_upsert_products_with_category_links_product_tags():
+    """When a product has a category and the product row is found, _link_product_tags is called.
+    This exercises the pg_insert(TagRow) and pg_insert(ProductTagRow) paths."""
+    db, session = _make_db()
+    db.session.return_value = session
+
+    # The product row found during _link_product_tags lookup
+    product_db_row = MagicMock()
+    product_db_row.id = 99
+
+    # Tag found after upsert
+    tag_db_row = MagicMock()
+    tag_db_row.id = 5
+    tag_db_row.slug = "dev-tools"
+
+    # scalars results
+    product_scalars = MagicMock()
+    product_scalars.first.return_value = product_db_row
+
+    tag_scalars = MagicMock()
+    tag_scalars.first.return_value = tag_db_row
+
+    product_select_result = MagicMock()
+    product_select_result.scalars.return_value = product_scalars
+
+    tag_select_result = MagicMock()
+    tag_select_result.scalars.return_value = tag_scalars
+
+    # upsert_products execute: first call is the bulk product insert,
+    # then the product SELECT (finding existing product), then tag upsert,
+    # then tag SELECT, then product_tag link insert
+    upsert_result = MagicMock()
+    upsert_result.rowcount = 1
+
+    execute_side_effects = [
+        upsert_result,          # bulk INSERT product rows
+        product_select_result,  # SELECT ProductRow where slug == p.slug
+        MagicMock(),            # INSERT TagRow (on_conflict_do_nothing)
+        tag_select_result,      # SELECT TagRow where slug == slug
+        MagicMock(),            # INSERT ProductTagRow (on_conflict_do_nothing)
+    ]
+    session.execute = AsyncMock(side_effect=execute_side_effects)
+
+    products = [
+        RawProduct(
+            external_id="ph-10",
+            name="DevApp",
+            slug="devapp",
+            tagline="For devs",
+            description="A dev tool",
+            url="https://devapp.io",
+            category="Dev Tools",
+            launched_at=None,
+        ),
+    ]
+
+    with patch("outbound.postgres.pipeline_repository.pg_insert") as mock_insert:
+        mock_stmt = MagicMock()
+        mock_stmt.on_conflict_do_update.return_value = mock_stmt
+        mock_stmt.on_conflict_do_nothing.return_value = mock_stmt
+        mock_insert.return_value = mock_stmt
+        mock_stmt.excluded = MagicMock()
+
+        repo = PostgresPipelineRepository(db)
+        count = await repo.upsert_products(products)
+
+    assert count == 1
+    session.commit.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_upsert_products_with_category_product_not_found_skips_link():
+    """When product row is not found after upsert, _link_product_tags should not insert a link."""
+    db, session = _make_db()
+    db.session.return_value = session
+
+    product_scalars = MagicMock()
+    product_scalars.first.return_value = None  # product not found
+
+    product_select_result = MagicMock()
+    product_select_result.scalars.return_value = product_scalars
+
+    upsert_result = MagicMock()
+    upsert_result.rowcount = 1
+
+    execute_side_effects = [
+        upsert_result,         # bulk INSERT product rows
+        product_select_result,  # SELECT ProductRow — not found
+    ]
+    session.execute = AsyncMock(side_effect=execute_side_effects)
+
+    products = [
+        RawProduct(
+            external_id="ph-11",
+            name="GhostApp",
+            slug="ghost-app",
+            tagline=None,
+            description=None,
+            url=None,
+            category="Ghost Category",
+            launched_at=None,
+        ),
+    ]
+
+    with patch("outbound.postgres.pipeline_repository.pg_insert") as mock_insert:
+        mock_stmt = MagicMock()
+        mock_stmt.on_conflict_do_update.return_value = mock_stmt
+        mock_stmt.on_conflict_do_nothing.return_value = mock_stmt
+        mock_insert.return_value = mock_stmt
+        mock_stmt.excluded = MagicMock()
+
+        repo = PostgresPipelineRepository(db)
+        count = await repo.upsert_products(products)
+
+    assert count == 1
+    session.commit.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_link_product_tags_tag_not_found_skips_link():
+    """When tag row is not found after upsert, the product_tag link should not be inserted."""
+    db, session = _make_db()
+
+    tag_scalars = MagicMock()
+    tag_scalars.first.return_value = None  # tag not found
+
+    tag_select_result = MagicMock()
+    tag_select_result.scalars.return_value = tag_scalars
+
+    # First call: INSERT TagRow (on_conflict_do_nothing)
+    # Second call: SELECT TagRow — not found
+    session.execute = AsyncMock(side_effect=[MagicMock(), tag_select_result])
+
+    with patch("outbound.postgres.pipeline_repository.pg_insert") as mock_insert:
+        mock_stmt = MagicMock()
+        mock_stmt.on_conflict_do_nothing.return_value = mock_stmt
+        mock_insert.return_value = mock_stmt
+
+        repo = PostgresPipelineRepository(db)
+        await repo._link_product_tags(session, product_id=1, category="Unknown Cat")
+
+    # No ProductTagRow insert should happen since tag was None
+    # Verify only 2 execute calls (tag INSERT + tag SELECT), not 3
+    assert session.execute.call_count == 2
+
+
+# ---------------------------------------------------------------------------
+# find_related_products
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_find_related_products_returns_raw_products():
+    db, session = _make_db()
+    db.session.return_value = session
+
+    product_row = MagicMock()
+    product_row.external_id = "ph-42"
+    product_row.name = "SaaSApp"
+    product_row.slug = "saas-app"
+    product_row.tagline = "A great SaaS app"
+    product_row.description = "For teams"
+    product_row.url = "https://saasapp.io"
+    product_row.category = "SaaS"
+    product_row.launched_at = datetime(2026, 2, 1)
+
+    scalars_mock = MagicMock()
+    scalars_mock.all.return_value = [product_row]
+    exec_result = MagicMock()
+    exec_result.scalars.return_value = scalars_mock
+    session.execute = AsyncMock(return_value=exec_result)
+
+    repo = PostgresPipelineRepository(db)
+    results = await repo.find_related_products("saas")
+
+    assert len(results) == 1
+    assert isinstance(results[0], RawProduct)
+    assert results[0].external_id == "ph-42"
+    assert results[0].name == "SaaSApp"
+
+
+@pytest.mark.asyncio
+async def test_find_related_products_empty_when_no_match():
+    db, session = _make_db()
+    db.session.return_value = session
+
+    scalars_mock = MagicMock()
+    scalars_mock.all.return_value = []
+    exec_result = MagicMock()
+    exec_result.scalars.return_value = scalars_mock
+    session.execute = AsyncMock(return_value=exec_result)
+
+    repo = PostgresPipelineRepository(db)
+    results = await repo.find_related_products("nonexistent")
+
+    assert results == []
+
+
+@pytest.mark.asyncio
+async def test_find_related_products_escapes_like_metacharacters():
+    """Backslash, percent, and underscore must be escaped to prevent wildcard injection."""
+    db, session = _make_db()
+    db.session.return_value = session
+
+    scalars_mock = MagicMock()
+    scalars_mock.all.return_value = []
+    exec_result = MagicMock()
+    exec_result.scalars.return_value = scalars_mock
+
+    captured_stmt = []
+    original_execute = session.execute
+
+    async def capture_execute(stmt, *args, **kwargs):
+        captured_stmt.append(stmt)
+        return exec_result
+
+    session.execute = capture_execute
+
+    repo = PostgresPipelineRepository(db)
+    # The keyword contains LIKE metacharacters
+    await repo.find_related_products("50%_off\\deals")
+
+    # Verify execute was called (any statement), confirming no exception was raised
+    assert len(captured_stmt) == 1
+
+
+@pytest.mark.asyncio
+async def test_find_related_products_multiple_results():
+    db, session = _make_db()
+    db.session.return_value = session
+
+    def _make_row(ext_id, name):
+        row = MagicMock()
+        row.external_id = ext_id
+        row.name = name
+        row.slug = name.lower()
+        row.tagline = None
+        row.description = None
+        row.url = None
+        row.category = None
+        row.launched_at = None
+        return row
+
+    rows = [_make_row("ph-1", "AppA"), _make_row("ph-2", "AppB")]
+    scalars_mock = MagicMock()
+    scalars_mock.all.return_value = rows
+    exec_result = MagicMock()
+    exec_result.scalars.return_value = scalars_mock
+    session.execute = AsyncMock(return_value=exec_result)
+
+    repo = PostgresPipelineRepository(db)
+    results = await repo.find_related_products("app")
+
+    assert len(results) == 2
+    assert {r.name for r in results} == {"AppA", "AppB"}

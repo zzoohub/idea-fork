@@ -8,6 +8,7 @@ interface FetchPostsParams {
   limit?: number;
   source?: string;
   sentiment?: string;
+  post_type?: string;
   q?: string;
 }
 
@@ -19,6 +20,7 @@ export async function fetchPosts(params?: FetchPostsParams) {
   if (params?.limit) sp.set("limit", String(params.limit));
   if (params?.source) sp.set("source", params.source);
   if (params?.sentiment) sp.set("sentiment", params.sentiment);
+  if (params?.post_type) sp.set("post_type", params.post_type);
   if (params?.q) sp.set("q", params.q);
 
   const qs = sp.toString();

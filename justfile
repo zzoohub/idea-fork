@@ -14,12 +14,19 @@ push branch="main" msg="update":
 # ─── DB ───────────────────────────────────────────────────────────────────────
 
 db-migrate:
-    cd db && echo "TODO: run migrations"
+    cd services/api && PYTHONPATH=src uv run alembic upgrade head
+
+db-migrate-new msg:
+    cd services/api && PYTHONPATH=src uv run alembic revision --autogenerate -m "{{msg}}"
+
+db-rollback:
+    cd services/api && PYTHONPATH=src uv run alembic downgrade -1
 
 db-seed:
     cd db && echo "TODO: run seeds"
 
-db-reset: db-migrate db-seed
+db-reset:
+    docker compose down -v && docker compose up -d --wait && just db-migrate
 
 # ─── API (FastAPI) ────────────────────────────────────────────────────────────
 
@@ -43,6 +50,9 @@ api-lint:
 
 api-pipeline:
     cd services/api && PYTHONPATH=src uv run python -m app.pipeline_cli
+
+api-pipeline-cron:
+    curl -s -X POST -H "X-Internal-Secret: $API_INTERNAL_SECRET" http://localhost:8080/internal/pipeline/run
 
 api-clean:
     rm -rf services/api/.venv services/api/__pycache__

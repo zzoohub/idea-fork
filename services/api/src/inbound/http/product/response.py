@@ -3,7 +3,12 @@ from datetime import datetime
 from pydantic import BaseModel
 
 from domain.post.models import Post
-from domain.product.models import Product
+from domain.product.models import Product, ProductMetrics
+
+
+class TagResponseData(BaseModel):
+    slug: str
+    name: str
 
 
 class ProductListResponseData(BaseModel):
@@ -19,6 +24,7 @@ class ProductListResponseData(BaseModel):
     launched_at: datetime | None
     complaint_count: int
     trending_score: float
+    tags: list[TagResponseData]
 
     @classmethod
     def from_domain(cls, product: Product) -> "ProductListResponseData":
@@ -35,6 +41,7 @@ class ProductListResponseData(BaseModel):
             launched_at=product.launched_at,
             complaint_count=product.complaint_count,
             trending_score=product.trending_score,
+            tags=[TagResponseData(slug=t.slug, name=t.name) for t in product.tags],
         )
 
 
@@ -47,7 +54,6 @@ class ProductPostResponseData(BaseModel):
     external_url: str
     external_created_at: datetime
     score: int
-    post_type: str | None
     sentiment: str | None
 
     @classmethod
@@ -61,6 +67,19 @@ class ProductPostResponseData(BaseModel):
             external_url=post.external_url,
             external_created_at=post.external_created_at,
             score=post.score,
-            post_type=post.post_type,
             sentiment=post.sentiment,
+        )
+
+
+class ProductMetricsResponseData(BaseModel):
+    total_mentions: int
+    negative_count: int
+    sentiment_score: int
+
+    @classmethod
+    def from_domain(cls, metrics: ProductMetrics) -> "ProductMetricsResponseData":
+        return cls(
+            total_mentions=metrics.total_mentions,
+            negative_count=metrics.negative_count,
+            sentiment_score=metrics.sentiment_score,
         )
