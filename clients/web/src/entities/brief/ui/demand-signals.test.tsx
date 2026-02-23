@@ -1,85 +1,112 @@
 import { describe, it, expect } from "vitest";
 import { render, screen } from "@testing-library/react";
-import { DemandSignals } from "./demand-signals";
+import { DemandSignals, type DemandSignalData } from "./demand-signals";
+
+const fullData: DemandSignalData = {
+  complaintCount: 47,
+  timeRange: "6 weeks",
+  subreddits: ["r/SaaS", "r/startups", "r/webdev", "r/entrepreneur", "r/indiehackers"],
+  avgScore: 142,
+  avgCommentsPerPost: 12,
+  communityVerdictPct: 84,
+  freshness: "2d ago",
+};
 
 describe("DemandSignals", () => {
-  describe("postCount", () => {
-    it("renders post count within aggregation text", () => {
-      render(
-        <DemandSignals postCount={120} platformCount={2} recency="2 days" />
-      );
-      expect(screen.getByText("120 posts")).toBeInTheDocument();
+  describe("complaint line", () => {
+    it("renders complaint count with time range", () => {
+      render(<DemandSignals data={fullData} />);
+      expect(
+        screen.getByText("47 complaints over 6 weeks"),
+      ).toBeInTheDocument();
     });
 
-    it("formats large post count with toLocaleString", () => {
+    it("renders complaint count without time range when null", () => {
+      render(
+        <DemandSignals data={{ ...fullData, timeRange: null }} />,
+      );
+      expect(screen.getByText("47 complaints")).toBeInTheDocument();
+    });
+  });
+
+  describe("subreddit line", () => {
+    it("shows first 3 subreddits with +N more", () => {
+      render(<DemandSignals data={fullData} />);
+      expect(
+        screen.getByText("r/SaaS, r/startups, r/webdev + 2 more"),
+      ).toBeInTheDocument();
+    });
+
+    it("shows all subreddits when 3 or fewer", () => {
       render(
         <DemandSignals
-          postCount={1234}
-          platformCount={1}
-          recency="1 hour"
-        />
+          data={{ ...fullData, subreddits: ["r/SaaS", "r/startups"] }}
+        />,
       );
-      // toLocaleString may produce "1,234" or "1234" depending on locale
-      const el = screen.getByText(/1[,.]?234 posts/);
-      expect(el).toBeInTheDocument();
-    });
-  });
-
-  describe("platformCount", () => {
-    it("renders singular 'platform' when platformCount=1", () => {
-      const { container } = render(
-        <DemandSignals postCount={10} platformCount={1} recency="today" />
-      );
-      expect(container.textContent).toContain("1 platform");
-      expect(container.textContent).not.toContain("1 platforms");
+      expect(screen.getByText("r/SaaS, r/startups")).toBeInTheDocument();
     });
 
-    it("renders plural 'platforms' when platformCount > 1", () => {
-      const { container } = render(
-        <DemandSignals postCount={10} platformCount={3} recency="today" />
-      );
-      expect(container.textContent).toContain("3 platforms");
-    });
-  });
-
-  describe("recency", () => {
-    it("renders the recency string within aggregation text", () => {
+    it("hides subreddit line when empty", () => {
       render(
-        <DemandSignals postCount={5} platformCount={2} recency="30 days" />
+        <DemandSignals data={{ ...fullData, subreddits: [] }} />,
       );
-      expect(screen.getByText("30 days")).toBeInTheDocument();
+      expect(screen.queryByText(/r\//)).not.toBeInTheDocument();
     });
   });
 
-  describe("aggregation text format", () => {
-    it("renders the full aggregation sentence", () => {
-      const { container } = render(
-        <DemandSignals postCount={47} platformCount={3} recency="30 days" />
+  describe("engagement line", () => {
+    it("renders avg upvotes and comments per post", () => {
+      render(<DemandSignals data={fullData} />);
+      expect(
+        screen.getByText(/avg 142 upvotes .* 12 comments per post/),
+      ).toBeInTheDocument();
+    });
+  });
+
+  describe("community verdict line", () => {
+    it("renders percentage when provided", () => {
+      render(<DemandSignals data={fullData} />);
+      expect(
+        screen.getByText("84% of users rated this valuable"),
+      ).toBeInTheDocument();
+    });
+
+    it("hides when null", () => {
+      render(
+        <DemandSignals
+          data={{ ...fullData, communityVerdictPct: null }}
+        />,
       );
-      expect(container.textContent).toContain("Aggregated from");
-      expect(container.textContent).toContain("47 posts");
-      expect(container.textContent).toContain("3 platforms");
-      expect(container.textContent).toContain("30 days");
+      expect(
+        screen.queryByText(/rated this valuable/),
+      ).not.toBeInTheDocument();
+    });
+  });
+
+  describe("freshness line", () => {
+    it("renders most recent when provided", () => {
+      render(<DemandSignals data={fullData} />);
+      expect(screen.getByText("Most recent: 2d ago")).toBeInTheDocument();
+    });
+
+    it("hides when null", () => {
+      render(
+        <DemandSignals data={{ ...fullData, freshness: null }} />,
+      );
+      expect(screen.queryByText(/Most recent/)).not.toBeInTheDocument();
     });
   });
 
   describe("className", () => {
     it("merges custom className", () => {
       const { container } = render(
-        <DemandSignals
-          postCount={1}
-          platformCount={1}
-          recency="now"
-          className="my-signals"
-        />
+        <DemandSignals data={fullData} className="my-signals" />,
       );
       expect(container.firstChild).toHaveClass("my-signals");
     });
 
     it("renders without optional className", () => {
-      const { container } = render(
-        <DemandSignals postCount={1} platformCount={1} recency="now" />
-      );
+      const { container } = render(<DemandSignals data={fullData} />);
       expect(container.firstChild).toBeInTheDocument();
     });
   });

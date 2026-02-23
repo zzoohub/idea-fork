@@ -6,6 +6,8 @@ import { Skeleton, EmptyState, Icon, ErrorState } from "@/src/shared/ui";
 import { BriefCard } from "@/src/entities/brief/ui";
 import { fetchBriefs } from "@/src/entities/brief/api";
 import type { BriefListItem } from "@/src/shared/api";
+import { extractDemandSignals } from "@/src/shared/lib/extract-demand-signals";
+import { computeHeatLevel } from "@/src/shared/lib/compute-heat-level";
 import { formatRelativeTime } from "@/src/shared/lib/format-relative-time";
 
 /* --------------------------------------------------------------------------
@@ -138,18 +140,30 @@ function BriefsListingInner() {
           role="feed"
           aria-label="AI-generated briefs"
         >
-          {briefs.map((brief) => (
-            <BriefCard
-              key={brief.id}
-              title={brief.title}
-              postCount={brief.source_count}
-              platformCount={1}
-              recency={brief.published_at ? formatRelativeTime(brief.published_at) : ""}
-              snippet={brief.summary}
-              tags={Object.keys(brief.demand_signals).slice(0, 3)}
-              slug={brief.slug}
-            />
-          ))}
+          {briefs.map((brief) => {
+            const parsed = extractDemandSignals(brief.demand_signals);
+            const heatLevel = computeHeatLevel({
+              postCount: parsed.postCount,
+              newestPostAt: parsed.newestPostAt,
+            });
+            const freshness = parsed.newestPostAt
+              ? formatRelativeTime(parsed.newestPostAt)
+              : null;
+
+            return (
+              <BriefCard
+                key={brief.id}
+                title={brief.title}
+                heatLevel={heatLevel}
+                complaintCount={parsed.postCount || brief.source_count}
+                communityCount={parsed.subredditCount || 1}
+                freshness={freshness}
+                snippet={brief.summary}
+                tags={[]}
+                slug={brief.slug}
+              />
+            );
+          })}
         </div>
       ) : (
         <EmptyState

@@ -2,6 +2,7 @@
 
 import { Icon } from "@/src/shared/ui/icon";
 import { CitationRef } from "./citation-ref";
+import { DemandSignals, type DemandSignalData } from "./demand-signals";
 
 /* ---------------------------------------------------------------------------
  * Types
@@ -18,7 +19,7 @@ interface Citation {
 
 interface BriefContent {
   problem: string;
-  demandSignals: string[];
+  demandSignals: DemandSignalData | null;
   suggestedDirections: Array<{ title: string; description: string }>;
 }
 
@@ -84,7 +85,7 @@ export function BriefBody({
       {/* ------------------------------------------------------------------ */}
       {/* Demand Signals                                                      */}
       {/* ------------------------------------------------------------------ */}
-      {content.demandSignals.length > 0 && (
+      {content.demandSignals && (
         <section
           className="rounded-xl bg-[#1a242d] border border-[#283039] p-6 sm:p-8"
           aria-labelledby="brief-demand-heading"
@@ -102,23 +103,12 @@ export function BriefBody({
             >
               Demand Signals
             </h2>
-            <span className="ml-auto text-xs text-slate-500 bg-slate-800 rounded-full px-3 py-1 font-medium">
-              Data from last 30 days
-            </span>
           </div>
 
-          {/* Signal bullets */}
-          <ul className="flex flex-col gap-3 mb-8">
-            {content.demandSignals.map((signal, i) => (
-              <li key={i} className="flex gap-3 text-slate-300 leading-relaxed">
-                <span
-                  className="mt-2 size-1.5 rounded-full bg-[#137fec] shrink-0"
-                  aria-hidden="true"
-                />
-                <span>{signal}</span>
-              </li>
-            ))}
-          </ul>
+          {/* Structured metric lines */}
+          <div className="mb-8">
+            <DemandSignals data={content.demandSignals} />
+          </div>
 
           {/* Two-column data: Platform Breakdown + Volume Trend */}
           {platforms.length > 0 && (

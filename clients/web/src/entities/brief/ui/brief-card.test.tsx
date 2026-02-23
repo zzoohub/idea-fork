@@ -21,9 +21,10 @@ vi.mock("next/link", () => ({
 
 const defaultProps = {
   title: "Users want faster checkout",
-  postCount: 89,
-  platformCount: 2,
-  recency: "3 days ago",
+  heatLevel: "growing" as const,
+  complaintCount: 89,
+  communityCount: 5,
+  freshness: "3d ago",
   snippet: "Many users complain about slow checkout.",
   tags: ["checkout", "ux", "performance"],
   slug: "faster-checkout",
@@ -34,7 +35,7 @@ describe("BriefCard", () => {
     it("renders the title", () => {
       render(<BriefCard {...defaultProps} />);
       expect(
-        screen.getByText("Users want faster checkout")
+        screen.getByText("Users want faster checkout"),
       ).toBeInTheDocument();
     });
 
@@ -42,21 +43,34 @@ describe("BriefCard", () => {
       render(<BriefCard {...defaultProps} />);
       expect(screen.getByRole("link")).toHaveAttribute(
         "href",
-        "/briefs/faster-checkout"
+        "/briefs/faster-checkout",
       );
     });
 
-    it("renders demand signals", () => {
+    it("renders complaint count", () => {
       render(<BriefCard {...defaultProps} />);
-      // postCount is shown as "89 related posts" in one span
-      expect(screen.getByText(/89/)).toBeInTheDocument();
-      expect(screen.getByText("3 days ago")).toBeInTheDocument();
+      expect(screen.getByText("89 complaints")).toBeInTheDocument();
+    });
+
+    it("renders community count", () => {
+      render(<BriefCard {...defaultProps} />);
+      expect(screen.getByText("across 5 communities")).toBeInTheDocument();
+    });
+
+    it("renders freshness as 'Active Xd ago'", () => {
+      render(<BriefCard {...defaultProps} />);
+      expect(screen.getByText("Active 3d ago")).toBeInTheDocument();
+    });
+
+    it("hides freshness when null", () => {
+      render(<BriefCard {...defaultProps} freshness={null} />);
+      expect(screen.queryByText(/Active/)).not.toBeInTheDocument();
     });
 
     it("renders the snippet", () => {
       render(<BriefCard {...defaultProps} />);
       expect(
-        screen.getByText(/Many users complain about slow checkout./)
+        screen.getByText(/Many users complain about slow checkout./),
       ).toBeInTheDocument();
     });
 
@@ -69,36 +83,39 @@ describe("BriefCard", () => {
 
     it("does not render tags section when tags is empty", () => {
       render(<BriefCard {...defaultProps} tags={[]} />);
-      // The tags div should not be rendered
       expect(screen.queryByText("checkout")).not.toBeInTheDocument();
+    });
+
+    it("renders singular 'complaint' when count is 1", () => {
+      render(<BriefCard {...defaultProps} complaintCount={1} />);
+      expect(screen.getByText("1 complaint")).toBeInTheDocument();
+    });
+
+    it("renders singular 'community' when count is 1", () => {
+      render(<BriefCard {...defaultProps} communityCount={1} />);
+      expect(screen.getByText("across 1 community")).toBeInTheDocument();
     });
   });
 
-  describe("confidence badge", () => {
-    it('defaults to "New" confidence badge', () => {
+  describe("heat badge", () => {
+    it("renders Growing badge", () => {
       render(<BriefCard {...defaultProps} />);
+      expect(screen.getByRole("status", { name: "Growing" })).toBeInTheDocument();
+    });
+
+    it("renders Hot badge", () => {
+      render(<BriefCard {...defaultProps} heatLevel="hot" />);
+      expect(screen.getByRole("status", { name: "Hot" })).toBeInTheDocument();
+    });
+
+    it("renders Steady badge", () => {
+      render(<BriefCard {...defaultProps} heatLevel="steady" />);
+      expect(screen.getByRole("status", { name: "Steady" })).toBeInTheDocument();
+    });
+
+    it("renders New badge", () => {
+      render(<BriefCard {...defaultProps} heatLevel="new" />);
       expect(screen.getByRole("status", { name: "New" })).toBeInTheDocument();
-    });
-
-    it('renders "High Confidence" badge when confidence="high"', () => {
-      render(<BriefCard {...defaultProps} confidence="high" />);
-      expect(
-        screen.getByRole("status", { name: "High Confidence" })
-      ).toBeInTheDocument();
-    });
-
-    it('renders "Trending" badge when confidence="trending"', () => {
-      render(<BriefCard {...defaultProps} confidence="trending" />);
-      expect(
-        screen.getByRole("status", { name: "Trending" })
-      ).toBeInTheDocument();
-    });
-
-    it('renders "Emerging" badge when confidence="emerging"', () => {
-      render(<BriefCard {...defaultProps} confidence="emerging" />);
-      expect(
-        screen.getByRole("status", { name: "Emerging" })
-      ).toBeInTheDocument();
     });
   });
 
@@ -106,17 +123,23 @@ describe("BriefCard", () => {
     it("renders a bookmark button", () => {
       render(<BriefCard {...defaultProps} />);
       expect(
-        screen.getByRole("button", { name: "Bookmark this brief" })
+        screen.getByRole("button", { name: "Bookmark this brief" }),
       ).toBeInTheDocument();
+    });
+
+    it("clicking bookmark button does not navigate (prevents default)", async () => {
+      const user = userEvent.setup();
+      render(<BriefCard {...defaultProps} />);
+      const bookmark = screen.getByRole("button", { name: "Bookmark this brief" });
+      await user.click(bookmark);
+      expect(bookmark).toBeInTheDocument();
     });
   });
 
   describe("tags as static chips", () => {
     it("tags are rendered as spans (non-interactive)", () => {
       render(<BriefCard {...defaultProps} />);
-      // The only button in the card is the bookmark button; tags are spans
       const buttons = screen.queryAllByRole("button");
-      // Exactly one button (the bookmark button), no tag buttons
       expect(buttons.length).toBe(1);
       expect(buttons[0]).toHaveAttribute("aria-label", "Bookmark this brief");
     });
@@ -125,7 +148,6 @@ describe("BriefCard", () => {
   describe("source platforms", () => {
     it("does not render platform stack when sourcePlatforms is empty", () => {
       render(<BriefCard {...defaultProps} sourcePlatforms={[]} />);
-      // No platform abbreviation letters shown
       expect(screen.queryByLabelText(/Sources:/)).not.toBeInTheDocument();
     });
 
@@ -136,19 +158,8 @@ describe("BriefCard", () => {
       ];
       render(<BriefCard {...defaultProps} sourcePlatforms={platforms} />);
       expect(
-        screen.getByLabelText("Sources: Reddit, Twitter")
+        screen.getByLabelText("Sources: Reddit, Twitter"),
       ).toBeInTheDocument();
-    });
-  });
-
-  describe("bookmark button click handler", () => {
-    it("clicking bookmark button does not navigate (prevents default)", async () => {
-      const user = userEvent.setup();
-      render(<BriefCard {...defaultProps} />);
-      const bookmark = screen.getByRole("button", { name: "Bookmark this brief" });
-      // Should not throw; stopPropagation and preventDefault are called internally
-      await user.click(bookmark);
-      expect(bookmark).toBeInTheDocument();
     });
   });
 });

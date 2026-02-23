@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { Icon } from "@/src/shared/ui/icon";
+import { HeatBadge } from "./heat-badge";
+import type { HeatLevel } from "@/src/shared/lib/compute-heat-level";
 
 interface SourcePlatform {
   name: string;
@@ -9,65 +11,14 @@ interface SourcePlatform {
 
 interface BriefCardProps {
   title: string;
-  postCount: number;
-  platformCount: number;
-  recency: string;
+  heatLevel: HeatLevel;
+  complaintCount: number;
+  communityCount: number;
+  freshness: string | null;
   snippet: string;
   tags: string[];
   slug: string;
-  confidence?: "high" | "trending" | "emerging" | "new";
   sourcePlatforms?: SourcePlatform[];
-}
-
-const CONFIDENCE_STYLES = {
-  high: {
-    badge: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
-    dot: "bg-emerald-500 animate-pulse",
-    label: "High Confidence",
-    showDot: true,
-  },
-  trending: {
-    badge: "bg-purple-500/10 text-purple-600 dark:text-purple-400",
-    dot: "",
-    label: "Trending",
-    showDot: false,
-  },
-  emerging: {
-    badge: "bg-blue-500/10 text-blue-600 dark:text-blue-400",
-    dot: "",
-    label: "Emerging",
-    showDot: false,
-  },
-  new: {
-    badge: "bg-slate-500/10 text-slate-600 dark:text-slate-400",
-    dot: "",
-    label: "New",
-    showDot: false,
-  },
-} as const;
-
-function ConfidenceTag({
-  confidence,
-}: {
-  confidence: "high" | "trending" | "emerging" | "new";
-}) {
-  const style = CONFIDENCE_STYLES[confidence];
-
-  return (
-    <span
-      className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ${style.badge}`}
-      role="status"
-      aria-label={style.label}
-    >
-      {style.showDot && (
-        <span
-          className={`inline-block size-1.5 rounded-full ${style.dot}`}
-          aria-hidden="true"
-        />
-      )}
-      {style.label}
-    </span>
-  );
 }
 
 function PlatformStack({
@@ -92,13 +43,13 @@ function PlatformStack({
 
 export function BriefCard({
   title,
-  postCount,
-  platformCount,
-  recency,
+  heatLevel,
+  complaintCount,
+  communityCount,
+  freshness,
   snippet,
   tags,
   slug,
-  confidence = "new",
   sourcePlatforms = [],
 }: BriefCardProps) {
   return (
@@ -118,9 +69,9 @@ export function BriefCard({
           "hover:-translate-y-1",
         ].join(" ")}
       >
-        {/* Row 1: Confidence badge + Bookmark */}
+        {/* Row 1: Heat badge + Bookmark */}
         <div className="flex justify-between items-start mb-3">
-          <ConfidenceTag confidence={confidence} />
+          <HeatBadge level={heatLevel} />
           <button
             type="button"
             className="shrink-0 text-slate-400 hover:text-[#137fec] transition-colors p-0.5"
@@ -146,19 +97,25 @@ export function BriefCard({
 
         {/* Row 4: Footer */}
         <div className="mt-auto border-t border-slate-200 dark:border-[#283039] pt-4 flex flex-col gap-4">
-          {/* Sub-row 1: Platforms + time */}
+          {/* Sub-row 1: Meta info */}
           <div className="flex justify-between items-center">
             <div className="flex items-center gap-2">
               {sourcePlatforms.length > 0 && (
                 <PlatformStack platforms={sourcePlatforms} />
               )}
               <span className="text-xs text-slate-500 dark:text-[#7a8a9a] tabular-nums">
-                {postCount.toLocaleString()} related posts
+                {complaintCount} complaint{complaintCount === 1 ? "" : "s"}
+              </span>
+              <span className="text-xs text-slate-400 dark:text-[#5e6e7e]" aria-hidden="true">&middot;</span>
+              <span className="text-xs text-slate-500 dark:text-[#7a8a9a]">
+                across {communityCount} {communityCount === 1 ? "community" : "communities"}
               </span>
             </div>
-            <span className="text-xs text-slate-400 dark:text-[#5e6e7e]">
-              {recency}
-            </span>
+            {freshness && (
+              <span className="text-xs text-slate-400 dark:text-[#5e6e7e]">
+                Active {freshness}
+              </span>
+            )}
           </div>
 
           {/* Sub-row 2: Tags + Read Brief */}

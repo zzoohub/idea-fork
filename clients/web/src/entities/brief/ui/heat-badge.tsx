@@ -1,39 +1,43 @@
 import { Icon } from "@/src/shared/ui/icon";
+import type { HeatLevel } from "@/src/shared/lib/compute-heat-level";
 
-interface ConfidenceBadgeProps {
-  level: "high" | "medium" | "low";
+interface HeatBadgeProps {
+  level: HeatLevel;
   className?: string;
 }
 
 const LEVEL_CONFIG = {
-  high: {
-    icon: "circle-check",
-    label: "High Confidence",
-    containerClass:
-      "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20",
-    iconClass: "text-emerald-400",
-  },
-  medium: {
-    icon: "info",
-    label: "Medium Confidence",
-    containerClass:
-      "bg-amber-500/10 text-amber-400 border border-amber-500/20",
-    iconClass: "text-amber-400",
-  },
-  low: {
-    icon: "triangle-alert",
-    label: "Low Confidence",
+  hot: {
+    icon: "flame",
+    label: "Hot",
     containerClass:
       "bg-red-500/10 text-red-400 border border-red-500/20",
     iconClass: "text-red-400",
   },
+  growing: {
+    icon: "trending-up",
+    label: "Growing",
+    containerClass:
+      "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20",
+    iconClass: "text-emerald-400",
+  },
+  steady: {
+    icon: "activity",
+    label: "Steady",
+    containerClass:
+      "bg-blue-500/10 text-blue-400 border border-blue-500/20",
+    iconClass: "text-blue-400",
+  },
+  new: {
+    icon: "sparkles",
+    label: "New",
+    containerClass:
+      "bg-slate-500/10 text-slate-400 border border-slate-500/20",
+    iconClass: "text-slate-400",
+  },
 } as const;
 
-/**
- * Displays a confidence level badge with icon and label.
- * Renders for all confidence levels (high, medium, low).
- */
-export function ConfidenceBadge({ level, className }: ConfidenceBadgeProps) {
+export function HeatBadge({ level, className }: HeatBadgeProps) {
   const config = LEVEL_CONFIG[level];
 
   return (

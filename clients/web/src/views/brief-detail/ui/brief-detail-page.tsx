@@ -3,19 +3,23 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
-  Chip,
   Icon,
   ErrorState,
 } from "@/src/shared/ui";
 import { isSafeUrl } from "@/src/shared/lib/sanitize-url";
 import {
   BriefBody,
-  DemandSignals,
-  ConfidenceBadge,
+  HeatBadge,
 } from "@/src/entities/brief/ui";
+import type { DemandSignalData } from "@/src/entities/brief/ui";
 import { BriefRating } from "@/src/features/rating/ui";
 import { fetchBrief } from "@/src/entities/brief/api";
 import type { BriefDetail } from "@/src/shared/api";
+import { extractDemandSignals } from "@/src/shared/lib/extract-demand-signals";
+import { extractSubreddits } from "@/src/shared/lib/extract-subreddits";
+import { computeHeatLevel } from "@/src/shared/lib/compute-heat-level";
+import { formatTimeRange } from "@/src/shared/lib/format-time-range";
+import { formatRelativeTime } from "@/src/shared/lib/format-relative-time";
 
 /* --------------------------------------------------------------------------
    BriefDetailPage
@@ -55,16 +59,40 @@ export function BriefDetailPage({ slug }: BriefDetailPageProps) {
   if (error || !brief) return <ErrorState message={error ?? "Brief not found."} onRetry={() => window.location.reload()} />;
 
   /* Map API data to component interfaces */
-  const demandSignalEntries = Object.entries(brief.demand_signals);
-  const demandSignalStrings = demandSignalEntries.map(
-    ([key, val]) => `${key}: ${String(val)}`,
-  );
+  const parsed = extractDemandSignals(brief.demand_signals);
+  const sourceSnapshots = brief.source_snapshots as Array<Record<string, unknown>>;
+  const subreddits = extractSubreddits(sourceSnapshots);
+  const heatLevel = computeHeatLevel({
+    postCount: parsed.postCount,
+    newestPostAt: parsed.newestPostAt,
+  });
+  const timeRange = formatTimeRange(parsed.oldestPostAt, parsed.newestPostAt);
+  const avgCommentsPerPost = parsed.postCount > 0
+    ? parsed.totalComments / parsed.postCount
+    : 0;
+  const communityVerdictPct =
+    brief.upvote_count + brief.downvote_count > 0
+      ? (brief.upvote_count / (brief.upvote_count + brief.downvote_count)) * 100
+      : null;
+  const freshness = parsed.newestPostAt
+    ? formatRelativeTime(parsed.newestPostAt)
+    : null;
+
+  const demandSignalData: DemandSignalData = {
+    complaintCount: parsed.postCount || brief.source_count,
+    timeRange,
+    subreddits,
+    avgScore: parsed.avgScore,
+    avgCommentsPerPost,
+    communityVerdictPct,
+    freshness,
+  };
+
   const suggestedDirections = brief.solution_directions.map((dir) => ({
     title: dir,
     description: "",
   }));
 
-  const sourceSnapshots = brief.source_snapshots as Array<Record<string, unknown>>;
   const citations = sourceSnapshots.slice(0, 5).map((snap, idx) => ({
     id: idx + 1,
     source: String(snap.source ?? "reddit"),
@@ -79,8 +107,6 @@ export function BriefDetailPage({ slug }: BriefDetailPageProps) {
     ? sourceSnapshots
     : sourceSnapshots.slice(0, INITIAL_SOURCE_COUNT);
   const remainingCount = sourceSnapshots.length - INITIAL_SOURCE_COUNT;
-
-  const tags = Object.keys(brief.demand_signals).slice(0, 5);
 
   return (
     <div className="mx-auto w-full max-w-[1280px] px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
@@ -157,27 +183,9 @@ export function BriefDetailPage({ slug }: BriefDetailPageProps) {
             </button>
           </div>
 
-          {/* Aggregation meta */}
-          <div className="mt-6">
-            <DemandSignals
-              postCount={brief.source_count}
-              platformCount={1}
-              recency={brief.published_at ? new Date(brief.published_at).toLocaleDateString() : ""}
-            />
-          </div>
-
-          {/* Badge row: tags */}
+          {/* Heat badge */}
           <div className="flex flex-wrap items-center gap-2.5 mt-5">
-            <ConfidenceBadge level={brief.upvote_count > brief.downvote_count ? "high" : "medium"} />
-            {tags.map((tag) => (
-              <Chip
-                key={tag}
-                variant="inactive"
-                interactive={false}
-              >
-                {tag}
-              </Chip>
-            ))}
+            <HeatBadge level={heatLevel} />
           </div>
 
           {/* Divider */}
@@ -187,7 +195,7 @@ export function BriefDetailPage({ slug }: BriefDetailPageProps) {
           <BriefBody
             content={{
               problem: brief.problem_statement,
-              demandSignals: demandSignalStrings,
+              demandSignals: demandSignalData,
               suggestedDirections,
             }}
             citations={citations}

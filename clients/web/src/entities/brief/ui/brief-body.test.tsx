@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { BriefBody } from "./brief-body";
+import type { DemandSignalData } from "./demand-signals";
 
 const CITATIONS = [
   {
@@ -22,9 +23,19 @@ const CITATIONS = [
   },
 ];
 
+const DEMAND_SIGNAL_DATA: DemandSignalData = {
+  complaintCount: 47,
+  timeRange: "6 weeks",
+  subreddits: ["r/SaaS", "r/startups"],
+  avgScore: 142,
+  avgCommentsPerPost: 12,
+  communityVerdictPct: 84,
+  freshness: "2d ago",
+};
+
 const CONTENT = {
   problem: "Users face friction at checkout. [1] Some drop off. [2]",
-  demandSignals: ["Signal A", "Signal B"],
+  demandSignals: DEMAND_SIGNAL_DATA,
   suggestedDirections: [
     { title: "Direction 1", description: "Description for direction 1" },
     { title: "Direction 2", description: "Description for direction 2" },
@@ -35,27 +46,27 @@ describe("BriefBody", () => {
   describe("problem section", () => {
     it("renders the Problem Statement heading", () => {
       render(
-        <BriefBody content={CONTENT} citations={CITATIONS} />
+        <BriefBody content={CONTENT} citations={CITATIONS} />,
       );
       expect(screen.getByRole("heading", { name: "Problem Statement" })).toBeInTheDocument();
     });
 
     it("renders plain text parts of the problem", () => {
       render(
-        <BriefBody content={CONTENT} citations={CITATIONS} />
+        <BriefBody content={CONTENT} citations={CITATIONS} />,
       );
       expect(screen.getByText(/Users face friction at checkout./)).toBeInTheDocument();
     });
 
     it("renders citation reference buttons", () => {
       render(
-        <BriefBody content={CONTENT} citations={CITATIONS} />
+        <BriefBody content={CONTENT} citations={CITATIONS} />,
       );
       expect(
-        screen.getByRole("button", { name: /Citation 1: r\/startups/ })
+        screen.getByRole("button", { name: /Citation 1: r\/startups/ }),
       ).toBeInTheDocument();
       expect(
-        screen.getByRole("button", { name: /Citation 2: r\/entrepreneur/ })
+        screen.getByRole("button", { name: /Citation 2: r\/entrepreneur/ }),
       ).toBeInTheDocument();
     });
 
@@ -65,36 +76,35 @@ describe("BriefBody", () => {
         problem: "No citation here [99] but text continues.",
       };
       render(
-        <BriefBody content={contentWithUnknownCitation} citations={CITATIONS} />
+        <BriefBody content={contentWithUnknownCitation} citations={CITATIONS} />,
       );
-      // [99] has no match, so it renders as a plain span
       expect(screen.getByText("[99]")).toBeInTheDocument();
     });
   });
 
   describe("demand signals section", () => {
-    it("renders Demand Signals heading when list is non-empty", () => {
+    it("renders Demand Signals heading when data is provided", () => {
       render(
-        <BriefBody content={CONTENT} citations={CITATIONS} />
+        <BriefBody content={CONTENT} citations={CITATIONS} />,
       );
       expect(
-        screen.getByRole("heading", { name: "Demand Signals" })
+        screen.getByRole("heading", { name: "Demand Signals" }),
       ).toBeInTheDocument();
     });
 
-    it("renders each demand signal", () => {
+    it("renders structured metric lines", () => {
       render(
-        <BriefBody content={CONTENT} citations={CITATIONS} />
+        <BriefBody content={CONTENT} citations={CITATIONS} />,
       );
-      expect(screen.getByText("Signal A")).toBeInTheDocument();
-      expect(screen.getByText("Signal B")).toBeInTheDocument();
+      expect(screen.getByText("47 complaints over 6 weeks")).toBeInTheDocument();
+      expect(screen.getByText("r/SaaS, r/startups")).toBeInTheDocument();
     });
 
-    it("does not render Demand Signals section when list is empty", () => {
-      const contentEmpty = { ...CONTENT, demandSignals: [] };
-      render(<BriefBody content={contentEmpty} citations={CITATIONS} />);
+    it("does not render Demand Signals section when data is null", () => {
+      const contentNull = { ...CONTENT, demandSignals: null };
+      render(<BriefBody content={contentNull} citations={CITATIONS} />);
       expect(
-        screen.queryByRole("heading", { name: "Demand Signals" })
+        screen.queryByRole("heading", { name: "Demand Signals" }),
       ).not.toBeInTheDocument();
     });
   });
@@ -102,16 +112,16 @@ describe("BriefBody", () => {
   describe("suggested directions section", () => {
     it("renders Suggested Solution Directions heading when list is non-empty", () => {
       render(
-        <BriefBody content={CONTENT} citations={CITATIONS} />
+        <BriefBody content={CONTENT} citations={CITATIONS} />,
       );
       expect(
-        screen.getByRole("heading", { name: "Suggested Solution Directions" })
+        screen.getByRole("heading", { name: "Suggested Solution Directions" }),
       ).toBeInTheDocument();
     });
 
     it("renders each direction title", () => {
       render(
-        <BriefBody content={CONTENT} citations={CITATIONS} />
+        <BriefBody content={CONTENT} citations={CITATIONS} />,
       );
       expect(screen.getByText("Direction 1")).toBeInTheDocument();
       expect(screen.getByText("Direction 2")).toBeInTheDocument();
@@ -119,7 +129,7 @@ describe("BriefBody", () => {
 
     it("renders each direction description", () => {
       render(
-        <BriefBody content={CONTENT} citations={CITATIONS} />
+        <BriefBody content={CONTENT} citations={CITATIONS} />,
       );
       expect(screen.getByText(/Description for direction 1/)).toBeInTheDocument();
       expect(screen.getByText(/Description for direction 2/)).toBeInTheDocument();
@@ -129,7 +139,7 @@ describe("BriefBody", () => {
       const contentEmpty = { ...CONTENT, suggestedDirections: [] };
       render(<BriefBody content={contentEmpty} citations={CITATIONS} />);
       expect(
-        screen.queryByRole("heading", { name: "Suggested Solution Directions" })
+        screen.queryByRole("heading", { name: "Suggested Solution Directions" }),
       ).not.toBeInTheDocument();
     });
   });
@@ -141,14 +151,14 @@ describe("BriefBody", () => {
           content={CONTENT}
           citations={CITATIONS}
           className="my-brief-body"
-        />
+        />,
       );
       expect(container.firstChild).toHaveClass("my-brief-body");
     });
 
     it("renders without className", () => {
       const { container } = render(
-        <BriefBody content={CONTENT} citations={CITATIONS} />
+        <BriefBody content={CONTENT} citations={CITATIONS} />,
       );
       expect(container.firstChild).toBeInTheDocument();
     });
@@ -158,10 +168,10 @@ describe("BriefBody", () => {
     it("expands citation when citation button is clicked", async () => {
       const user = userEvent.setup();
       render(
-        <BriefBody content={CONTENT} citations={CITATIONS} />
+        <BriefBody content={CONTENT} citations={CITATIONS} />,
       );
       await user.click(
-        screen.getByRole("button", { name: /Citation 1: r\/startups/ })
+        screen.getByRole("button", { name: /Citation 1: r\/startups/ }),
       );
       expect(screen.getByText("The checkout is too slow.")).toBeInTheDocument();
     });
@@ -174,7 +184,7 @@ describe("BriefBody", () => {
         { name: "Twitter", color: "bg-[#1DA1F2]", percentage: 28, postCount: 13 },
       ];
       render(
-        <BriefBody content={CONTENT} citations={CITATIONS} platforms={platforms} />
+        <BriefBody content={CONTENT} citations={CITATIONS} platforms={platforms} />,
       );
       expect(screen.getByText("Reddit")).toBeInTheDocument();
       expect(screen.getByText("Twitter")).toBeInTheDocument();
@@ -182,7 +192,7 @@ describe("BriefBody", () => {
 
     it("does not render platform breakdown when platforms is empty", () => {
       render(
-        <BriefBody content={CONTENT} citations={CITATIONS} platforms={[]} />
+        <BriefBody content={CONTENT} citations={CITATIONS} platforms={[]} />,
       );
       expect(screen.queryByText("Platform Breakdown")).not.toBeInTheDocument();
     });
