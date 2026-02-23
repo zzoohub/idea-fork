@@ -182,15 +182,20 @@ export function ProductDetailPage({ slug }: ProductDetailPageProps) {
           name={product.name}
           iconUrl={product.image_url ?? undefined}
           category={product.category ?? tCommon("uncategorized")}
+          tagline={product.tagline ?? undefined}
           description={product.description ?? undefined}
+          launchedAt={product.launched_at ?? undefined}
           websiteUrl={product.url ?? undefined}
-
         />
 
         <ComplaintSummary
           totalMentions={product.metrics?.total_mentions ?? product.complaint_count}
-          criticalComplaints={product.metrics?.negative_count ?? product.posts.length}
-          sentimentScore={product.metrics?.sentiment_score ?? Math.round(product.trending_score)}
+          criticalComplaints={product.metrics?.negative_count ?? product.posts.filter((p) => p.sentiment === "negative" || p.sentiment === "frustrated").length}
+          frustrationRate={(() => {
+            const total = product.metrics?.total_mentions ?? product.complaint_count;
+            const negative = product.metrics?.negative_count ?? product.posts.filter((p) => p.sentiment === "negative" || p.sentiment === "frustrated").length;
+            return total > 0 ? Math.round((negative / total) * 100) : null;
+          })()}
           themes={computeThemes(product.posts, (key) => tFeed(key as never))}
         />
       </div>

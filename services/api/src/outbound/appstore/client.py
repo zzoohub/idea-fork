@@ -14,9 +14,6 @@ _ITUNES_SEARCH_URL = "https://itunes.apple.com/search"
 _ITUNES_REVIEWS_URL = (
     "https://itunes.apple.com/{country}/rss/customerreviews/page={page}/id={app_id}/json"
 )
-_APPLE_RSS_NEW_APPS_URL = (
-    "https://rss.marketingtools.apple.com/api/v2/us/apps/most-recent/{limit}/apps.json"
-)
 _SLUG_RE = re.compile(r"[^a-z0-9]+")
 
 
@@ -88,49 +85,6 @@ class AppStoreClient:
 
         products = products[:limit]
         logger.info("Found %d apps from App Store", len(products))
-        return products
-
-    async def fetch_new_apps(
-        self, limit: int = 25, genre_id: int | None = None
-    ) -> list[RawProduct]:
-        url = _APPLE_RSS_NEW_APPS_URL.format(limit=limit)
-        products: list[RawProduct] = []
-
-        try:
-            async with httpx.AsyncClient(timeout=30, follow_redirects=True) as http:
-                resp = await http.get(url)
-                resp.raise_for_status()
-                data = resp.json()
-
-            for item in data.get("feed", {}).get("results", []):
-                if genre_id is not None:
-                    genres = item.get("genreIds", [])
-                    if str(genre_id) not in genres:
-                        continue
-
-                app_id = item.get("id", "")
-                name = item.get("name", "")
-                released = _parse_release_date(item.get("releaseDate"))
-
-                products.append(
-                    RawProduct(
-                        external_id=str(app_id),
-                        name=name,
-                        slug=f"{_slugify(name)}-{app_id}",
-                        tagline=None,
-                        description=None,
-                        url=item.get("url"),
-                        category=item.get("genres", [None])[0] if item.get("genres") else None,
-                        launched_at=released,
-                        image_url=item.get("artworkUrl100"),
-                        source="app_store",
-                    )
-                )
-
-            logger.info("Fetched %d new apps from Apple RSS", len(products))
-        except Exception:
-            logger.exception("Apple RSS new apps fetch failed")
-
         return products
 
     async def fetch_reviews(

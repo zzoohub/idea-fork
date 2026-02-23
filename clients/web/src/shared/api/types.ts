@@ -114,7 +114,7 @@ export interface RelatedBrief {
 }
 
 export interface ProductDetail extends ProductListItem {
-  metrics: ProductMetrics;
+  metrics: ProductMetrics | null;
   posts: ProductPost[];
   related_briefs: RelatedBrief[];
 }

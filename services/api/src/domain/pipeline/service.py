@@ -132,18 +132,6 @@ class PipelineService:
                         max_age_days=self._max_age_days,
                     )
 
-                    # Also fetch latest apps from Apple RSS feed
-                    try:
-                        new_apps = await self._appstore.fetch_new_apps()
-                        # Deduplicate by external_id
-                        existing_ids = {p.external_id for p in app_products}
-                        for app in new_apps:
-                            if app.external_id not in existing_ids:
-                                app_products.append(app)
-                                existing_ids.add(app.external_id)
-                    except Exception:
-                        logger.exception("App Store new apps RSS fetch failed")
-
                     if app_products:
                         count = await self._repo.upsert_products(app_products)
                         result.products_upserted += count

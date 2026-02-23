@@ -926,14 +926,13 @@ async def test_stage_brief_keywords_fallback_to_label_when_all_words_are_stop_wo
 
 
 # ---------------------------------------------------------------------------
-# Stage fetch — App Store / Play Store max_age_days and fetch_new_apps
+# Stage fetch — App Store / Play Store max_age_days
 # ---------------------------------------------------------------------------
 
 
-def make_appstore(*, products=None, new_apps=None, reviews=None) -> AsyncMock:
+def make_appstore(*, products=None, reviews=None) -> AsyncMock:
     appstore = AsyncMock()
     appstore.search_apps = AsyncMock(return_value=products if products is not None else [])
-    appstore.fetch_new_apps = AsyncMock(return_value=new_apps if new_apps is not None else [])
     appstore.fetch_reviews = AsyncMock(return_value=reviews if reviews is not None else [])
     return appstore
 
@@ -947,8 +946,6 @@ def make_playstore(*, products=None, reviews=None) -> AsyncMock:
 
 @pytest.mark.asyncio
 async def test_stage_fetch_passes_max_age_days_to_appstore():
-    from domain.pipeline.models import RawProduct
-
     appstore = make_appstore()
     svc = PipelineService(
         repo=make_repo(),
@@ -987,108 +984,6 @@ async def test_stage_fetch_passes_max_age_days_to_playstore():
     await svc.run()
 
     playstore.search_apps.assert_called_once_with(["todo"], max_age_days=180)
-
-
-@pytest.mark.asyncio
-async def test_stage_fetch_calls_fetch_new_apps():
-    """fetch_new_apps must be called when App Store is configured."""
-    appstore = make_appstore()
-    svc = PipelineService(
-        repo=make_repo(),
-        reddit=make_reddit(),
-        llm=make_llm(),
-        rss=make_rss(),
-        trends=make_trends(),
-        producthunt=make_producthunt(),
-        subreddits=["saas"],
-        appstore=appstore,
-        appstore_keywords=["todo"],
-    )
-
-    await svc.run()
-
-    appstore.fetch_new_apps.assert_called_once()
-
-
-@pytest.mark.asyncio
-async def test_stage_fetch_deduplicates_search_and_new_apps():
-    """Apps from fetch_new_apps that also appear in search should not be duplicated."""
-    from domain.pipeline.models import RawProduct
-    from datetime import datetime, timezone
-
-    product = RawProduct(
-        external_id="123",
-        name="TestApp",
-        slug="testapp-123",
-        tagline=None,
-        description=None,
-        url=None,
-        category=None,
-        launched_at=datetime(2026, 1, 1, tzinfo=timezone.utc),
-        source="app_store",
-    )
-    appstore = make_appstore(products=[product], new_apps=[product])
-    repo = make_repo()
-    repo.upsert_products = AsyncMock(return_value=1)
-
-    svc = PipelineService(
-        repo=repo,
-        reddit=make_reddit(),
-        llm=make_llm(),
-        rss=make_rss(),
-        trends=make_trends(),
-        producthunt=make_producthunt(),
-        subreddits=["saas"],
-        appstore=appstore,
-        appstore_keywords=["todo"],
-    )
-
-    await svc.run()
-
-    # upsert_products should be called with 1 product (deduplicated)
-    called_products = repo.upsert_products.call_args_list[0][0][0]
-    assert len(called_products) == 1
-
-
-@pytest.mark.asyncio
-async def test_stage_fetch_new_apps_failure_does_not_block():
-    """If fetch_new_apps fails, search results should still be processed."""
-    from domain.pipeline.models import RawProduct
-    from datetime import datetime, timezone
-
-    product = RawProduct(
-        external_id="123",
-        name="TestApp",
-        slug="testapp-123",
-        tagline=None,
-        description=None,
-        url=None,
-        category=None,
-        launched_at=None,
-        source="app_store",
-    )
-    appstore = make_appstore(products=[product])
-    appstore.fetch_new_apps = AsyncMock(side_effect=RuntimeError("RSS down"))
-    repo = make_repo()
-    repo.upsert_products = AsyncMock(return_value=1)
-
-    svc = PipelineService(
-        repo=repo,
-        reddit=make_reddit(),
-        llm=make_llm(),
-        rss=make_rss(),
-        trends=make_trends(),
-        producthunt=make_producthunt(),
-        subreddits=["saas"],
-        appstore=appstore,
-        appstore_keywords=["todo"],
-    )
-
-    result = await svc.run()
-
-    # Search results should still be upserted
-    repo.upsert_products.assert_called()
-    assert result.products_upserted >= 1
 
 
 def test_pipeline_service_stores_max_age_days():

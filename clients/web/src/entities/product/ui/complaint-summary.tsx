@@ -12,7 +12,7 @@ interface ComplaintSummaryProps {
   mentionsTrend?: number;
   criticalComplaints: number;
   criticalTrend?: number;
-  sentimentScore: number;
+  frustrationRate: number | null;
   themes: ComplaintTheme[];
   className?: string;
 }
@@ -38,7 +38,7 @@ export function ComplaintSummary({
   mentionsTrend,
   criticalComplaints,
   criticalTrend,
-  sentimentScore,
+  frustrationRate,
   themes,
   className,
 }: ComplaintSummaryProps) {
@@ -102,35 +102,48 @@ export function ComplaintSummary({
         </div>
       </div>
 
-      {/* Sentiment Score Card */}
+      {/* Frustration Rate Card */}
       <div className="relative overflow-hidden p-5 rounded-2xl bg-white dark:bg-[#18212F] border border-slate-200 dark:border-[#283039]">
         <div className="absolute -right-2 -top-2 opacity-10" aria-hidden="true">
-          <Icon name="chart-line" size={64} className="text-purple-500" />
+          <Icon name="chart-line" size={64} className="text-orange-500" />
         </div>
         <div className="relative">
           <p className="text-sm text-slate-500 dark:text-slate-400">
-            {t("sentimentScore")}
+            {t("frustrationRate")}
           </p>
           <div className="mt-2 flex items-baseline gap-2">
-            <span className="text-3xl font-bold text-slate-900 dark:text-slate-50 tabular-nums">
-              {sentimentScore}
-            </span>
-            <span className="text-sm text-slate-400 dark:text-slate-500">/ 100</span>
+            {frustrationRate != null ? (
+              <>
+                <span className="text-3xl font-bold text-slate-900 dark:text-slate-50 tabular-nums">
+                  {frustrationRate}%
+                </span>
+              </>
+            ) : (
+              <span className="text-3xl font-bold text-slate-400 dark:text-slate-500">
+                {t("noData")}
+              </span>
+            )}
           </div>
           {/* Progress bar */}
-          <div className="mt-3 h-1.5 w-full rounded-full bg-slate-200 dark:bg-slate-700/50 overflow-hidden">
-            <div
-              className="h-full rounded-full bg-gradient-to-r from-blue-500 to-purple-500 transition-all duration-700 ease-out"
-              style={{ width: `${Math.min(Math.max(sentimentScore, 0), 100)}%` }}
-              role="progressbar"
-              aria-valuenow={sentimentScore}
-              aria-valuemin={0}
-              aria-valuemax={100}
-              aria-label={t("sentimentAriaLabel", { score: sentimentScore })}
-            />
-          </div>
+          {frustrationRate != null ? (
+            <div className="mt-3 h-1.5 w-full rounded-full bg-slate-200 dark:bg-slate-700/50 overflow-hidden">
+              <div
+                className="h-full rounded-full bg-gradient-to-r from-orange-400 to-red-500 transition-all duration-700 ease-out"
+                style={{ width: `${Math.min(Math.max(frustrationRate, 0), 100)}%` }}
+                role="progressbar"
+                aria-valuenow={frustrationRate}
+                aria-valuemin={0}
+                aria-valuemax={100}
+                aria-label={t("frustrationAriaLabel", { rate: frustrationRate })}
+              />
+            </div>
+          ) : (
+            <div className="mt-3 h-1.5 w-full rounded-full bg-slate-200 dark:bg-slate-700/50" />
+          )}
           <p className="mt-1.5 text-xs text-slate-500 dark:text-slate-400">
-            {t("basedOnAnalysis")}
+            {frustrationRate != null
+              ? t("negativeOfTotal", { rate: frustrationRate })
+              : t("noData")}
           </p>
         </div>
       </div>

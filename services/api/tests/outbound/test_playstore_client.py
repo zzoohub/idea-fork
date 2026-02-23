@@ -160,8 +160,8 @@ async def test_search_apps_filters_old_apps():
 
 
 @pytest.mark.asyncio
-async def test_search_apps_skips_app_when_released_is_none():
-    """Apps without a released date are skipped."""
+async def test_search_apps_includes_app_when_released_is_none():
+    """Apps without a released date are included (not filtered out)."""
     item = _gps_item()
     detail = _gps_detail(released=None)
 
@@ -179,7 +179,8 @@ async def test_search_apps_skips_app_when_released_is_none():
     with patch("outbound.playstore.client.asyncio.to_thread", side_effect=to_thread_side_effect):
         result = await client.search_apps(["productivity"], max_age_days=365)
 
-    assert result == []
+    assert len(result) == 1
+    assert result[0].launched_at is None
 
 
 @pytest.mark.asyncio

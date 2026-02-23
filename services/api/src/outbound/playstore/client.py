@@ -60,13 +60,7 @@ class PlayStoreClient:
                         continue
 
                     released = _parse_released(detail.get("released"))
-                    if released is None:
-                        logger.warning(
-                            "No released date for %s, skipping", app_id
-                        )
-                        continue
-
-                    if released < cutoff:
+                    if released is not None and released < cutoff:
                         continue
 
                     products.append(

@@ -4,12 +4,15 @@ import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { Icon } from "@/src/shared/ui/icon";
 import { isSafeUrl } from "@/src/shared/lib/sanitize-url";
+import { formatRelativeTime } from "@/src/shared/lib/format-relative-time";
 
 interface ProductHeaderProps {
   name: string;
   iconUrl?: string;
   category: string;
+  tagline?: string;
   description?: string;
+  launchedAt?: string;
   websiteUrl?: string;
   className?: string;
 }
@@ -18,7 +21,9 @@ export function ProductHeader({
   name,
   iconUrl,
   category,
+  tagline,
   description,
+  launchedAt,
   websiteUrl,
   className,
 }: ProductHeaderProps) {
@@ -61,6 +66,12 @@ export function ProductHeader({
           {name}
         </h1>
 
+        {tagline && (
+          <p className="text-base font-medium text-slate-600 dark:text-slate-300">
+            {tagline}
+          </p>
+        )}
+
         {description && (
           <p className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed max-w-xl">
             {description}
@@ -72,6 +83,13 @@ export function ProductHeader({
             <Icon name="layout-grid" size={16} className="text-slate-400 dark:text-slate-500" />
             {category}
           </span>
+
+          {launchedAt && (
+            <span className="inline-flex items-center gap-1.5 text-sm text-slate-500 dark:text-slate-400">
+              <Icon name="calendar" size={16} className="text-slate-400 dark:text-slate-500" />
+              {t("launchedAt", { time: formatRelativeTime(launchedAt) })}
+            </span>
+          )}
 
           {websiteUrl && isSafeUrl(websiteUrl) && (
             <a

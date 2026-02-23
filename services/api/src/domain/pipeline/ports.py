@@ -38,10 +38,6 @@ class AppStoreClient(Protocol):
         self, keywords: list[str], limit: int = 20, max_age_days: int = 365
     ) -> list[RawProduct]: ...
 
-    async def fetch_new_apps(
-        self, limit: int = 25, genre_id: int | None = None
-    ) -> list[RawProduct]: ...
-
     async def fetch_reviews(
         self, app_id: str, country: str = "us", pages: int = 3
     ) -> list[RawPost]: ...
