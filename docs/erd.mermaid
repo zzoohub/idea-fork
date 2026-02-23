@@ -9,6 +9,8 @@ erDiagram
     brief ||--o{ rating : receives
     product ||--o{ product_post : linked_to
     post ||--o{ product_post : complaints_about
+    product ||--o{ product_tag : tagged_with
+    tag ||--o{ product_tag : applied_to_product
 
     post {
         bigint id PK
@@ -87,14 +89,23 @@ erDiagram
         bigint id PK
         timestamptz created_at
         timestamptz updated_at
+        timestamptz launched_at
         integer complaint_count
         numeric trending_score
+        text source
+        text external_id UK
         text name
-        text slug UK
+        text slug "UK (source, slug)"
+        text tagline
         text description
         text url
         text image_url
         text category
+    }
+
+    product_tag {
+        bigint product_id PK_FK
+        bigint tag_id PK_FK
     }
 
     product_post {

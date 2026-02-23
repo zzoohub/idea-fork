@@ -17,6 +17,7 @@ import type { ProductListItem } from "@/src/shared/api";
 const SORT_OPTIONS_KEYS = [
   { value: "-complaint_count", labelKey: "mostSignals" },
   { value: "-trending_score", labelKey: "trending" },
+  { value: "-launched_at", labelKey: "newest" },
 ] as const;
 
 /* --------------------------------------------------------------------------

@@ -31,7 +31,7 @@ describe("SearchOverlay", () => {
           onClear={noop}
         />
       );
-      expect(screen.getByRole("dialog")).toHaveAttribute("aria-label", "Open search");
+      expect(screen.getByRole("dialog")).toHaveAttribute("aria-label", "Search");
     });
 
     it("renders Close search button", () => {

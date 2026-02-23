@@ -12,7 +12,7 @@ const THEMES = [
 const DEFAULT_PROPS = {
   totalMentions: 270,
   criticalComplaints: 15,
-  sentimentScore: 72,
+  frustrationRate: 72 as number | null,
   themes: THEMES,
 };
 
@@ -28,16 +28,16 @@ describe("ComplaintSummary", () => {
       expect(screen.getByText("15")).toBeInTheDocument();
     });
 
-    it("renders sentiment score", () => {
+    it("renders frustration rate", () => {
       renderWithIntl(<ComplaintSummary {...DEFAULT_PROPS} />);
-      expect(screen.getByText("72")).toBeInTheDocument();
+      expect(screen.getByText("72%")).toBeInTheDocument();
     });
 
     it("renders card labels", () => {
       renderWithIntl(<ComplaintSummary {...DEFAULT_PROPS} />);
       expect(screen.getByText("Total Mentions")).toBeInTheDocument();
       expect(screen.getByText("Critical Complaints")).toBeInTheDocument();
-      expect(screen.getByText("Sentiment Score")).toBeInTheDocument();
+      expect(screen.getByText("Frustration Rate")).toBeInTheDocument();
     });
 
     it("renders trend badges when provided", () => {
@@ -54,11 +54,11 @@ describe("ComplaintSummary", () => {
 
     it("does not render trend badges when not provided", () => {
       renderWithIntl(<ComplaintSummary {...DEFAULT_PROPS} />);
-      expect(screen.queryByText(/%/)).not.toBeInTheDocument();
+      expect(screen.queryByText(/[+-]\d+%/)).not.toBeInTheDocument();
     });
   });
 
-  describe("sentiment progress bar", () => {
+  describe("frustration rate progress bar", () => {
     it("renders a progressbar with correct value", () => {
       renderWithIntl(<ComplaintSummary {...DEFAULT_PROPS} />);
       const progressbar = screen.getByRole("progressbar");
@@ -67,12 +67,19 @@ describe("ComplaintSummary", () => {
       expect(progressbar).toHaveAttribute("aria-valuemax", "100");
     });
 
-    it("clamps score to 0-100 range in width", () => {
+    it("clamps rate to 0-100 range in width", () => {
       const { container } = renderWithIntl(
-        <ComplaintSummary {...DEFAULT_PROPS} sentimentScore={150} />
+        <ComplaintSummary {...DEFAULT_PROPS} frustrationRate={150} />
       );
       const bar = container.querySelector('[role="progressbar"]');
       expect(bar).toHaveStyle({ width: "100%" });
+    });
+
+    it("shows N/A when frustrationRate is null", () => {
+      renderWithIntl(<ComplaintSummary {...DEFAULT_PROPS} frustrationRate={null} />);
+      const naElements = screen.getAllByText("N/A");
+      expect(naElements.length).toBeGreaterThanOrEqual(1);
+      expect(screen.queryByRole("progressbar")).not.toBeInTheDocument();
     });
   });
 

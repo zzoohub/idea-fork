@@ -27,28 +27,29 @@
     "closeSearch": "검색 닫기",
     "switchToLightMode": "라이트 모드로 전환",
     "switchToDarkMode": "다크 모드로 전환",
-    "searchBriefsAndProducts": "브리프 및 제품 검색",
+    "searchBriefsAndProducts": "브리핑 및 제품 검색",
     "filterByPostType": "게시글 유형으로 필터",
     "filterByContentType": "콘텐츠 유형으로 필터",
     "filterByCategory": "카테고리로 필터",
     "complaintsAriaLabel": "사용자 불만 피드",
-    "briefsAriaLabel": "AI 생성 브리프",
+    "briefsAriaLabel": "AI 생성 브리핑",
     "loadingPosts": "게시글 로딩 중",
-    "loadingBriefs": "브리프 로딩 중",
+    "loadingBriefs": "브리핑 로딩 중",
     "loadingSearchResults": "검색 결과 로딩 중",
     "rateContent": "콘텐츠 평가",
-    "rateThisBrief": "이 브리프 평가",
+    "rateThisBrief": "이 브리핑 평가",
     "helpful": "도움이 됨",
     "notHelpful": "도움이 안 됨",
     "sortBy": "정렬 기준",
     "breadcrumb": "경로",
     "complaintStatistics": "불만 통계",
     "switchToKorean": "한국어로 전환",
-    "switchToEnglish": "영어로 전환"
+    "switchToEnglish": "영어로 전환",
+    "searchDialog": "검색"
   },
   "navigation": {
     "feed": "피드",
-    "briefs": "브리프",
+    "briefs": "AI 브리핑",
     "products": "제품"
   },
   "feed": {
@@ -75,38 +76,39 @@
     }
   },
   "briefs": {
-    "heading": "AI 브리프",
-    "description": "Reddit, Twitter 및 기타 플랫폼의 실제 사용자 불만에서 합성된 제품 기회입니다.",
+    "heading": "AI 브리핑",
+    "description": "진짜 유저 불만에서 AI가 뽑아낸 제품 기회들.",
     "sortOptions": {
       "trending": "인기순",
       "newest": "최신순",
       "sources": "출처순"
     },
     "errors": {
-      "loadFailed": "브리프를 불러오지 못했습니다."
+      "loadFailed": "브리핑을 불러오지 못했습니다."
     },
     "empty": {
-      "message": "아직 브리프가 없습니다.",
-      "suggestion": "새로운 브리프가 곧 생성됩니다. 잠시 후 다시 확인해 주세요."
+      "message": "아직 브리핑이 없습니다.",
+      "suggestion": "새로운 브리핑이 곧 생성됩니다. 잠시 후 다시 확인해 주세요."
     }
   },
   "briefDetail": {
-    "breadcrumbBriefs": "브리프",
+    "breadcrumbBriefs": "브리핑",
     "createProject": "프로젝트 만들기",
     "keySourcePosts": "주요 출처 게시글",
     "opportunity": "기회",
-    "viewAllBriefs": "전체 브리프 보기",
+    "viewAllBriefs": "전체 브리핑 보기",
     "errors": {
-      "loadFailed": "브리프를 불러오지 못했습니다.",
-      "notFound": "브리프를 찾을 수 없습니다."
+      "loadFailed": "브리핑을 불러오지 못했습니다.",
+      "notFound": "브리핑을 찾을 수 없습니다."
     }
   },
   "products": {
     "heading": "제품",
-    "description": "제품을 탐색하고 구축할 가치가 있는 격차를 발견하세요.",
+    "description": "새로 뜨는 서비스와 유저 시그널을 파악하고, 다음에 만들 서비스의 힌트를 찾으세요.",
     "sortOptions": {
       "mostSignals": "시그널 많은순",
-      "trending": "인기순"
+      "trending": "인기순",
+      "newest": "출시일순"
     },
     "periods": {
       "all": "전체 기간",
@@ -135,15 +137,21 @@
     "userComplaints": "사용자 불만",
     "sortRecent": "최신순",
     "sortPopular": "인기순",
+    "sortCritical": "심각도순",
+    "sourceIn": "{source}에서",
+    "complaintsEmpty": "불만 사항이 없습니다.",
+    "complaintsEmptySuggestion": "필터를 제거하거나 나중에 다시 확인해 주세요.",
+    "browseProducts": "제품 둘러보기",
+    "complaintThemes": "불만 테마",
     "errors": {
       "loadFailed": "제품을 불러오지 못했습니다.",
       "notFound": "제품을 찾을 수 없습니다."
     },
-    "relatedBriefs": "관련 브리프",
-    "relatedBriefsEmpty": "관련 브리프가 아직 없습니다.",
-    "relatedBriefsSuggestion": "더 많은 불만이 분석되면 브리프가 생성됩니다.",
-    "viewAllBriefs": "전체 브리프 보기",
-    "readBrief": "브리프 읽기",
+    "relatedBriefs": "관련 브리핑",
+    "relatedBriefsEmpty": "관련 브리핑이 아직 없습니다.",
+    "relatedBriefsSuggestion": "더 많은 불만이 분석되면 브리핑이 생성됩니다.",
+    "viewAllBriefs": "전체 브리핑 보기",
+    "readBrief": "브리핑 읽기",
     "sources": "{count}개 출처",
     "sentiment": {
       "frustrated": "불만족",
@@ -154,13 +162,13 @@
   },
   "search": {
     "heading": "검색 결과",
-    "placeholder": "브리프, 제품 검색...",
-    "helpText": "브리프, 제품, 게시글 검색",
+    "placeholder": "브리핑, 제품 검색...",
+    "helpText": "브리핑, 제품, 게시글 검색",
     "resultsFor": "\"{query}\" 검색 결과",
     "resultCount": "{count}개 결과",
     "tabs": {
       "all": "전체",
-      "briefs": "브리프",
+      "briefs": "브리핑",
       "products": "제품",
       "posts": "게시글"
     },
@@ -169,12 +177,13 @@
     },
     "empty": {
       "message": "\"{query}\"에 대한 결과가 없습니다",
-      "suggestion": "다른 키워드를 시도하거나 맞춤법을 확인해 보세요."
+      "suggestion": "다른 키워드를 시도하거나 맞춤법을 확인해 보세요.",
+      "browseBriefs": "브리핑 둘러보기"
     }
   },
   "briefCard": {
-    "readBrief": "브리프 읽기",
-    "complaints": "{count}개 불만",
+    "readBrief": "브리핑 읽기",
+    "complaints": "{count}개 시그널",
     "communities": "{count}개 커뮤니티"
   },
   "productCard": {
@@ -183,7 +192,7 @@
   },
   "postCard": {
     "viewOriginal": "원문 보기",
-    "relatedBrief": "관련 브리프"
+    "relatedBrief": "관련 브리핑"
   },
   "briefBody": {
     "problemStatement": "문제 정의",
@@ -215,16 +224,18 @@
     "criticalComplaints": "심각한 불만",
     "topIssue": "주요 이슈: {name}",
     "requiresAttention": "즉각적인 대응 필요",
-    "sentimentScore": "감성 점수",
-    "basedOnAnalysis": "최근 분석 기반",
-    "sentimentAriaLabel": "감성 점수: 100점 만점에 {score}점"
+    "frustrationRate": "불만 비율",
+    "frustrationAriaLabel": "불만 비율: {rate}%",
+    "negativeOfTotal": "전체 언급의 {rate}%가 부정적",
+    "noData": "N/A"
   },
   "productHeader": {
     "share": "공유",
-    "copied": "복사됨!"
+    "copied": "복사됨!",
+    "launchedAt": "{time} 출시"
   },
   "briefRating": {
-    "wasUseful": "이 브리프가 유용했나요?",
+    "wasUseful": "이 브리핑이 유용했나요?",
     "thanks": "피드백 감사합니다.",
     "whatMissing": "무엇이 부족했나요? (선택사항)",
     "tellUsMore": "더 알려주세요...",

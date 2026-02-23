@@ -32,6 +32,27 @@ async def test_list_products():
 
 
 @pytest.mark.asyncio
+async def test_list_products_with_search_query():
+    """GET /v1/products?q=notion passes q through to repository."""
+    product_repo = AsyncMock()
+    product_repo.list_products = AsyncMock(return_value=[make_product()])
+
+    app = build_test_app(product_repo=product_repo)
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        resp = await client.get("/v1/products", params={"q": "notion"})
+
+    assert resp.status_code == 200
+    body = resp.json()
+    assert len(body["data"]) == 1
+
+    # Verify the repository was called with q set
+    call_args = product_repo.list_products.call_args
+    params = call_args[0][0]
+    assert params.q == "notion"
+
+
+@pytest.mark.asyncio
 async def test_get_product_with_posts():
     product = make_product()
     posts = [make_post(1), make_post(2)]
@@ -66,6 +87,46 @@ async def test_list_products_pagination_has_next():
     assert resp.status_code == 200
     body = resp.json()
     assert len(body["data"]) == 5
+    assert body["meta"]["has_next"] is True
+    assert body["meta"]["next_cursor"] is not None
+
+
+@pytest.mark.asyncio
+async def test_list_products_pagination_sort_launched_at():
+    from datetime import datetime, timezone
+
+    products = [
+        make_product(id=i, slug=f"product-{i}", launched_at=datetime(2026, 1, i + 1, tzinfo=timezone.utc))
+        for i in range(6)
+    ]
+    product_repo = AsyncMock()
+    product_repo.list_products = AsyncMock(return_value=products)
+
+    app = build_test_app(product_repo=product_repo)
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        resp = await client.get("/v1/products", params={"limit": 5, "sort": "-launched_at"})
+
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["meta"]["has_next"] is True
+    assert body["meta"]["next_cursor"] is not None
+
+
+@pytest.mark.asyncio
+async def test_list_products_pagination_sort_launched_at_null():
+    """When last product has launched_at=None, cursor should still encode."""
+    products = [make_product(id=i, slug=f"product-{i}", launched_at=None) for i in range(6)]
+    product_repo = AsyncMock()
+    product_repo.list_products = AsyncMock(return_value=products)
+
+    app = build_test_app(product_repo=product_repo)
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        resp = await client.get("/v1/products", params={"limit": 5, "sort": "-launched_at"})
+
+    assert resp.status_code == 200
+    body = resp.json()
     assert body["meta"]["has_next"] is True
     assert body["meta"]["next_cursor"] is not None
 

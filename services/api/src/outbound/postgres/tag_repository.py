@@ -5,7 +5,7 @@ from sqlalchemy import func, select
 from domain.tag.models import Tag
 from outbound.postgres.database import Database
 from outbound.postgres.mapper import tag_to_domain
-from outbound.postgres.models import PostRow, PostTagRow, ProductTagRow, TagRow
+from outbound.postgres.models import PostRow, PostTagRow, ProductRow, ProductTagRow, TagRow
 
 
 class PostgresTagRepository:
@@ -37,13 +37,18 @@ class PostgresTagRepository:
             result = await session.execute(stmt)
             return [tag_to_domain(row) for row, _ in result.all()]
 
-    async def list_product_tags(self, limit: int = 20) -> list[Tag]:
+    async def list_product_tags(
+        self, days: int = 7, limit: int = 20
+    ) -> list[Tag]:
+        cutoff = datetime.now(UTC).replace(tzinfo=None) - timedelta(days=days)
         stmt = (
             select(
                 TagRow,
                 func.count(ProductTagRow.product_id).label("product_count"),
             )
             .join(ProductTagRow, ProductTagRow.tag_id == TagRow.id)
+            .join(ProductRow, ProductRow.id == ProductTagRow.product_id)
+            .where(ProductRow.created_at >= cutoff)
             .group_by(TagRow.id)
             .order_by(func.count(ProductTagRow.product_id).desc())
             .limit(limit)

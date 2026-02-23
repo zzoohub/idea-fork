@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import { Link } from "@/src/shared/i18n/navigation";
 import { Icon } from "@/src/shared/ui/icon";
 import { Badge } from "@/src/shared/ui/badge";
+import { Chip } from "@/src/shared/ui/chip";
 import { ErrorState } from "@/src/shared/ui/error-state";
 import { EmptyState } from "@/src/shared/ui/empty-state";
 import {
@@ -13,10 +14,10 @@ import {
 } from "@/src/entities/product/ui";
 import { isSafeUrl } from "@/src/shared/lib/sanitize-url";
 import { fetchProduct } from "@/src/entities/product/api";
-import type { ProductDetail, ProductPost, RelatedBrief } from "@/src/shared/api";
+import type { ProductDetail, ProductPost } from "@/src/shared/api";
 import { formatRelativeTime } from "@/src/shared/lib/format-relative-time";
 
-const INITIAL_VISIBLE_COUNT = 4;
+const INITIAL_VISIBLE_COUNT = 3;
 
 /* --------------------------------------------------------------------------
    Compute themes from post_type breakdown
@@ -34,10 +35,16 @@ const POST_TYPE_LABEL_KEY: Record<string, string> = {
   other: "other",
 };
 
+interface ComputedTheme {
+  type: string;
+  name: string;
+  count: number;
+}
+
 function computeThemes(
   posts: ProductPost[],
   getLabel: (key: string) => string,
-): { name: string; count: number }[] {
+): ComputedTheme[] {
   const counts = new Map<string, number>();
   for (const post of posts) {
     const pt = post.post_type;
@@ -47,6 +54,7 @@ function computeThemes(
   return [...counts.entries()]
     .sort((a, b) => b[1] - a[1])
     .map(([type, count]) => ({
+      type,
       name: getLabel(POST_TYPE_LABEL_KEY[type] ?? type),
       count,
     }));
@@ -54,21 +62,34 @@ function computeThemes(
 
 /* --------------------------------------------------------------------------
    Sentiment config
+   DB sentiment values: positive | negative | neutral | mixed
+   DB post_type values: need | complaint | feature_request |
+     alternative_seeking | comparison | question | review |
+     showcase | discussion | other
    -------------------------------------------------------------------------- */
-type SentimentLabelKey = "frustrated" | "featureRequest" | "question" | "bugReport";
-
-const SENTIMENT_VARIANT: Record<
+const SENTIMENT_BADGE: Record<
   string,
-  { labelKey: SentimentLabelKey; variant: "frustrated" | "request" | "question" | "bug_report" }
+  { labelKey: "frustrated"; variant: "frustrated" }
 > = {
-  frustrated: { labelKey: "frustrated", variant: "frustrated" },
   negative: { labelKey: "frustrated", variant: "frustrated" },
-  request: { labelKey: "featureRequest", variant: "request" },
-  feature_request: { labelKey: "featureRequest", variant: "request" },
-  question: { labelKey: "question", variant: "question" },
-  bug_report: { labelKey: "bugReport", variant: "bug_report" },
-  bug: { labelKey: "bugReport", variant: "bug_report" },
 };
+
+/* Severity for "Most Critical" sort — lower = more critical.
+   Checked against post.sentiment first, then post.post_type. */
+const SEVERITY_ORDER: Record<string, number> = {
+  // sentiment
+  negative: 0,
+  // post_type
+  complaint: 1,
+  need: 1,
+  feature_request: 2,
+  alternative_seeking: 2,
+  question: 3,
+};
+
+function getSeverity(post: ProductPost): number {
+  return SEVERITY_ORDER[post.sentiment ?? ""] ?? SEVERITY_ORDER[post.post_type ?? ""] ?? 99;
+}
 
 function getSourceConfig(post: ProductPost) {
   const s = post.source.toLowerCase();
@@ -107,7 +128,9 @@ export function ProductDetailPage({ slug }: ProductDetailPageProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showAllComplaints, setShowAllComplaints] = useState(false);
-  const [sortBy, setSortBy] = useState<"recent" | "popular">("recent");
+  const [sortBy, setSortBy] = useState<"recent" | "popular" | "critical">("recent");
+  const [activePostType, setActivePostType] = useState<string | null>(null);
+  const [expandedIds, setExpandedIds] = useState<Set<number>>(new Set());
   const t = useTranslations("productDetail");
   const tCommon = useTranslations("common");
   const tA11y = useTranslations("accessibility");
@@ -137,8 +160,18 @@ export function ProductDetailPage({ slug }: ProductDetailPageProps) {
   if (loading) return <ProductDetailSkeleton />;
   if (error || !product) return <ErrorState message={error ?? t("errors.notFound")} onRetry={() => window.location.reload()} />;
 
-  const sortedPosts = [...product.posts].sort((a, b) => {
+  const computedThemes = computeThemes(product.posts, (key) => tFeed(key as never));
+
+  // Collect available post types from data (for filter chips)
+  const availablePostTypes = computedThemes.map((th) => th.type);
+
+  const filteredPosts = activePostType
+    ? product.posts.filter((p) => p.post_type === activePostType)
+    : product.posts;
+
+  const sortedPosts = [...filteredPosts].sort((a, b) => {
     if (sortBy === "popular") return b.score - a.score;
+    if (sortBy === "critical") return getSeverity(a) - getSeverity(b);
     return new Date(b.external_created_at).getTime() - new Date(a.external_created_at).getTime();
   });
 
@@ -148,8 +181,17 @@ export function ProductDetailPage({ slug }: ProductDetailPageProps) {
 
   const remainingCount = sortedPosts.length - INITIAL_VISIBLE_COUNT;
 
+  const toggleExpanded = (id: number) => {
+    setExpandedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
   return (
-    <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-10">
+    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-10">
       {/* Breadcrumbs */}
       <nav aria-label={tA11y("breadcrumb")} className="mb-6">
         <ol className="flex items-center gap-1.5 text-sm">
@@ -190,15 +232,43 @@ export function ProductDetailPage({ slug }: ProductDetailPageProps) {
 
         <ComplaintSummary
           totalMentions={product.metrics?.total_mentions ?? product.complaint_count}
-          criticalComplaints={product.metrics?.negative_count ?? product.posts.filter((p) => p.sentiment === "negative" || p.sentiment === "frustrated").length}
+          criticalComplaints={product.metrics?.negative_count ?? product.posts.filter((p) => p.sentiment === "negative").length}
           frustrationRate={(() => {
             const total = product.metrics?.total_mentions ?? product.complaint_count;
-            const negative = product.metrics?.negative_count ?? product.posts.filter((p) => p.sentiment === "negative" || p.sentiment === "frustrated").length;
+            const negative = product.metrics?.negative_count ?? product.posts.filter((p) => p.sentiment === "negative").length;
             return total > 0 ? Math.round((negative / total) * 100) : null;
           })()}
-          themes={computeThemes(product.posts, (key) => tFeed(key as never))}
+          themes={computedThemes}
         />
       </div>
+
+      {/* Themes section */}
+      {computedThemes.length > 0 && (
+        <section aria-labelledby="themes-heading" className="mb-8">
+          <h2
+            id="themes-heading"
+            className="text-lg font-bold text-slate-900 dark:text-slate-50 mb-3"
+          >
+            {t("complaintThemes")}
+          </h2>
+          <div className="flex flex-wrap gap-2">
+            {computedThemes.map((theme) => (
+              <Chip
+                key={theme.type}
+                variant={activePostType === theme.type ? "active" : "inactive"}
+                aria-pressed={activePostType === theme.type}
+                onClick={() =>
+                  setActivePostType((prev) =>
+                    prev === theme.type ? null : theme.type,
+                  )
+                }
+              >
+                {theme.name} ({theme.count})
+              </Chip>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* Complaint feed */}
       <section aria-labelledby="complaints-heading">
@@ -215,124 +285,156 @@ export function ProductDetailPage({ slug }: ProductDetailPageProps) {
           </h2>
 
           <div className="flex items-center gap-2">
-            <button
-              type="button"
-              className={[
-                "px-3.5 py-1.5 rounded-lg text-sm font-medium transition-colors duration-150 cursor-pointer",
-                "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#137fec]",
-                sortBy === "recent"
-                  ? "bg-[#137fec] text-white shadow-sm"
-                  : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700",
-              ].join(" ")}
-              onClick={() => setSortBy("recent")}
-            >
-              {t("sortRecent")}
-            </button>
-            <button
-              type="button"
-              className={[
-                "px-3.5 py-1.5 rounded-lg text-sm font-medium transition-colors duration-150 cursor-pointer",
-                "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#137fec]",
-                sortBy === "popular"
-                  ? "bg-[#137fec] text-white shadow-sm"
-                  : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700",
-              ].join(" ")}
-              onClick={() => setSortBy("popular")}
-            >
-              {t("sortPopular")}
-            </button>
+            {(["recent", "popular", "critical"] as const).map((option) => (
+              <button
+                key={option}
+                type="button"
+                aria-pressed={sortBy === option}
+                className={[
+                  "px-3.5 py-1.5 rounded-lg text-sm font-medium transition-colors duration-150 cursor-pointer",
+                  "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#137fec]",
+                  sortBy === option
+                    ? "bg-[#137fec] text-white shadow-sm"
+                    : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700",
+                ].join(" ")}
+                onClick={() => setSortBy(option)}
+              >
+                {t(option === "recent" ? "sortRecent" : option === "popular" ? "sortPopular" : "sortCritical")}
+              </button>
+            ))}
           </div>
         </div>
 
-        {/* Complaint cards */}
-        <div className="space-y-4">
-          {visibleComplaints.map((complaint) => {
-            const sentimentCfg = complaint.sentiment
-              ? SENTIMENT_VARIANT[complaint.sentiment]
-              : undefined;
-            const srcCfg = getSourceConfig(complaint);
-            return (
-              <article
-                key={complaint.id}
-                className={[
-                  "group p-5 rounded-2xl",
-                  "bg-white dark:bg-[#18212F]",
-                  "border border-slate-200 dark:border-[#283039]",
-                  "hover:border-[#137fec]/50",
-                  "transition-all duration-200",
-                ].join(" ")}
+        {/* Filter chips */}
+        {availablePostTypes.length > 1 && (
+          <div className="flex flex-wrap gap-2 mb-4" role="group" aria-label={tA11y("filterByPostType")}>
+            <Chip
+              variant={activePostType === null ? "active" : "inactive"}
+              aria-pressed={activePostType === null}
+              onClick={() => setActivePostType(null)}
+            >
+              {tFeed("all")}
+            </Chip>
+            {availablePostTypes.map((pt) => (
+              <Chip
+                key={pt}
+                variant={activePostType === pt ? "active" : "inactive"}
+                aria-pressed={activePostType === pt}
+                onClick={() =>
+                  setActivePostType((prev) => (prev === pt ? null : pt))
+                }
               >
-                {/* Top row: source + time + sentiment */}
-                <div className="flex items-center gap-3 mb-3">
-                  <div
-                    className={[
-                      "flex size-8 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white",
-                      srcCfg.color,
-                    ].join(" ")}
-                    aria-hidden="true"
-                  >
-                    {srcCfg.icon}
-                  </div>
-                  <div className="flex flex-wrap items-center gap-2 min-w-0 flex-1">
-                    <span className="text-xs text-slate-400 dark:text-slate-500">
-                      in {srcCfg.label}
-                    </span>
-                    <span aria-hidden="true" className="text-slate-300 dark:text-slate-600">
-                      &middot;
-                    </span>
-                    <time className="text-xs text-slate-400 dark:text-slate-500">
-                      {formatRelativeTime(complaint.external_created_at)}
-                    </time>
-                  </div>
-                  {sentimentCfg && (
-                    <Badge variant={sentimentCfg.variant}>
-                      {t(`sentiment.${sentimentCfg.labelKey}`)}
-                    </Badge>
-                  )}
-                </div>
+                {tFeed((POST_TYPE_LABEL_KEY[pt] ?? pt) as never)}
+              </Chip>
+            ))}
+          </div>
+        )}
 
-                {/* Title */}
-                <h3 className="text-base font-semibold text-slate-900 dark:text-slate-50 group-hover:text-[#137fec] transition-colors duration-150 mb-1.5">
-                  {complaint.title}
-                </h3>
+        {/* Complaint cards */}
+        {sortedPosts.length === 0 ? (
+          <EmptyState
+            message={t("complaintsEmpty")}
+            suggestion={t("complaintsEmptySuggestion")}
+            action={activePostType ? {
+              label: tCommon("clearFilter"),
+              onClick: () => setActivePostType(null),
+            } : {
+              label: t("browseProducts"),
+              onClick: () => { window.location.href = "/products"; },
+            }}
+          />
+        ) : (
+          <div className="space-y-4">
+            {visibleComplaints.map((complaint) => {
+              const badge = complaint.sentiment
+                ? SENTIMENT_BADGE[complaint.sentiment]
+                : undefined;
+              const srcCfg = getSourceConfig(complaint);
+              const isExpanded = expandedIds.has(complaint.id);
+              return (
+                <article
+                  key={complaint.id}
+                  className={[
+                    "group p-5 rounded-2xl cursor-pointer",
+                    "bg-white dark:bg-[#18212F]",
+                    "border border-slate-200 dark:border-[#283039]",
+                    "hover:border-[#137fec]/50",
+                    "transition-all duration-200",
+                  ].join(" ")}
+                  onClick={() => toggleExpanded(complaint.id)}
+                >
+                  {/* Title */}
+                  <h3 className="text-base font-semibold text-slate-900 dark:text-slate-50 group-hover:text-[#137fec] transition-colors duration-150 mb-2">
+                    {complaint.title}
+                  </h3>
 
-                {/* Description */}
-                {complaint.body && (
-                  <p className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed line-clamp-2">
-                    {complaint.body}
-                  </p>
-                )}
-
-                {/* Footer: actions */}
-                <div className="flex items-center gap-5 mt-4 pt-3 border-t border-slate-100 dark:border-[#283039]">
-                  <span className="inline-flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
-                    <Icon name="thumbs-up" size={14} />
-                    <span className="tabular-nums">{complaint.score.toLocaleString()}</span>
-                  </span>
-                  <span className="flex-1" />
-                  {isSafeUrl(complaint.external_url) ? (
-                    <a
-                      href={complaint.external_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1 text-xs font-medium text-[#137fec] hover:text-[#0f6bca] transition-colors duration-150"
+                  {/* Metadata row: source + time + sentiment */}
+                  <div className="flex items-center gap-3 mb-2">
+                    <div
+                      className={[
+                        "flex size-6 shrink-0 items-center justify-center rounded-full text-[10px] font-bold text-white",
+                        srcCfg.color,
+                      ].join(" ")}
+                      aria-hidden="true"
                     >
-                      {tCommon("viewOriginal")}
-                      <Icon name="external-link" size={14} />
-                    </a>
-                  ) : (
-                    <span className="text-xs text-slate-400">
-                      {tCommon("viewOriginal")}
-                    </span>
+                      {srcCfg.icon}
+                    </div>
+                    <div className="flex flex-wrap items-center gap-2 min-w-0 flex-1">
+                      <span className="text-xs text-slate-400 dark:text-slate-500">
+                        {t("sourceIn", { source: srcCfg.label })}
+                      </span>
+                      <span aria-hidden="true" className="text-slate-300 dark:text-slate-600">
+                        &middot;
+                      </span>
+                      <time className="text-xs text-slate-400 dark:text-slate-500">
+                        {formatRelativeTime(complaint.external_created_at)}
+                      </time>
+                    </div>
+                    {badge && (
+                      <Badge variant={badge.variant}>
+                        {t(`sentiment.${badge.labelKey}`)}
+                      </Badge>
+                    )}
+                  </div>
+
+                  {/* Body */}
+                  {complaint.body && (
+                    <p className={[
+                      "text-sm text-slate-500 dark:text-slate-400 leading-relaxed",
+                      isExpanded ? "" : "line-clamp-2",
+                    ].filter(Boolean).join(" ")}>
+                      {complaint.body}
+                    </p>
                   )}
-                </div>
-              </article>
-            );
-          })}
-        </div>
+
+                  {/* Footer: actions */}
+                  <div className="flex items-center gap-5 mt-4 pt-3 border-t border-slate-100 dark:border-[#283039]">
+                    <span className="inline-flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
+                      <Icon name="thumbs-up" size={14} />
+                      <span className="tabular-nums">{complaint.score.toLocaleString()}</span>
+                    </span>
+                    <span className="flex-1" />
+                    {isExpanded && isSafeUrl(complaint.external_url) && (
+                      <a
+                        href={complaint.external_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={(e) => e.stopPropagation()}
+                        className="inline-flex items-center gap-1 text-xs font-medium text-[#137fec] hover:text-[#0f6bca] transition-colors duration-150"
+                      >
+                        {tCommon("viewOriginal")}
+                        <Icon name="external-link" size={14} />
+                      </a>
+                    )}
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+        )}
 
         {/* Show more / fewer */}
-        {remainingCount > 0 && (
+        {sortedPosts.length > 0 && remainingCount > 0 && (
           <div className="mt-6 flex justify-center">
             <button
               type="button"
@@ -414,7 +516,7 @@ export function ProductDetailPage({ slug }: ProductDetailPageProps) {
    -------------------------------------------------------------------------- */
 export function ProductDetailSkeleton() {
   return (
-    <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-10">
+    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-10">
       {/* Breadcrumbs skeleton */}
       <div className="flex items-center gap-2 mb-6">
         <div className="skeleton h-4 w-16 rounded" />

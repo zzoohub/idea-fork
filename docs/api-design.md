@@ -1,6 +1,6 @@
 # idea-fork — API Design
 
-**Status**: Draft
+**Status**: Active
 **Author**: zzoo
 **Date**: 2026-02-21
 **SADD Reference**: [docs/design-doc.md](/docs/design-doc.md)
@@ -220,7 +220,7 @@ Single post detail.
 
 ### 3.2 Tags
 
-Tags power the feed filter UI. Low-cardinality, rarely changes.
+Tags power the feed and product filter UIs. Low-cardinality, rarely changes.
 
 #### `GET /v1/tags`
 
@@ -239,6 +239,35 @@ List all tags. No pagination (expected < 100 tags).
 ```
 
 **Caching:** `Cache-Control: public, max-age=3600`. Tags change infrequently.
+
+#### `GET /v1/tags/trending`
+
+List tags trending in recent posts.
+
+**Query parameters:**
+
+| Parameter | Type | Default | Description |
+|---|---|---|---|
+| `days` | integer | 7 | Lookback period in days (1–90) |
+| `limit` | integer | 10 | Max tags to return (1–60) |
+
+**Response: `200 OK`** — same shape as `GET /v1/tags`.
+
+**Caching:** `Cache-Control: public, max-age=60`.
+
+#### `GET /v1/tags/by-products`
+
+List tags associated with products (via `product_tag`).
+
+**Query parameters:**
+
+| Parameter | Type | Default | Description |
+|---|---|---|---|
+| `limit` | integer | 20 | Max tags to return (1–60) |
+
+**Response: `200 OK`** — same shape as `GET /v1/tags`.
+
+**Caching:** `Cache-Control: public, max-age=60`.
 
 ---
 
@@ -364,11 +393,11 @@ Brief detail page with full synthesis and source posts.
 
 ### 3.4 Products
 
-Trending products paired with user complaints. P1 feature.
+Products paired with user complaints. Products are ingested from Product Hunt, App Store, and Play Store. Deduplication by `lower(name)` using `DISTINCT ON`.
 
 #### `GET /v1/products`
 
-List products with sorting and keyset pagination.
+List products with sorting, filtering, and keyset pagination.
 
 **Query parameters:**
 
@@ -376,8 +405,10 @@ List products with sorting and keyset pagination.
 |---|---|---|---|
 | `cursor` | string | — | Keyset cursor |
 | `limit` | integer | 20 | Items per page (1–100) |
-| `sort` | string | `-trending_score` | Sort field. Allowed: `-trending_score`, `-complaint_count` |
+| `sort` | string | `-trending_score` | Sort field. Allowed: `-trending_score`, `-complaint_count`, `-launched_at` |
 | `category` | string | — | Filter by category |
+| `period` | string | — | Filter by recency. Allowed: `7d`, `30d`, `90d` |
+| `q` | string | — | Search by product name, tagline, or description (ILIKE, max 200 chars) |
 
 **Response: `200 OK`**
 
@@ -394,9 +425,13 @@ List products with sorting and keyset pagination.
       "image_url": "https://cdn.idea-fork.com/products/notion.png",
       "category": "Productivity",
       "source": "producthunt",
+      "sources": ["producthunt", "play_store"],
       "launched_at": "2016-08-15T00:00:00Z",
       "complaint_count": 156,
-      "trending_score": 8.7
+      "trending_score": 8.7,
+      "tags": [
+        { "slug": "productivity", "name": "Productivity" }
+      ]
     }
   ],
   "meta": {
@@ -406,9 +441,14 @@ List products with sorting and keyset pagination.
 }
 ```
 
+**Notes:**
+- `sources` aggregates all platform sources for products with the same name (deduplication across Product Hunt, App Store, Play Store).
+- `tags` are loaded from the `product_tag` junction table.
+- `q` performs case-insensitive partial match (`ILIKE '%term%'`) on `name`, `tagline`, and `description`. Uses pg_trgm GIN index on `name` for performance.
+
 #### `GET /v1/products/{slug}`
 
-Product detail with linked complaint posts.
+Product detail with metrics, linked complaint posts, and related briefs.
 
 **Response: `200 OK`**
 
@@ -424,9 +464,18 @@ Product detail with linked complaint posts.
     "image_url": "https://cdn.idea-fork.com/products/notion.png",
     "category": "Productivity",
     "source": "producthunt",
+    "sources": ["producthunt", "play_store"],
     "launched_at": "2016-08-15T00:00:00Z",
     "complaint_count": 156,
     "trending_score": 8.7,
+    "tags": [
+      { "slug": "productivity", "name": "Productivity" }
+    ],
+    "metrics": {
+      "total_mentions": 270,
+      "negative_count": 85,
+      "sentiment_score": 69
+    },
     "posts": [
       {
         "id": 456,
@@ -440,17 +489,28 @@ Product detail with linked complaint posts.
         "post_type": "complaint",
         "sentiment": "negative"
       }
+    ],
+    "related_briefs": [
+      {
+        "id": 12,
+        "slug": "mobile-note-taking-performance",
+        "title": "Mobile Note-Taking Apps Are Too Slow",
+        "summary": "Users across multiple subreddits report severe performance issues...",
+        "source_count": 47
+      }
     ]
   },
   "meta": {
-    "posts_cursor": "eyJpZCI6NDU2fQ",
-    "posts_has_next": true
+    "posts_has_next": true,
+    "posts_cursor": "eyJpZCI6NDU2fQ"
   }
 }
 ```
 
 **Notes:**
-- `posts` are the first page of linked complaint posts (default 10). Client fetches more via `GET /v1/posts?product={slug}&cursor=...` (see below).
+- `metrics` is computed from posts sharing the product's tags: `total_mentions` (all matched posts), `negative_count` (posts with `sentiment = 'negative'`), `sentiment_score` (positive % = `positive / (positive + negative) * 100`).
+- `posts` are linked via tag matching (`product_tag` → `post_tag`), limited to first 10. Sorted by `id DESC`.
+- `related_briefs` are briefs whose source posts overlap with the product's linked posts (via `brief_source` ∩ `product_post`), limited to 3, sorted by `source_count DESC`.
 - Addressed by slug for SEO.
 
 **Error: `404 Not Found`** — product does not exist.
@@ -553,6 +613,38 @@ Returns posts linked to a product via `product_post` join table. Same response s
 
 ---
 
+## 4.1 Internal Endpoints
+
+Internal endpoints are not part of the public API. They are used for pipeline orchestration and admin tools.
+
+#### `POST /internal/pipeline/run`
+
+Trigger a pipeline run (ingestion → tagging → clustering → brief generation). Requires `X-Internal-Secret` header matching `API_INTERNAL_SECRET` env var.
+
+**Response: `200 OK`** (success) or `207 Multi-Status` (partial errors)
+
+```json
+{
+  "data": {
+    "posts_fetched": 150,
+    "posts_upserted": 148,
+    "posts_tagged": 140,
+    "clusters_created": 5,
+    "briefs_generated": 3,
+    "has_errors": false,
+    "errors": []
+  }
+}
+```
+
+**Error: `403 Forbidden`** — invalid or missing internal secret.
+
+#### `GET /admin/pipeline`
+
+HTML admin page for triggering pipeline runs via browser UI. Accepts the internal secret via form input.
+
+---
+
 ## 5. Status Codes Summary
 
 | Endpoint | Success | Client Errors |
@@ -560,12 +652,15 @@ Returns posts linked to a product via `product_post` join table. Same response s
 | `GET /v1/posts` | 200 | 422 (bad params) |
 | `GET /v1/posts/{id}` | 200 | 404 |
 | `GET /v1/tags` | 200 | — |
+| `GET /v1/tags/trending` | 200 | 422 (bad params) |
+| `GET /v1/tags/by-products` | 200 | 422 (bad params) |
 | `GET /v1/briefs` | 200 | 422 (bad params) |
 | `GET /v1/briefs/{slug}` | 200 | 404 |
 | `GET /v1/products` | 200 | 422 (bad params) |
 | `GET /v1/products/{slug}` | 200 | 404 |
 | `POST /v1/briefs/{id}/ratings` | 201 | 400, 404, 409, 422, 429 |
 | `PATCH /v1/briefs/{id}/ratings` | 200 | 400, 404, 422, 429 |
+| `POST /internal/pipeline/run` | 200/207 | 403 |
 
 All endpoints may return `500` for unexpected server errors.
 
@@ -592,6 +687,8 @@ All endpoints may return `500` for unexpected server errors.
 | `GET /v1/posts` | `public, max-age=60` | Feed refreshed by pipeline (hourly/daily). 60s staleness OK. |
 | `GET /v1/posts/{id}` | `public, max-age=300` | Post content rarely changes after ingestion. |
 | `GET /v1/tags` | `public, max-age=3600` | Tags change infrequently. |
+| `GET /v1/tags/trending` | `public, max-age=60` | Trending tags shift with new data. |
+| `GET /v1/tags/by-products` | `public, max-age=60` | Product tags shift with new data. |
 | `GET /v1/briefs` | `public, max-age=60` | New briefs published periodically. |
 | `GET /v1/briefs/{slug}` | `public, max-age=300` | Brief content is static after publication. Vote counts may lag — acceptable. |
 | `GET /v1/products` | `public, max-age=60` | Trending scores update with pipeline runs. |

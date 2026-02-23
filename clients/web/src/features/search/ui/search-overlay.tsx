@@ -76,7 +76,7 @@ export function SearchOverlay({
     <div
       role="dialog"
       aria-modal="true"
-      aria-label={tA11y("openSearch")}
+      aria-label={tA11y("searchDialog")}
       className={[
         "fixed inset-0 z-[100]",
         "bg-bg-primary",

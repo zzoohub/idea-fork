@@ -151,22 +151,24 @@ export function NavigationBar() {
         {/* -- Right side: search, dark toggle, avatar -- */}
         <div className="flex items-center gap-2">
           {/* Desktop search input (hidden on mobile) */}
-          <div className="hidden sm:flex items-center relative">
+          <form
+            role="search"
+            className="hidden sm:flex items-center relative"
+            onSubmit={(e) => {
+              e.preventDefault();
+              handleSearchSubmit(searchValue);
+            }}
+          >
             <Icon
               name="search"
               size={18}
               className="absolute left-2.5 text-slate-400 dark:text-slate-500 pointer-events-none"
             />
             <input
-              type="text"
+              type="search"
               placeholder={tSearch("placeholder")}
               value={searchValue}
               onChange={(e) => setSearchValue(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  handleSearchSubmit(searchValue);
-                }
-              }}
               maxLength={200}
               className={[
                 "w-56 lg:w-64 h-9 pl-9 pr-3",
@@ -180,7 +182,7 @@ export function NavigationBar() {
               ].join(" ")}
               aria-label={tA11y("searchBriefsAndProducts")}
             />
-          </div>
+          </form>
 
           {/* Mobile search trigger (visible only on mobile) */}
           <button
@@ -188,7 +190,7 @@ export function NavigationBar() {
             onClick={() => setSearchOpen(true)}
             className={[
               "flex sm:hidden items-center justify-center",
-              "size-10 rounded-lg",
+              "size-11 rounded-lg",
               "text-slate-500 dark:text-slate-400",
               "hover:bg-slate-100 dark:hover:bg-surface-dark",
               "transition-colors duration-150 cursor-pointer",

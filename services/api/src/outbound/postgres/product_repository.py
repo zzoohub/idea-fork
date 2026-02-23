@@ -16,12 +16,16 @@ from shared.pagination import cast_cursor_value, decode_cursor
 SORT_COLUMN_MAP = {
     "-trending_score": ProductRow.trending_score,
     "-complaint_count": ProductRow.complaint_count,
+    "-launched_at": ProductRow.launched_at,
 }
 
 SORT_RAW_MAP = {
     "-trending_score": "trending_score",
     "-complaint_count": "complaint_count",
+    "-launched_at": "launched_at",
 }
+
+_NULLABLE_SORT_COLS = {"launched_at"}
 
 
 class PostgresProductRepository:
@@ -36,6 +40,12 @@ class PostgresProductRepository:
         where_parts: list[str] = []
         bind_params: dict = {}
 
+        if params.q:
+            where_parts.append(
+                "(name ILIKE :q OR tagline ILIKE :q OR description ILIKE :q)"
+            )
+            bind_params["q"] = f"%{params.q}%"
+
         if params.category:
             where_parts.append("category = :category")
             bind_params["category"] = params.category
@@ -47,6 +57,9 @@ class PostgresProductRepository:
 
         where_clause = f"WHERE {' AND '.join(where_parts)}" if where_parts else ""
 
+        nullable = sort_col_name in _NULLABLE_SORT_COLS
+        nulls_last = " NULLS LAST" if nullable else ""
+
         # Step 1: Get grouped products (best row per normalized name)
         grouped_sql = f"""
             SELECT DISTINCT ON (lower(name))
@@ -55,7 +68,7 @@ class PostgresProductRepository:
                 complaint_count, trending_score, created_at
             FROM product
             {where_clause}
-            ORDER BY lower(name), {sort_col_name} DESC, id DESC
+            ORDER BY lower(name), {sort_col_name} DESC{nulls_last}, id DESC
         """
 
         # Build cursor pagination clause for wrapper
@@ -68,6 +81,10 @@ class PostgresProductRepository:
                 cursor_clause = f"WHERE (g.{sort_col_name} < :cursor_v OR (g.{sort_col_name} = :cursor_v AND g.id < :cursor_id))"
                 bind_params["cursor_v"] = cursor_v
                 bind_params["cursor_id"] = cursor_id
+            elif nullable and cursor_id is not None:
+                # Cursor is on a NULL row — only return other NULL rows with smaller id
+                cursor_clause = f"WHERE (g.{sort_col_name} IS NULL AND g.id < :cursor_id)"
+                bind_params["cursor_id"] = cursor_id
 
         wrapper_sql = f"""
             SELECT g.id, g.name, g.slug, g.source, g.external_id,
@@ -79,7 +96,7 @@ class PostgresProductRepository:
                     WHERE lower(p2.name) = lower(g.name)) AS sources
             FROM ({grouped_sql}) g
             {cursor_clause}
-            ORDER BY g.{sort_col_name} DESC, g.id DESC
+            ORDER BY g.{sort_col_name} DESC{nulls_last}, g.id DESC
             LIMIT :limit
         """
         bind_params["limit"] = params.limit + 1

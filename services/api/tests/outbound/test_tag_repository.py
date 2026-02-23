@@ -96,3 +96,46 @@ async def test_list_trending_tags_returns_empty():
     result = await repo.list_trending_tags(days=30, limit=5)
 
     assert result == []
+
+
+@pytest.mark.asyncio
+async def test_list_product_tags_returns_tags():
+    tag_rows = [_make_tag_row(1, "saas", "SaaS"), _make_tag_row(2, "mobile", "Mobile")]
+
+    mock_result = MagicMock()
+    mock_result.all.return_value = [(tag_rows[0], 20), (tag_rows[1], 10)]
+
+    mock_session = AsyncMock()
+    mock_session.execute = AsyncMock(return_value=mock_result)
+    mock_session.__aenter__ = AsyncMock(return_value=mock_session)
+    mock_session.__aexit__ = AsyncMock(return_value=False)
+
+    mock_db = MagicMock()
+    mock_db.session.return_value = mock_session
+
+    repo = PostgresTagRepository(mock_db)
+    result = await repo.list_product_tags(days=7, limit=20)
+
+    assert len(result) == 2
+    assert all(isinstance(t, Tag) for t in result)
+    assert result[0].slug == "saas"
+    assert result[1].slug == "mobile"
+
+
+@pytest.mark.asyncio
+async def test_list_product_tags_returns_empty():
+    mock_result = MagicMock()
+    mock_result.all.return_value = []
+
+    mock_session = AsyncMock()
+    mock_session.execute = AsyncMock(return_value=mock_result)
+    mock_session.__aenter__ = AsyncMock(return_value=mock_session)
+    mock_session.__aexit__ = AsyncMock(return_value=False)
+
+    mock_db = MagicMock()
+    mock_db.session.return_value = mock_session
+
+    repo = PostgresTagRepository(mock_db)
+    result = await repo.list_product_tags(days=30, limit=10)
+
+    assert result == []

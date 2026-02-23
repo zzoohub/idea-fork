@@ -255,6 +255,8 @@ class GeminiLlmClient:
                 continue
             raw = _strip_code_fences(response.text)
             data = json.loads(raw)
+            if isinstance(data, list):
+                data = data[0] if data else {}
 
             results.append(ClusteringResult(
                 label=data.get("label", f"Cluster {cluster_label}"),

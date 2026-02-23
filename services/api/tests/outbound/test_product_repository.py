@@ -26,6 +26,7 @@ def _make_product_row(
     complaint_count=10,
     trending_score=Decimal("8.5000"),
     tags=None,
+    sources=None,
 ):
     row = MagicMock()
     row.id = id
@@ -42,6 +43,7 @@ def _make_product_row(
     row.complaint_count = complaint_count
     row.trending_score = trending_score
     row.tags = tags if tags is not None else []
+    row.sources = sources if sources is not None else [source]
     return row
 
 
@@ -100,16 +102,40 @@ def _make_post_row(
 
 
 def _make_mock_db(rows):
-    """Scalars with .all() and .first() chain."""
-    mock_scalars = MagicMock()
-    mock_scalars.all.return_value = rows
-    mock_scalars.first.return_value = rows[0] if rows else None
+    """Mock DB that supports both raw SQL (fetchall) and ORM (scalars) patterns.
 
-    mock_result = MagicMock()
-    mock_result.scalars.return_value = mock_scalars
+    list_products uses raw SQL: result.fetchall() for products, then
+    select(...) for tags per product.
+    Other methods use ORM: result.scalars().all() / .first().
+    """
+
+    def _make_result(result_rows):
+        r = MagicMock()
+        r.fetchall.return_value = result_rows
+        r.fetchone.return_value = result_rows[0] if result_rows else None
+        r.__iter__ = lambda self: iter([])  # empty iteration for tag sub-queries
+
+        mock_scalars = MagicMock()
+        mock_scalars.all.return_value = result_rows
+        mock_scalars.first.return_value = result_rows[0] if result_rows else None
+        r.scalars.return_value = mock_scalars
+        return r
+
+    main_result = _make_result(rows)
+    tag_result = MagicMock()
+    tag_result.__iter__ = lambda self: iter([])
+
+    call_count = 0
+
+    async def mock_execute(*args, **kwargs):
+        nonlocal call_count
+        call_count += 1
+        if call_count == 1:
+            return main_result
+        return tag_result
 
     mock_session = AsyncMock()
-    mock_session.execute = AsyncMock(return_value=mock_result)
+    mock_session.execute = AsyncMock(side_effect=mock_execute)
     mock_session.__aenter__ = AsyncMock(return_value=mock_session)
     mock_session.__aexit__ = AsyncMock(return_value=False)
 
@@ -142,6 +168,17 @@ async def test_list_products_sort_complaint_count():
     repo = PostgresProductRepository(mock_db)
 
     params = ProductListParams(sort="-complaint_count")
+    result = await repo.list_products(params)
+    assert len(result) == 1
+
+
+@pytest.mark.asyncio
+async def test_list_products_sort_launched_at():
+    rows = [_make_product_row(1, launched_at=datetime(2026, 1, 1, tzinfo=timezone.utc))]
+    mock_db = _make_mock_db(rows)
+    repo = PostgresProductRepository(mock_db)
+
+    params = ProductListParams(sort="-launched_at")
     result = await repo.list_products(params)
     assert len(result) == 1
 

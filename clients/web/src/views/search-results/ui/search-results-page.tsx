@@ -1,7 +1,7 @@
 "use client";
 
 import { useSearchParams } from "next/navigation";
-import { useEffect, useState, useCallback, useMemo, Suspense } from "react";
+import { useEffect, useState, useCallback, useMemo, useRef, Suspense } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "@/src/shared/i18n/navigation";
 import { Skeleton, EmptyState, ErrorState } from "@/src/shared/ui";
@@ -41,6 +41,8 @@ function mapSource(source: string) {
   if (s === "twitter" || s === "x") return "twitter" as const;
   if (s === "linkedin") return "linkedin" as const;
   if (s === "appstore" || s === "app_store") return "appstore" as const;
+  if (s === "playstore" || s === "play_store" || s === "google_play")
+    return "appstore" as const;
   return "reddit" as const;
 }
 
@@ -50,6 +52,8 @@ function mapSourceName(post: Post): string {
   if (s === "twitter" || s === "x") return "Twitter / X";
   if (s === "linkedin") return "LinkedIn";
   if (s === "appstore" || s === "app_store") return "App Store";
+  if (s === "playstore" || s === "play_store" || s === "google_play")
+    return "Google Play";
   return post.source;
 }
 
@@ -65,19 +69,6 @@ function filterBriefs(briefs: BriefListItem[], query: string): BriefListItem[] {
   );
 }
 
-function filterProducts(
-  products: ProductListItem[],
-  query: string,
-): ProductListItem[] {
-  const q = query.toLowerCase();
-  return products.filter(
-    (p) =>
-      p.name.toLowerCase().includes(q) ||
-      (p.description?.toLowerCase().includes(q) ?? false) ||
-      (p.tagline?.toLowerCase().includes(q) ?? false) ||
-      (p.category?.toLowerCase().includes(q) ?? false),
-  );
-}
 
 /* --------------------------------------------------------------------------
    SearchResultsInner
@@ -108,48 +99,49 @@ function SearchResultsInner() {
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const cancelRef = useRef(false);
 
   /* Fetch all 3 types in parallel */
-  useEffect(() => {
+  const fetchData = useCallback(() => {
     if (!query.trim()) return;
-    let cancelled = false;
+    cancelRef.current = false;
 
     setLoading(true);
     setError(null);
 
     Promise.all([
-      fetchBriefs({ limit: 200 }).catch(() => ({ data: [] as BriefListItem[] })),
-      fetchProducts({ limit: 200 }).catch(() => ({ data: [] as ProductListItem[] })),
+      fetchBriefs({ limit: 100 }).catch(() => ({ data: [] as BriefListItem[] })),
+      fetchProducts({ q: query, limit: 50 }).catch(() => ({ data: [] as ProductListItem[] })),
       fetchPosts({ q: query, limit: 50 }).catch(() => ({ data: [] as Post[] })),
     ])
       .then(([briefsRes, productsRes, postsRes]) => {
-        if (cancelled) return;
+        if (cancelRef.current) return;
         setBriefs(briefsRes.data);
         setProducts(productsRes.data);
         setPosts(postsRes.data);
         setLoading(false);
       })
       .catch(() => {
-        if (!cancelled) {
+        if (!cancelRef.current) {
           setError(t("errors.searchFailed"));
           setLoading(false);
         }
       });
-
-    return () => {
-      cancelled = true;
-    };
   }, [query, t]);
 
-  /* Filtered results (client-side for briefs/products, backend for posts) */
+  useEffect(() => {
+    fetchData();
+    return () => {
+      cancelRef.current = true;
+    };
+  }, [fetchData]);
+
+  /* Filtered results (client-side for briefs, backend for products/posts) */
   const filteredBriefs = useMemo(
     () => (query ? filterBriefs(briefs, query) : []),
     [briefs, query],
   );
-  const filteredProducts = useMemo(
-    () => (query ? filterProducts(products, query) : []),
-    [products, query],
-  );
+  const filteredProducts = products; // already filtered by backend
   const filteredPosts = posts; // already filtered by backend
 
   const totalResults =
@@ -181,9 +173,38 @@ function SearchResultsInner() {
     router.push("/");
   }, [router]);
 
+  /* Roving tabindex for WAI-ARIA tabs pattern */
+  const tabRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  const activeTabIndex = TYPE_TAB_KEYS.findIndex((t) => t.key === activeType);
+
+  const handleTabKeyDown = useCallback(
+    (e: React.KeyboardEvent, index: number) => {
+      let nextIndex: number | null = null;
+      if (e.key === "ArrowRight") {
+        nextIndex = (index + 1) % TYPE_TAB_KEYS.length;
+      } else if (e.key === "ArrowLeft") {
+        nextIndex =
+          (index - 1 + TYPE_TAB_KEYS.length) % TYPE_TAB_KEYS.length;
+      } else if (e.key === "Home") {
+        nextIndex = 0;
+      } else if (e.key === "End") {
+        nextIndex = TYPE_TAB_KEYS.length - 1;
+      }
+      if (nextIndex !== null) {
+        e.preventDefault();
+        tabRefs.current[nextIndex]?.focus();
+        handleTabChange(TYPE_TAB_KEYS[nextIndex].key);
+      }
+    },
+    [handleTabChange],
+  );
+
+  const panelId = `panel-${activeType ?? "all"}`;
+  const activeTabId = `tab-${activeType ?? "all"}`;
+
   if (!query.trim()) return null;
   if (loading) return <SearchSkeleton />;
-  if (error) return <ErrorState message={error} onRetry={() => window.location.reload()} />;
+  if (error) return <ErrorState message={error} onRetry={fetchData} />;
 
   return (
     <div className="flex flex-col gap-6 w-full max-w-4xl mx-auto pb-20 md:pb-10">
@@ -203,8 +224,9 @@ function SearchResultsInner() {
         role="tablist"
         aria-label={tA11y("filterByContentType")}
       >
-        {TYPE_TAB_KEYS.map((tab) => {
+        {TYPE_TAB_KEYS.map((tab, index) => {
           const isActive = activeType === tab.key;
+          const tabId = `tab-${tab.key ?? "all"}`;
           const count =
             tab.key === "briefs"
               ? filteredBriefs.length
@@ -217,15 +239,20 @@ function SearchResultsInner() {
           return (
             <button
               key={tab.labelKey}
+              ref={(el) => { tabRefs.current[index] = el; }}
+              id={tabId}
               type="button"
               role="tab"
               aria-selected={isActive}
+              aria-controls={panelId}
+              tabIndex={isActive ? 0 : -1}
               aria-label={
                 count !== null
                   ? `${t(`tabs.${tab.labelKey}`)}, ${t("resultCount", { count })}`
                   : t(`tabs.${tab.labelKey}`)
               }
               onClick={() => handleTabChange(tab.key)}
+              onKeyDown={(e) => handleTabKeyDown(e, index)}
               className={[
                 "relative shrink-0 px-3 pb-2.5 pt-1 text-sm font-medium transition-colors duration-150 cursor-pointer",
                 "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary",
@@ -245,7 +272,12 @@ function SearchResultsInner() {
       </div>
 
       {/* Results area */}
-      <div aria-live="polite">
+      <div
+        role="tabpanel"
+        id={panelId}
+        aria-labelledby={activeTabId}
+        aria-live="polite"
+      >
         {totalResults === 0 ? (
           <NoResults query={query} onClear={handleClearSearch} />
         ) : activeType === null ? (
@@ -474,7 +506,7 @@ function ViewAllLink({
       <button
         type="button"
         onClick={onClick}
-        className="text-sm font-semibold text-primary hover:underline cursor-pointer"
+        className="text-sm font-semibold text-primary hover:underline cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
       >
         {tCommon("viewAll", { count, label })} &rarr;
       </button>
@@ -497,12 +529,32 @@ function NoResults({
 }) {
   const t = useTranslations("search");
   const tCommon = useTranslations("common");
+  const router = useRouter();
   return (
-    <EmptyState
-      message={t("empty.message", { query })}
-      suggestion={t("empty.suggestion")}
-      action={{ label: tCommon("clearSearch"), onClick: onClear }}
-    />
+    <div className="flex flex-col items-center justify-center py-layout-lg text-center">
+      <p className="text-body text-text-secondary">
+        {t("empty.message", { query })}
+      </p>
+      <p className="mt-space-sm text-body-sm text-text-tertiary max-w-[320px]">
+        {t("empty.suggestion")}
+      </p>
+      <div className="mt-space-lg flex items-center gap-3">
+        <button
+          type="button"
+          onClick={onClear}
+          className="px-4 py-2 text-sm font-medium rounded-lg text-text-secondary hover:bg-bg-tertiary transition-colors cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+        >
+          {tCommon("clearSearch")}
+        </button>
+        <button
+          type="button"
+          onClick={() => router.push("/briefs")}
+          className="px-4 py-2 text-sm font-semibold rounded-lg text-primary hover:bg-primary/10 transition-colors cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+        >
+          {t("empty.browseBriefs")}
+        </button>
+      </div>
+    </div>
   );
 }
 
@@ -550,6 +602,16 @@ function SearchSkeleton() {
           ))}
         </div>
       </div>
+
+      {/* Section: Posts skeleton */}
+      <div className="flex flex-col gap-4">
+        <Skeleton variant="text" className="h-6 w-14" />
+        <div className="flex flex-col gap-5 max-w-3xl mx-auto w-full">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <Skeleton key={i} variant="card" className="h-36" />
+          ))}
+        </div>
+      </div>
     </div>
   );
 }
@@ -558,13 +620,8 @@ function SearchSkeleton() {
    SearchResultsPage - Suspense boundary for useSearchParams
    -------------------------------------------------------------------------- */
 export function SearchResultsPage() {
-  const t = useTranslations("search");
-
   return (
-    <section className="w-full px-4 py-6" aria-labelledby="search-heading">
-      <h1 id="search-heading" className="sr-only">
-        {t("heading")}
-      </h1>
+    <section className="w-full px-4 py-6">
       <Suspense fallback={<SearchSkeleton />}>
         <SearchResultsInner />
       </Suspense>

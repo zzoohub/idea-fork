@@ -7,6 +7,7 @@ interface FetchProductsParams {
   cursor?: string;
   limit?: number;
   period?: string;
+  q?: string;
 }
 
 export async function fetchProducts(params?: FetchProductsParams) {
@@ -16,6 +17,7 @@ export async function fetchProducts(params?: FetchProductsParams) {
   if (params?.cursor) sp.set("cursor", params.cursor);
   if (params?.limit) sp.set("limit", String(params.limit));
   if (params?.period) sp.set("period", params.period);
+  if (params?.q) sp.set("q", params.q);
 
   const qs = sp.toString();
   return apiFetch<ProductListItem[]>(`/products${qs ? `?${qs}` : ""}`);

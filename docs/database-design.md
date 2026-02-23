@@ -1,6 +1,6 @@
 # idea-fork — Database Design
 
-**Status**: Draft
+**Status**: Active
 **Database**: PostgreSQL 16 (Neon serverless)
 **SADD Reference**: [docs/design-doc.md](/docs/design-doc.md)
 
@@ -26,6 +26,7 @@
 | Brief listing | Sort by published_at + keyset paginate | High |
 | Brief detail | Brief + source posts (denormalized in JSONB) | High |
 | Product listing | Sort by trending_score or complaint_count + paginate | Medium |
+| Product search | ILIKE on name/tagline/description + pg_trgm GIN index | Medium |
 | Product detail | Product + linked complaint posts | Medium |
 | Rating submission | INSERT with unique constraint (brief_id, session_id) | Low |
 | Pipeline: untagged posts | Filter by tagging_status = 'pending' | Low (batch) |
@@ -46,6 +47,8 @@ erDiagram
     brief ||--o{ rating : receives
     product ||--o{ product_post : linked_to
     post ||--o{ product_post : complaints_about
+    product ||--o{ product_tag : tagged_with
+    tag ||--o{ product_tag : applied_to_product
 
     post {
         bigint id PK
@@ -130,12 +133,17 @@ erDiagram
         text source
         text external_id UK
         text name
-        text slug UK
-        text description
+        text slug "UK (source, slug)"
         text tagline
+        text description
         text url
         text image_url
         text category
+    }
+
+    product_tag {
+        bigint product_id PK_FK
+        bigint tag_id PK_FK
     }
 
     product_post {
@@ -163,7 +171,7 @@ Full Mermaid source: [docs/erd.mermaid](/docs/erd.mermaid)
 
 Posts use `source` + `external_id` instead of Reddit-specific column names (`reddit_id`). This follows the SADD recommendation to "abstract data source layer for future platform additions" (Section 7, Risk Mitigation) with minimal overhead.
 
-- `source`: platform identifier (`reddit`, `app_store`, `play_store`)
+- `source`: platform identifier (`reddit`, `rss`, `app_store`, `play_store`)
 - `external_id`: unique ID on the source platform
 - `subreddit`: Reddit-specific metadata, nullable for non-Reddit sources
 - Unique constraint on `(source, external_id)` prevents duplicate ingestion across re-fetches
@@ -174,7 +182,7 @@ LLM classification splits into two storage strategies:
 
 | Classification | Storage | Rationale |
 |---|---|---|
-| `post_type` (complaint, feature_request, question) | Direct column with CHECK | Always exactly one value per post. Low cardinality, enumerable. |
+| `post_type` (10 types: need, complaint, feature_request, alternative_seeking, comparison, question, review, showcase, discussion, other) | Direct column with CHECK | Always exactly one value per post. Low cardinality, enumerable. |
 | `sentiment` (positive, negative, neutral, mixed) | Direct column with CHECK | Same as above. |
 | Category tags (SaaS, mobile app, etc.) | Separate `tag` table, many-to-many via `post_tag` | Open-ended, many-to-many. Primary feed filter target. |
 
@@ -216,17 +224,27 @@ This follows the SADD explicitly: "Pre-computed source post references stored in
 }
 ```
 
-### 3.4 Product: Product Hunt as Source
+### 3.4 Product: Multi-Source with Deduplication
 
-Products are ingested from the Product Hunt API. The `product` table follows the same external source pattern as `post`:
+Products are ingested from Product Hunt, App Store, and Play Store. The `product` table follows the same external source pattern as `post`:
 
-- `source`: platform identifier (`producthunt` for MVP). Extensible for future sources.
-- `external_id`: Product Hunt product ID. Unique constraint on `(source, external_id)` prevents duplicates.
-- `launched_at`: Product Hunt launch date, used for freshness ranking.
-- `tagline`: Short product description from Product Hunt (separate from longer `description`).
-- `url`: Product's own website URL (not the Product Hunt page).
+- `source`: platform identifier (`producthunt`, `app_store`, `play_store`).
+- `external_id`: Source-specific product ID. Unique constraint on `(source, external_id)` prevents duplicates.
+- `slug`: Unique per `(source, slug)` — not globally unique, since the same product may exist on multiple platforms.
+- `launched_at`: Product launch date, used for freshness ranking.
+- `tagline`: Short product description (separate from longer `description`). Null for Play Store sources.
+- `url`: Product's own website URL.
 
-Product-to-post linking (`product_post`) is populated by the pipeline via product name/keyword matching against complaint posts.
+**Deduplication:** Products with the same name (case-insensitive) across platforms are deduplicated at query time using `DISTINCT ON (lower(name))`. The `sources` array in the API response aggregates all platform sources for a product.
+
+**Product-to-post linking:** Products link to complaint posts via shared tags through the `product_tag` ↔ `post_tag` join path. The `product_tag` table links products to tags assigned by the pipeline; posts with matching tags are surfaced as related complaints.
+
+### 3.8 Product Tags
+
+The `product_tag` junction table links products to tags, enabling:
+- Product filtering by category tags on the listing page
+- Tag-based complaint matching (product's tags → posts with the same tags)
+- Tags are assigned during pipeline ingestion
 
 ### 3.5 Brief Rating Counters
 
@@ -315,8 +333,11 @@ All post indexes are partial (`WHERE deleted_at IS NULL`) to exclude soft-delete
 |---|---|---|
 | `idx_product_trending` | B-tree | Product listing sorted by trending score |
 | `idx_product_complaints` | B-tree | Product listing sorted by complaint count |
-| `idx_product_source_external` | B-tree (unique) | Upsert on `(source, external_id)` for Product Hunt ingestion |
+| `idx_product_launched` | B-tree (partial) | Product listing sorted by launched_at (WHERE launched_at IS NOT NULL) |
+| `idx_product_name_trgm` | GIN/pg_trgm | Product search by name (`ILIKE '%term%'`) |
+| `idx_product_source_external` | B-tree (unique) | Upsert on `(source, external_id)` for ingestion |
 | `idx_product_post_post_id` | B-tree | Reverse: find products linked to a post |
+| `idx_product_tag_tag_id` | B-tree | Reverse: find products by tag |
 
 ### Pipeline Performance
 
@@ -374,8 +395,15 @@ DO UPDATE SET score = EXCLUDED.score,
 
 | File | Content |
 |---|---|
-| `api/migrations/001_initial_schema.sql` | Full DDL: extensions, functions, tables, indexes, triggers, comments |
-| `api/migrations/001_initial_schema.rollback.sql` | Drops all objects in reverse dependency order |
+| `db/migrations/001_initial_schema.sql` | Full DDL: extensions, functions, tables, indexes, triggers, comments |
+| `db/migrations/001_initial_schema.rollback.sql` | Drops all objects in reverse dependency order |
+| `db/migrations/002_product_search.sql` | Add pg_trgm GIN index on product.name for ILIKE search |
+| `services/api/alembic/versions/a31dbf9701cd_initial_schema.py` | Alembic initial schema (matches 001_initial_schema.sql) |
+| `services/api/alembic/versions/9dacea10fdae_add_rss_to_post_source_check.py` | Add `rss` to post source CHECK |
+| `services/api/alembic/versions/b4e2a7c1f3d0_add_product_tag.py` | Add `product_tag` junction table |
+| `services/api/alembic/versions/c7f3a2b8d910_expand_post_type_check.py` | Expand post_type to 10 values |
+| `services/api/alembic/versions/c3e82ceda34a_expand_product_source_check.py` | Add `app_store`, `play_store` to product source CHECK |
+| `services/api/alembic/versions/61cd45beede7_product_slug_unique_per_source.py` | Change product slug unique to `(source, slug)` |
 
 ### Post-Migration Checklist
 

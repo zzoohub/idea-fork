@@ -36,9 +36,10 @@ async def list_trending_tags(
 async def list_product_tags(
     request: Request,
     response: Response,
+    days: int = Query(7, ge=1, le=90),
     limit: int = Query(20, ge=1, le=60),
 ):
     svc = _get_service(request)
-    tags = await svc.list_product_tags(limit)
+    tags = await svc.list_product_tags(days, limit)
     cache_collection(response)
     return envelope([TagResponseData.from_domain(t).model_dump() for t in tags])

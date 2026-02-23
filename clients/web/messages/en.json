@@ -44,11 +44,12 @@
     "breadcrumb": "Breadcrumb",
     "complaintStatistics": "Complaint statistics",
     "switchToKorean": "Switch to Korean",
-    "switchToEnglish": "Switch to English"
+    "switchToEnglish": "Switch to English",
+    "searchDialog": "Search"
   },
   "navigation": {
     "feed": "Feed",
-    "briefs": "Briefs",
+    "briefs": "AI Briefs",
     "products": "Products"
   },
   "feed": {
@@ -76,7 +77,7 @@
   },
   "briefs": {
     "heading": "AI Briefs",
-    "description": "Product opportunities synthesized from real user complaints across Reddit, Twitter, and other platforms.",
+    "description": "AI-generated product opportunities from real user pain.",
     "sortOptions": {
       "trending": "Trending",
       "newest": "Newest",
@@ -103,10 +104,11 @@
   },
   "products": {
     "heading": "Products",
-    "description": "Explore products and uncover gaps worth building for.",
+    "description": "Spot rising products and user signals, and find hints for what to build next.",
     "sortOptions": {
       "mostSignals": "Most Signals",
-      "trending": "Trending"
+      "trending": "Trending",
+      "newest": "Newest"
     },
     "periods": {
       "all": "All time",
@@ -135,6 +137,12 @@
     "userComplaints": "User Complaints",
     "sortRecent": "Most Recent",
     "sortPopular": "Most Popular",
+    "sortCritical": "Most Critical",
+    "sourceIn": "in {source}",
+    "complaintsEmpty": "No complaints found.",
+    "complaintsEmptySuggestion": "Try removing a filter or check back later.",
+    "browseProducts": "Browse products",
+    "complaintThemes": "Complaint Themes",
     "errors": {
       "loadFailed": "Failed to load product.",
       "notFound": "Product not found."
@@ -169,12 +177,13 @@
     },
     "empty": {
       "message": "No results for \"{query}\"",
-      "suggestion": "Try different keywords or check your spelling."
+      "suggestion": "Try different keywords or check your spelling.",
+      "browseBriefs": "Browse Briefs"
     }
   },
   "briefCard": {
     "readBrief": "Read Brief",
-    "complaints": "{count, plural, one {# complaint} other {# complaints}}",
+    "complaints": "{count, plural, one {# signal} other {# signals}}",
     "communities": "across {count, plural, one {# community} other {# communities}}"
   },
   "productCard": {
@@ -215,13 +224,15 @@
     "criticalComplaints": "Critical Complaints",
     "topIssue": "Top issue: {name}",
     "requiresAttention": "Requires immediate attention",
-    "sentimentScore": "Sentiment Score",
-    "basedOnAnalysis": "Based on recent analysis",
-    "sentimentAriaLabel": "Sentiment score: {score} out of 100"
+    "frustrationRate": "Frustration Rate",
+    "frustrationAriaLabel": "Frustration rate: {rate}%",
+    "negativeOfTotal": "{rate}% of mentions are negative",
+    "noData": "N/A"
   },
   "productHeader": {
     "share": "Share",
-    "copied": "Copied!"
+    "copied": "Copied!",
+    "launchedAt": "Launched {time}"
   },
   "briefRating": {
     "wasUseful": "Was this brief useful?",

@@ -52,3 +52,4 @@ class ProductListParams:
     sort: str = "-trending_score"
     category: str | None = None
     period: str | None = None
+    q: str | None = None

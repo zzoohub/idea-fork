@@ -181,6 +181,7 @@ def make_product(
     complaint_count=10,
     trending_score=8.5,
     tags=None,
+    launched_at=None,
 ):
     return Product(
         id=id,
@@ -193,7 +194,7 @@ def make_product(
         url="https://notion.so",
         image_url=None,
         category=category,
-        launched_at=None,
+        launched_at=launched_at,
         complaint_count=complaint_count,
         trending_score=trending_score,
         tags=tags or [],

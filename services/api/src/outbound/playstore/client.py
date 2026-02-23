@@ -49,17 +49,16 @@ class PlayStoreClient:
                     seen.add(app_id)
 
                     # Fetch detail to get released date
+                    released = None
                     try:
                         detail = await asyncio.to_thread(gps.app, app_id)
                         await asyncio.sleep(0.5)
+                        released = _parse_released(detail.get("released"))
                     except Exception:
                         logger.warning(
-                            "Play Store detail fetch failed for %s, skipping",
-                            app_id,
+                            "Play Store detail fetch failed for %s", app_id
                         )
-                        continue
 
-                    released = _parse_released(detail.get("released"))
                     if released is not None and released < cutoff:
                         continue
 

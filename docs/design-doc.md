@@ -1,6 +1,6 @@
 # idea-fork — Software Architecture Design Document
 
-**Status**: Draft
+**Status**: Active
 **Author**: zzoo
 **Date**: 2026-02-20
 **PRD Reference**: [docs/prd.md](/docs/prd.md)
@@ -55,13 +55,13 @@ Builders (indie hackers, early-stage founders, PMs) spend 5+ hours/week manually
 - **Reddit API** — source of raw user complaints (ingestion target).
 - **RSS Feeds** — tech news from Hacker News, TechCrunch, etc. (ingestion target).
 - **Product Hunt API** — source of trending/new products (ingestion target + competitive context for briefs).
+- **App Store / Google Play** — source of app reviews, ratings, AND product listings (dual role: both post and product ingestion).
 - **Google Trends** — search interest data included as demand signals in briefs.
-- **App Store / Google Play** — source of app reviews and ratings (ingestion target).
 - **Google Gemini API** — tagging (Gemini Flash), embedding (Gemini Embedding), brief synthesis (Gemini Flash). HDBSCAN for clustering (local, no API call).
 
 **Data flows:**
 - **Inbound (complaints)**: Reddit API, RSS Feeds, App Store, Google Play → Data Pipeline → PostgreSQL (raw posts, tags, clusters, briefs)
-- **Inbound (products)**: Product Hunt API → Data Pipeline → PostgreSQL (products + competitive context in briefs)
+- **Inbound (products)**: Product Hunt API, App Store, Google Play → Data Pipeline → PostgreSQL (products + tag-based complaint linking)
 - **Inbound (trends)**: Google Trends → Data Pipeline → demand signals in briefs
 - **Read path**: User → Web App (Next.js SSR) → API Server → PostgreSQL → rendered page
 - **Write path (MVP)**: Brief ratings only — User → API → PostgreSQL
@@ -160,8 +160,9 @@ The API has meaningful domain logic (not just CRUD) — tagging rules, clusterin
 External Services:
 - Reddit API — data source for user complaints (called by pipeline)
 - Product Hunt API — data source for trending/new products (called by pipeline)
-- App Store / Google Play — data source for app reviews (called by pipeline)
-- LLM APIs (Anthropic, OpenAI) — tagging, clustering, brief generation (called by pipeline)
+- App Store / Google Play — data source for app reviews AND product listings (called by pipeline)
+- RSS Feeds — tech news articles from HN, TechCrunch, etc. (called by pipeline)
+- Google Gemini API — tagging (Flash), embedding, brief synthesis (called by pipeline)
 - PostHog — user analytics (client-side + server-side events)
 - Sentry — error tracking (both web and API)
 ```
@@ -181,7 +182,7 @@ The API server is organized into domain modules following hexagonal architecture
 
 **Module relationships:**
 - `brief` depends on `post` (briefs are synthesized from post clusters)
-- `product` depends on `post` (products are paired with complaints)
+- `product` depends on `post` via `tag` (products are paired with complaints through shared tags via `product_tag` and `post_tag`)
 - `pipeline` writes to `post`, `brief`, and `product` — it's the data producer
 - Feed/Brief/Product read APIs are independent of each other (no cross-module queries on the read path)
 
@@ -210,7 +211,7 @@ Google Play reviews ┘  store in DB         update DB (tags +              stor
 
 Tagging assigns each post a `post_type` from 10 categories:
 - **Actionable** (7): `need`, `complaint`, `feature_request`, `alternative_seeking`, `comparison`, `question`, `review`
-- **Non-actionable** (3): `general_discussion`, `praise`, `showcase`
+- **Non-actionable** (3): `showcase`, `discussion`, `other`
 
 Only actionable post types are included as clustering input (ACTIONABLE_POST_TYPES filter). Non-actionable posts remain in the feed but are excluded from brief generation.
 ```
@@ -220,10 +221,11 @@ Clustering uses Gemini Embedding API for vectorization + HDBSCAN (scikit-learn) 
 **Flow 1b: Pipeline — Product Hunt → products**
 
 ```
-Product Hunt API ──fetch──▶ Trending/new products ──store in DB──▶ products table
-                                                         │
-                                              link to complaint posts
-                                              via product name matching
+Product Hunt API ──┐
+App Store ─────────┤──fetch──▶ Products ──store in DB──▶ products table
+Google Play ───────┘                          │
+                                   link to complaint posts
+                                   via product_tag → post_tag matching
 ```
 
 Consistency: Pipeline runs as a single transaction per batch. Posts are tagged, then clustered, then briefs are generated — sequential within a pipeline run. Eventual consistency is acceptable (users see new data on next page load).
@@ -440,7 +442,7 @@ Feature flags (via PostHog) for:
 | 2 | Brief generation — one LLM call per brief or chain-of-thought with multiple calls? | A: Single call (cheaper, faster) B: Multi-step (research → outline → write, higher quality) | Test both, compare quality ratings | zzoo |
 | 3 | Feed search — PostgreSQL full-text search (pg_trgm + tsvector) vs. external search service? | A: PostgreSQL built-in (simpler, no extra infra) B: Typesense/Meilisearch (better relevance, more ops) | Evaluate pg FTS quality on sample data | zzoo |
 | 4 | Pipeline scheduling — hourly vs. daily? | A: Hourly (fresher data, higher LLM cost) B: Daily (cheaper, acceptable for MVP) | Estimate LLM cost per run, user expectations for freshness | zzoo |
-| 5 | Korean localization — MVP or post-MVP? | A: MVP (next-intl from day one) B: Post-MVP (English only first) | Target audience analysis — Korean indie hackers vs. global | zzoo |
+| ~~5~~ | ~~Korean localization~~ — **Resolved**: MVP. `next-intl` with Korean + English from day one. | — | — | zzoo |
 
 ---
 

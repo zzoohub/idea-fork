@@ -21,7 +21,7 @@ class GoogleTrendsClient:
             self._last_call = time.monotonic()
             return await asyncio.to_thread(self._fetch, keywords)
         except Exception:
-            logger.exception("Google Trends fetch failed for %s", keywords)
+            logger.warning("Google Trends fetch failed for %s (skipped)", keywords)
             return {}
 
     def _fetch(self, keywords: list[str]) -> dict[str, Any]:

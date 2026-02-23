@@ -6,5 +6,5 @@ export async function fetchTags() {
 }
 
 export async function fetchProductTags() {
-  return apiFetch<Tag[]>("/tags/by-products?limit=20");
+  return apiFetch<Tag[]>("/tags/by-products?days=7&limit=20");
 }

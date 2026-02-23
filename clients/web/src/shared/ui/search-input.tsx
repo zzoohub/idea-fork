@@ -60,8 +60,8 @@ export function SearchInput({
           type="button"
           onClick={onClear}
           className={[
-            "absolute right-2 flex items-center justify-center",
-            "h-7 w-7 rounded-full",
+            "absolute right-1 flex items-center justify-center",
+            "size-11 rounded-full",
             "text-text-tertiary hover:text-text-secondary hover:bg-slate-200 dark:hover:bg-[#232b36]",
             "transition-colors cursor-pointer",
           ].join(" ")}

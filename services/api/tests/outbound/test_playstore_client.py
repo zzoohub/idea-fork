@@ -184,8 +184,8 @@ async def test_search_apps_includes_app_when_released_is_none():
 
 
 @pytest.mark.asyncio
-async def test_search_apps_skips_app_when_detail_fetch_fails():
-    """When gps.app() fails for an app, that app is skipped."""
+async def test_search_apps_includes_app_when_detail_fetch_fails():
+    """When gps.app() fails, the app is still included (with launched_at=None)."""
     item = _gps_item()
 
     call_count = 0
@@ -202,7 +202,8 @@ async def test_search_apps_skips_app_when_detail_fetch_fails():
     with patch("outbound.playstore.client.asyncio.to_thread", side_effect=to_thread_side_effect):
         result = await client.search_apps(["productivity"], max_age_days=365)
 
-    assert result == []
+    assert len(result) == 1
+    assert result[0].launched_at is None
 
 
 @pytest.mark.asyncio

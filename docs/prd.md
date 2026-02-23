@@ -52,8 +52,9 @@ idea-fork aggregates user complaints, clusters them by theme, and generates prod
 ### Feed
 - [P0] Paginated complaint stream from Reddit, App Store, Google Play
 - [P0] Post card: title/snippet, source, date, tags, link to original
-- [P0] Post type classification (10 types via LLM, 7 actionable as filter tabs)
+- [P0] Post type classification (10 types via LLM, 7 actionable as filter tabs): `need`, `complaint`, `feature_request`, `alternative_seeking`, `comparison`, `question`, `review` (actionable) + `showcase`, `discussion`, `other` (non-actionable)
 - [P0] Filter by post type + tag/category
+- [P0] Search results page (`/search`) with tabs: All, Briefs, Products, Posts
 - [P1] Filter by source, sort by recency/trending, keyword search
 
 ### AI Briefs
@@ -62,11 +63,11 @@ idea-fork aggregates user complaints, clusters them by theme, and generates prod
 - [P1] Rating (thumbs up/down, no login)
 
 ### Products
-- [P0] Trending products from Product Hunt with complaint pairing
-- [P0] Product detail: info, complaint summary, source posts
+- [P0] Products from Product Hunt, App Store, Play Store with complaint pairing via tag matching
+- [P0] Product detail: header, complaint summary (metrics: total mentions, critical complaints, frustration rate), complaint themes, user complaints (sort by recent/popular/critical, filter by post type), related briefs
 
 ### Data Pipeline
-- [P0] Reddit + App Store + Google Play ingestion, Product Hunt products
+- [P0] Reddit + RSS + App Store + Google Play ingestion; Product Hunt + App Store + Play Store products
 - [P0] Gemini LLM tagging (post_type, topics, sentiment)
 - [P0] Embedding clustering (Gemini + HDBSCAN) + brief generation with attribution
 - [P0] Google Trends integration
@@ -80,11 +81,11 @@ idea-fork aggregates user complaints, clusters them by theme, and generates prod
 
 ## 6. Scope
 
-**In:** Feed, briefs, products, data pipeline, no-login browsing, responsive web (Next.js + FastAPI).
+**In:** Feed, briefs, products, search, data pipeline, no-login browsing, responsive web (Next.js + FastAPI), Korean/English i18n.
 
 **Out:** Business plan generation, analytics dashboards, marketing automation, real-time alerting, native mobile, paid tier (validate demand first).
 
-**Future:** Premium features, more data sources (X, HN, SO, G2), brief export, collaboration, Korean localization.
+**Future:** Premium features, more data sources (X, HN, SO, G2), brief export, collaboration.
 
 ---
 

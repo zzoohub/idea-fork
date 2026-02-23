@@ -1,7 +1,7 @@
 # idea-fork -- UX Design
 
 **Status:** Active
-**Last Updated:** 2026-02-23
+**Last Updated:** 2026-02-24
 
 ---
 
@@ -73,23 +73,45 @@ Grid (1-3 columns). Filter by category chips, sort by signals/trending. Each car
 
 ### 3.5 Product Detail (`/products/[slug]`)
 
-Header (icon, name, category, link), Complaint Summary (themes ranked by count), User Complaints list, Related Brief.
+**Layout:** Single column, max-w-6xl. Breadcrumbs → Header → Complaint Summary → Complaint Themes → User Complaints → Related Briefs.
+
+**Sections:**
+
+1. **Breadcrumbs** — Products > {product name}
+2. **Product Header** — Icon (96px), name, category badge, tagline, description, launched date, website link
+3. **Complaint Summary** — 3 metric cards in a responsive grid (1→3 columns):
+   - Total Mentions (count + optional trend badge)
+   - Critical Complaints (negative sentiment count + top theme name)
+   - Frustration Rate (negative/total percentage as progress bar, 0-100% clamped, null → "N/A")
+4. **Complaint Themes** — Clickable chips showing `post_type` breakdown with counts (e.g., "Complaint (42)"). Clicking filters the complaint list. Computed client-side from post data.
+5. **User Complaints** — Post cards with sort controls + post type filter chips:
+   - **Sort:** Recent (by date) | Popular (by score) | Critical (by severity: negative sentiment → complaint/need → feature_request → question)
+   - **Filter:** All + one chip per available post_type (independent of themes section)
+   - **Cards:** Title, source icon + label (Reddit r/subreddit, App Store, Play Store, etc.), relative time, sentiment badge (negative → "Frustrated"), expandable body (line-clamp-2 → full), score, external link
+   - **Pagination:** Show first 3, then "Show all N complaints" / "Show fewer" toggle
+   - **Empty state:** Message + suggestion + clear filter / browse products action
+6. **Related Briefs** — Grid of brief cards (1→3 columns). Title, summary, source count, "Read Brief →" link. Empty state with link to browse all briefs.
 
 ### 3.6 Search Results (`/search?q=...`)
 
 **Entry points:** Desktop header input (Enter), mobile search overlay (Enter), direct URL.
 
-**Tabs:** `All | Briefs (N) | Products (N) | Posts (N)` -- URL-driven via `?type=` param.
+**Tabs:** `All | Briefs (N) | Products (N) | Posts (N)` -- URL-driven via `?type=` param. Implements WAI-ARIA Tabs pattern: roving tabindex (Arrow Left/Right, Home/End), `role="tabpanel"` with `aria-labelledby`.
 
 **"All" tab:** Grouped sections (Briefs, Products, Posts) with max 3 items each + "View all N" links. Fixed order: Briefs > Products > Posts.
 
 **Type tabs:** Full list using same grid/list layout as listing pages.
 
-**Empty state:** "No results for '{query}'" + suggestion + "Clear Search" button.
+**Empty state:** "No results for '{query}'" + suggestion + dual actions: "Clear Search" (secondary) + "Browse Briefs" (primary, links to `/briefs`). Keeps users in the discovery loop instead of dead-ending.
+
+**Skeleton:** Matches "All" tab layout -- header, 4 tab placeholders, Briefs grid (3 cards), Products grid (3 cards), Posts list (3 cards). Prevents layout shift on load.
+
+**Error recovery:** Inline refetch (no full page reload). Preserves scroll position and client state.
 
 **Filtering strategy:**
 - Posts: backend `q` param search.
-- Briefs/Products: fetched in bulk, filtered client-side with case-insensitive `includes()` on title, summary, name, description, tagline, category.
+- Products: backend `q` param search.
+- Briefs: fetched in bulk, filtered client-side with case-insensitive `includes()` on title, summary.
 
 ---
 
@@ -113,7 +135,7 @@ Inline thumbs up/down at bottom. No modal, no login. Thumbs down shows optional 
 
 ### Search
 
-Submit on Enter only (no live dropdown, no autocomplete). Desktop input syncs with URL `q` param on `/search` page. Mobile overlay closes + navigates on submit.
+Submit on Enter only (no live dropdown, no autocomplete). Desktop: `<form role="search">` with `type="search"` input, syncs with URL `q` param on `/search` page. Mobile: full-screen overlay (`role="dialog"`, `aria-modal`) with auto-focus, Escape to close, body scroll lock, focus restoration. Overlay closes + navigates on submit.
 
 ---
 
@@ -137,7 +159,7 @@ Desktop: multi-column card grids, max-w-1200px. Detail pages: max-w-720px.
 - Touch targets: 44x44pt minimum.
 - Focus: `focus-visible` outline on all interactive elements.
 - Color never sole indicator (always icon/text + color).
-- Keyboard: Tab order, Enter/Space activation, Escape to close.
-- Screen readers: `aria-label`, `aria-expanded`, `aria-live`, `role="tablist"`.
+- Keyboard: Tab order, Enter/Space activation, Escape to close. Tabs use roving tabindex (Arrow keys, Home/End).
+- Screen readers: `aria-label`, `aria-expanded`, `aria-live`, `role="tablist"`, `role="tabpanel"` with `aria-labelledby`. Search landmark via `role="search"`.
 - `prefers-reduced-motion` respected.
 - i18n: `next-intl` for Korean/English.

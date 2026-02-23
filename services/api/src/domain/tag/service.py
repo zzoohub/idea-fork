@@ -14,5 +14,5 @@ class TagService:
     ) -> list[Tag]:
         return await self._repo.list_trending_tags(days, limit)
 
-    async def list_product_tags(self, limit: int = 20) -> list[Tag]:
-        return await self._repo.list_product_tags(limit)
+    async def list_product_tags(self, days: int = 7, limit: int = 20) -> list[Tag]:
+        return await self._repo.list_product_tags(days, limit)
