@@ -4,7 +4,7 @@ import pytest
 
 from domain.post.models import PostTag
 from domain.product.errors import ProductNotFoundError
-from domain.product.models import Product, ProductListParams, ProductMetrics
+from domain.product.models import Product, ProductListParams, ProductMetrics, RelatedBrief
 from domain.product.service import ProductService
 from tests.conftest import make_post, make_product
 
@@ -30,15 +30,18 @@ async def test_get_product_by_slug_found_returns_product_and_posts():
     repo.get_product_by_slug = AsyncMock(return_value=product)
     repo.get_product_posts = AsyncMock(return_value=posts)
     repo.get_product_metrics = AsyncMock(return_value=metrics)
+    repo.get_related_briefs = AsyncMock(return_value=[])
     svc = ProductService(repo)
 
-    result_product, result_posts, result_metrics = await svc.get_product_by_slug("notion", posts_limit=5)
+    result_product, result_posts, result_metrics, result_briefs = await svc.get_product_by_slug("notion", posts_limit=5)
     assert result_product.slug == "notion"
     assert len(result_posts) == 2
     assert result_metrics.total_mentions == 2
+    assert result_briefs == []
     repo.get_product_by_slug.assert_called_once_with("notion")
     repo.get_product_posts.assert_called_once_with(10, 5)
     repo.get_product_metrics.assert_called_once_with(10)
+    repo.get_related_briefs.assert_called_once_with(10)
 
 
 @pytest.mark.asyncio
@@ -58,6 +61,7 @@ async def test_get_product_by_slug_uses_default_posts_limit():
     repo = AsyncMock()
     repo.get_product_by_slug = AsyncMock(return_value=product)
     repo.get_product_posts = AsyncMock(return_value=[])
+    repo.get_related_briefs = AsyncMock(return_value=[])
     svc = ProductService(repo)
 
     await svc.get_product_by_slug("notion")
@@ -130,9 +134,10 @@ async def test_get_product_by_slug_returns_metrics_from_repo():
     repo.get_product_by_slug = AsyncMock(return_value=product)
     repo.get_product_posts = AsyncMock(return_value=[])
     repo.get_product_metrics = AsyncMock(return_value=expected_metrics)
+    repo.get_related_briefs = AsyncMock(return_value=[])
     svc = ProductService(repo)
 
-    _, _, metrics = await svc.get_product_by_slug("stripe")
+    _, _, metrics, _ = await svc.get_product_by_slug("stripe")
     assert metrics is expected_metrics
 
 
@@ -146,8 +151,9 @@ async def test_get_product_by_slug_with_tags_in_product():
     repo.get_product_by_slug = AsyncMock(return_value=product)
     repo.get_product_posts = AsyncMock(return_value=[])
     repo.get_product_metrics = AsyncMock(return_value=metrics)
+    repo.get_related_briefs = AsyncMock(return_value=[])
     svc = ProductService(repo)
 
-    result_product, _, _ = await svc.get_product_by_slug("stripe")
+    result_product, _, _, _ = await svc.get_product_by_slug("stripe")
     assert len(result_product.tags) == 1
     assert result_product.tags[0].slug == "payments"

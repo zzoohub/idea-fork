@@ -35,7 +35,11 @@ class ProductHuntClient(Protocol):
 
 class AppStoreClient(Protocol):
     async def search_apps(
-        self, keywords: list[str], limit: int = 20
+        self, keywords: list[str], limit: int = 20, max_age_days: int = 365
+    ) -> list[RawProduct]: ...
+
+    async def fetch_new_apps(
+        self, limit: int = 25, genre_id: int | None = None
     ) -> list[RawProduct]: ...
 
     async def fetch_reviews(
@@ -45,7 +49,7 @@ class AppStoreClient(Protocol):
 
 class PlayStoreClient(Protocol):
     async def search_apps(
-        self, keywords: list[str], limit: int = 20
+        self, keywords: list[str], limit: int = 20, max_age_days: int = 365
     ) -> list[RawProduct]: ...
 
     async def fetch_reviews(

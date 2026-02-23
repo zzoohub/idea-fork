@@ -31,6 +31,15 @@ class Product:
 
 
 @dataclass(frozen=True)
+class RelatedBrief:
+    id: int
+    slug: str
+    title: str
+    summary: str
+    source_count: int
+
+
+@dataclass(frozen=True)
 class ProductWithPosts:
     product: Product
     posts: list[Post] = field(default_factory=list)

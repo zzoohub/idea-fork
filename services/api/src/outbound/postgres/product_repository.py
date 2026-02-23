@@ -2,7 +2,7 @@ from sqlalchemy import and_, func, or_, select, text
 from sqlalchemy.orm import aliased
 
 from domain.post.models import Post, PostTag
-from domain.product.models import Product, ProductListParams, ProductMetrics
+from domain.product.models import Product, ProductListParams, ProductMetrics, RelatedBrief
 from outbound.postgres.database import Database
 from outbound.postgres.mapper import post_to_domain, product_to_domain
 from outbound.postgres.models import (
@@ -218,6 +218,34 @@ class PostgresProductRepository:
                 negative_count=negative,
                 sentiment_score=score,
             )
+
+    async def get_related_briefs(
+        self, product_id: int, limit: int = 3
+    ) -> list[RelatedBrief]:
+        sql = text("""
+            SELECT DISTINCT b.id, b.slug, b.title, b.summary, b.source_count
+            FROM brief b
+            JOIN brief_source bs ON bs.brief_id = b.id
+            JOIN product_post pp ON pp.post_id = bs.post_id
+            WHERE pp.product_id = :product_id
+              AND b.status = 'published'
+            ORDER BY b.source_count DESC
+            LIMIT :limit
+        """)
+        async with self._db.session() as session:
+            result = await session.execute(
+                sql, {"product_id": product_id, "limit": limit}
+            )
+            return [
+                RelatedBrief(
+                    id=row.id,
+                    slug=row.slug,
+                    title=row.title,
+                    summary=row.summary,
+                    source_count=row.source_count,
+                )
+                for row in result.fetchall()
+            ]
 
     def _apply_cursor(self, stmt, cursor: str | None, sort_col):
         if cursor is None:

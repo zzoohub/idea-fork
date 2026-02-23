@@ -61,7 +61,10 @@
       "alternative": "Alternative",
       "comparison": "Comparison",
       "question": "Question",
-      "review": "Review"
+      "review": "Review",
+      "showcase": "Showcase",
+      "discussion": "Discussion",
+      "other": "Other"
     },
     "errors": {
       "loadFailed": "Failed to load posts."
@@ -136,6 +139,12 @@
       "loadFailed": "Failed to load product.",
       "notFound": "Product not found."
     },
+    "relatedBriefs": "Related Briefs",
+    "relatedBriefsEmpty": "No related briefs yet.",
+    "relatedBriefsSuggestion": "Briefs are generated as more complaints are analyzed.",
+    "viewAllBriefs": "Browse all briefs",
+    "readBrief": "Read Brief",
+    "sources": "{count, plural, one {# source} other {# sources}}",
     "sentiment": {
       "frustrated": "Frustrated",
       "featureRequest": "Feature Request",
@@ -211,7 +220,8 @@
     "sentimentAriaLabel": "Sentiment score: {score} out of 100"
   },
   "productHeader": {
-    "trackChanges": "Track Changes"
+    "share": "Share",
+    "copied": "Copied!"
   },
   "briefRating": {
     "wasUseful": "Was this brief useful?",

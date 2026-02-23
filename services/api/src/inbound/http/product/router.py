@@ -7,6 +7,7 @@ from inbound.http.product.response import (
     ProductListResponseData,
     ProductMetricsResponseData,
     ProductPostResponseData,
+    RelatedBriefResponseData,
 )
 from inbound.http.response import cache_collection, cache_detail, envelope
 from shared.pagination import encode_cursor
@@ -53,7 +54,7 @@ async def list_products(
 async def get_product(slug: str, request: Request, response: Response):
     svc = _get_service(request)
     posts_limit = 10
-    product, posts, metrics = await svc.get_product_by_slug(slug, posts_limit)
+    product, posts, metrics, related_briefs = await svc.get_product_by_slug(slug, posts_limit)
     posts_has_next = len(posts) > posts_limit
     post_items = posts[:posts_limit]
 
@@ -64,6 +65,10 @@ async def get_product(slug: str, request: Request, response: Response):
     data["posts"] = [
         ProductPostResponseData.from_domain(p).model_dump(mode="json")
         for p in post_items
+    ]
+    data["related_briefs"] = [
+        RelatedBriefResponseData.from_domain(b).model_dump(mode="json")
+        for b in related_briefs
     ]
 
     meta: dict = {"posts_has_next": posts_has_next, "posts_cursor": None}

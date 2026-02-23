@@ -6,16 +6,51 @@ import { Link } from "@/src/shared/i18n/navigation";
 import { Icon } from "@/src/shared/ui/icon";
 import { Badge } from "@/src/shared/ui/badge";
 import { ErrorState } from "@/src/shared/ui/error-state";
+import { EmptyState } from "@/src/shared/ui/empty-state";
 import {
   ProductHeader,
   ComplaintSummary,
 } from "@/src/entities/product/ui";
 import { isSafeUrl } from "@/src/shared/lib/sanitize-url";
 import { fetchProduct } from "@/src/entities/product/api";
-import type { ProductDetail, ProductPost } from "@/src/shared/api";
+import type { ProductDetail, ProductPost, RelatedBrief } from "@/src/shared/api";
 import { formatRelativeTime } from "@/src/shared/lib/format-relative-time";
 
 const INITIAL_VISIBLE_COUNT = 4;
+
+/* --------------------------------------------------------------------------
+   Compute themes from post_type breakdown
+   -------------------------------------------------------------------------- */
+const POST_TYPE_LABEL_KEY: Record<string, string> = {
+  need: "need",
+  complaint: "complaint",
+  feature_request: "featureRequest",
+  alternative_seeking: "alternative",
+  comparison: "comparison",
+  question: "question",
+  review: "review",
+  showcase: "showcase",
+  discussion: "discussion",
+  other: "other",
+};
+
+function computeThemes(
+  posts: ProductPost[],
+  getLabel: (key: string) => string,
+): { name: string; count: number }[] {
+  const counts = new Map<string, number>();
+  for (const post of posts) {
+    const pt = post.post_type;
+    if (!pt) continue;
+    counts.set(pt, (counts.get(pt) ?? 0) + 1);
+  }
+  return [...counts.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .map(([type, count]) => ({
+      name: getLabel(POST_TYPE_LABEL_KEY[type] ?? type),
+      count,
+    }));
+}
 
 /* --------------------------------------------------------------------------
    Sentiment config
@@ -76,6 +111,7 @@ export function ProductDetailPage({ slug }: ProductDetailPageProps) {
   const t = useTranslations("productDetail");
   const tCommon = useTranslations("common");
   const tA11y = useTranslations("accessibility");
+  const tFeed = useTranslations("feed.postTypes");
 
   useEffect(() => {
     let cancelled = false;
@@ -148,14 +184,14 @@ export function ProductDetailPage({ slug }: ProductDetailPageProps) {
           category={product.category ?? tCommon("uncategorized")}
           description={product.description ?? undefined}
           websiteUrl={product.url ?? undefined}
-          status="Active"
+
         />
 
         <ComplaintSummary
           totalMentions={product.metrics?.total_mentions ?? product.complaint_count}
-          criticalComplaints={product.posts.length}
+          criticalComplaints={product.metrics?.negative_count ?? product.posts.length}
           sentimentScore={product.metrics?.sentiment_score ?? Math.round(product.trending_score)}
-          themes={[]}
+          themes={computeThemes(product.posts, (key) => tFeed(key as never))}
         />
       </div>
 
@@ -314,6 +350,54 @@ export function ProductDetailPage({ slug }: ProductDetailPageProps) {
                 : tCommon("showAllComplaints", { count: sortedPosts.length })}
             </button>
           </div>
+        )}
+      </section>
+
+      {/* Related Briefs */}
+      <section aria-labelledby="related-briefs-heading" className="mt-10">
+        <h2
+          id="related-briefs-heading"
+          className="text-xl font-bold text-slate-900 dark:text-slate-50 mb-6"
+        >
+          {t("relatedBriefs")}
+        </h2>
+
+        {product.related_briefs.length > 0 ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {product.related_briefs.map((brief) => (
+              <Link
+                key={brief.id}
+                href={`/briefs/${brief.slug}`}
+                className="group block p-5 rounded-2xl bg-white dark:bg-[#18212F] border border-slate-200 dark:border-[#283039] hover:border-[#137fec]/50 transition-all duration-200 no-underline"
+              >
+                <h3 className="text-base font-semibold text-slate-900 dark:text-slate-50 group-hover:text-[#137fec] transition-colors duration-150 line-clamp-2 mb-2">
+                  {brief.title}
+                </h3>
+                <p className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed line-clamp-2 mb-4">
+                  {brief.summary}
+                </p>
+                <div className="flex items-center justify-between">
+                  <span className="inline-flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
+                    <Icon name="file-text" size={14} />
+                    {t("sources", { count: brief.source_count })}
+                  </span>
+                  <span className="inline-flex items-center gap-1 text-xs font-medium text-[#137fec] group-hover:text-[#0f6bca] transition-colors duration-150">
+                    {t("readBrief")}
+                    <Icon name="arrow-right" size={14} />
+                  </span>
+                </div>
+              </Link>
+            ))}
+          </div>
+        ) : (
+          <EmptyState
+            message={t("relatedBriefsEmpty")}
+            suggestion={t("relatedBriefsSuggestion")}
+            action={{
+              label: t("viewAllBriefs"),
+              onClick: () => { window.location.href = "/briefs"; },
+            }}
+          />
         )}
       </section>
     </div>

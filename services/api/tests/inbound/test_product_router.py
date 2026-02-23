@@ -9,6 +9,7 @@ from inbound.http.product.response import (
     ProductListResponseData,
     ProductMetricsResponseData,
     ProductPostResponseData,
+    RelatedBriefResponseData,
     TagResponseData,
 )
 from tests.conftest import build_test_app, make_post, make_product
@@ -37,6 +38,7 @@ async def test_get_product_with_posts():
     product_repo = AsyncMock()
     product_repo.get_product_by_slug = AsyncMock(return_value=product)
     product_repo.get_product_posts = AsyncMock(return_value=posts)
+    product_repo.get_related_briefs = AsyncMock(return_value=[])
 
     app = build_test_app(product_repo=product_repo)
     transport = ASGITransport(app=app)
@@ -93,6 +95,7 @@ async def test_get_product_with_posts_has_next():
     product_repo = AsyncMock()
     product_repo.get_product_by_slug = AsyncMock(return_value=product)
     product_repo.get_product_posts = AsyncMock(return_value=posts)
+    product_repo.get_related_briefs = AsyncMock(return_value=[])
 
     app = build_test_app(product_repo=product_repo)
     transport = ASGITransport(app=app)
@@ -112,6 +115,7 @@ async def test_get_product_with_no_posts():
     product_repo = AsyncMock()
     product_repo.get_product_by_slug = AsyncMock(return_value=product)
     product_repo.get_product_posts = AsyncMock(return_value=[])
+    product_repo.get_related_briefs = AsyncMock(return_value=[])
 
     app = build_test_app(product_repo=product_repo)
     transport = ASGITransport(app=app)
@@ -195,6 +199,7 @@ async def test_get_product_detail_includes_metrics():
     product_repo.get_product_by_slug = AsyncMock(return_value=product)
     product_repo.get_product_posts = AsyncMock(return_value=[])
     product_repo.get_product_metrics = AsyncMock(return_value=metrics)
+    product_repo.get_related_briefs = AsyncMock(return_value=[])
 
     app = build_test_app(product_repo=product_repo)
     transport = ASGITransport(app=app)
@@ -220,6 +225,7 @@ async def test_get_product_detail_includes_tags():
     product_repo.get_product_by_slug = AsyncMock(return_value=product)
     product_repo.get_product_posts = AsyncMock(return_value=[])
     product_repo.get_product_metrics = AsyncMock(return_value=metrics)
+    product_repo.get_related_briefs = AsyncMock(return_value=[])
 
     app = build_test_app(product_repo=product_repo)
     transport = ASGITransport(app=app)
@@ -243,6 +249,7 @@ async def test_get_product_detail_metrics_zero_values():
     product_repo.get_product_by_slug = AsyncMock(return_value=product)
     product_repo.get_product_posts = AsyncMock(return_value=[])
     product_repo.get_product_metrics = AsyncMock(return_value=metrics)
+    product_repo.get_related_briefs = AsyncMock(return_value=[])
 
     app = build_test_app(product_repo=product_repo)
     transport = ASGITransport(app=app)

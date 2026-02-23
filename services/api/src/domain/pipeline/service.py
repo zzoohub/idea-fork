@@ -50,6 +50,7 @@ class PipelineService:
         appstore_keywords: list[str] | None = None,
         appstore_review_pages: int = 3,
         playstore_review_count: int = 100,
+        appstore_max_age_days: int = 365,
     ) -> None:
         self._repo = repo
         self._reddit = reddit
@@ -65,6 +66,7 @@ class PipelineService:
         self._appstore_keywords = appstore_keywords or []
         self._appstore_review_pages = appstore_review_pages
         self._playstore_review_count = playstore_review_count
+        self._max_age_days = appstore_max_age_days
 
     async def run(self) -> PipelineRunResult:
         result = PipelineRunResult()
@@ -126,8 +128,22 @@ class PipelineService:
             if self._appstore and self._appstore_keywords:
                 try:
                     app_products = await self._appstore.search_apps(
-                        self._appstore_keywords
+                        self._appstore_keywords,
+                        max_age_days=self._max_age_days,
                     )
+
+                    # Also fetch latest apps from Apple RSS feed
+                    try:
+                        new_apps = await self._appstore.fetch_new_apps()
+                        # Deduplicate by external_id
+                        existing_ids = {p.external_id for p in app_products}
+                        for app in new_apps:
+                            if app.external_id not in existing_ids:
+                                app_products.append(app)
+                                existing_ids.add(app.external_id)
+                    except Exception:
+                        logger.exception("App Store new apps RSS fetch failed")
+
                     if app_products:
                         count = await self._repo.upsert_products(app_products)
                         result.products_upserted += count
@@ -166,7 +182,8 @@ class PipelineService:
             if self._playstore and self._appstore_keywords:
                 try:
                     play_products = await self._playstore.search_apps(
-                        self._appstore_keywords
+                        self._appstore_keywords,
+                        max_age_days=self._max_age_days,
                     )
                     if play_products:
                         count = await self._repo.upsert_products(play_products)

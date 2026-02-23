@@ -91,6 +91,7 @@ def create_app() -> FastAPI:
         appstore_keywords=appstore_keywords,
         appstore_review_pages=settings.PIPELINE_APPSTORE_REVIEW_PAGES,
         playstore_review_count=settings.PIPELINE_PLAYSTORE_REVIEW_COUNT,
+        appstore_max_age_days=settings.PIPELINE_APPSTORE_MAX_AGE_DAYS,
     )
 
     @asynccontextmanager

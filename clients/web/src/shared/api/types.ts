@@ -105,9 +105,18 @@ export interface ProductMetrics {
   sentiment_score: number;
 }
 
+export interface RelatedBrief {
+  id: number;
+  slug: string;
+  title: string;
+  summary: string;
+  source_count: number;
+}
+
 export interface ProductDetail extends ProductListItem {
   metrics: ProductMetrics;
   posts: ProductPost[];
+  related_briefs: RelatedBrief[];
 }
 
 /* --------------------------------------------------------------------------

@@ -3,7 +3,7 @@ from datetime import datetime
 from pydantic import BaseModel
 
 from domain.post.models import Post
-from domain.product.models import Product, ProductMetrics
+from domain.product.models import Product, ProductMetrics, RelatedBrief
 
 
 class TagResponseData(BaseModel):
@@ -56,6 +56,7 @@ class ProductPostResponseData(BaseModel):
     external_url: str
     external_created_at: datetime
     score: int
+    post_type: str | None
     sentiment: str | None
 
     @classmethod
@@ -69,7 +70,26 @@ class ProductPostResponseData(BaseModel):
             external_url=post.external_url,
             external_created_at=post.external_created_at,
             score=post.score,
+            post_type=post.post_type,
             sentiment=post.sentiment,
+        )
+
+
+class RelatedBriefResponseData(BaseModel):
+    id: int
+    slug: str
+    title: str
+    summary: str
+    source_count: int
+
+    @classmethod
+    def from_domain(cls, brief: RelatedBrief) -> "RelatedBriefResponseData":
+        return cls(
+            id=brief.id,
+            slug=brief.slug,
+            title=brief.title,
+            summary=brief.summary,
+            source_count=brief.source_count,
         )
 
 

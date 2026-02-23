@@ -11,5 +11,6 @@ export type {
   ProductDetail,
   ProductMetrics,
   ProductPost,
+  RelatedBrief,
   Rating,
 } from "./types";

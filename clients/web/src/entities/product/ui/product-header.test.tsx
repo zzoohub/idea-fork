@@ -41,20 +41,6 @@ describe("ProductHeader", () => {
     });
   });
 
-  describe("status", () => {
-    it("renders status badge when provided", () => {
-      renderWithIntl(
-        <ProductHeader name="App" category="Tools" status="Active" />
-      );
-      expect(screen.getByText("Active")).toBeInTheDocument();
-    });
-
-    it("does not render status badge when not provided", () => {
-      renderWithIntl(<ProductHeader name="App" category="Tools" />);
-      expect(screen.queryByText("Active")).not.toBeInTheDocument();
-    });
-  });
-
   describe("icon / avatar", () => {
     it("renders img when iconUrl is provided", () => {
       const { container } = renderWithIntl(

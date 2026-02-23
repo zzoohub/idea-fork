@@ -41,6 +41,7 @@ def _stub_repos():
     product_repo.get_product_metrics = AsyncMock(
         return_value=ProductMetrics(total_mentions=0, negative_count=0, sentiment_score=0)
     )
+    product_repo.get_related_briefs = AsyncMock(return_value=[])
 
     rating_repo = AsyncMock()
     rating_repo.create_rating = AsyncMock(return_value=None)

@@ -5,7 +5,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 
 from domain.pipeline.models import RawPost, RawProduct
-from outbound.appstore.client import AppStoreClient, _slugify
+from outbound.appstore.client import AppStoreClient, _slugify, _parse_release_date
 
 
 # ---------------------------------------------------------------------------
@@ -38,6 +38,30 @@ def test_slugify_already_lowercase():
 
 
 # ---------------------------------------------------------------------------
+# _parse_release_date helper
+# ---------------------------------------------------------------------------
+
+
+def test_parse_release_date_valid():
+    result = _parse_release_date("2024-01-15T08:00:00Z")
+    assert result.year == 2024
+    assert result.month == 1
+    assert result.day == 15
+
+
+def test_parse_release_date_none():
+    assert _parse_release_date(None) is None
+
+
+def test_parse_release_date_empty():
+    assert _parse_release_date("") is None
+
+
+def test_parse_release_date_invalid():
+    assert _parse_release_date("not-a-date") is None
+
+
+# ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
 
@@ -64,6 +88,7 @@ def _itunes_item(
     primary_genre_name="Productivity",
     artwork_url_512="https://example.com/icon512.png",
     artwork_url_100=None,
+    release_date="2026-01-15T08:00:00Z",
 ):
     item = {
         "trackId": track_id,
@@ -76,6 +101,8 @@ def _itunes_item(
         item["artworkUrl512"] = artwork_url_512
     if artwork_url_100 is not None:
         item["artworkUrl100"] = artwork_url_100
+    if release_date is not None:
+        item["releaseDate"] = release_date
     return item
 
 
@@ -104,7 +131,7 @@ def _rss_feed_response(app_id: str, entries: list) -> dict:
 
 
 # ---------------------------------------------------------------------------
-# AppStoreClient.search_apps
+# AppStoreClient.search_apps — with releaseDate filtering
 # ---------------------------------------------------------------------------
 
 
@@ -123,8 +150,53 @@ async def test_search_apps_returns_raw_products():
     assert isinstance(product, RawProduct)
     assert product.external_id == "123456"
     assert product.name == "TestApp"
-    assert product.slug == "testapp"
+    assert product.slug == "testapp-123456"
     assert product.source == "app_store"
+
+
+@pytest.mark.asyncio
+async def test_search_apps_records_launched_at():
+    """launched_at must be set from releaseDate."""
+    item = _itunes_item(release_date="2026-01-15T08:00:00Z")
+    http = _make_async_http({"results": [item]})
+
+    client = AppStoreClient()
+
+    with patch("outbound.appstore.client.httpx.AsyncClient", return_value=http):
+        result = await client.search_apps(["app"])
+
+    assert result[0].launched_at is not None
+    assert result[0].launched_at.year == 2026
+    assert result[0].launched_at.month == 1
+
+
+@pytest.mark.asyncio
+async def test_search_apps_filters_old_apps():
+    """Apps with releaseDate before cutoff are excluded."""
+    item = _itunes_item(release_date="2015-01-01T00:00:00Z")
+    http = _make_async_http({"results": [item]})
+
+    client = AppStoreClient()
+
+    with patch("outbound.appstore.client.httpx.AsyncClient", return_value=http):
+        result = await client.search_apps(["old"], max_age_days=365)
+
+    assert result == []
+
+
+@pytest.mark.asyncio
+async def test_search_apps_includes_app_without_release_date():
+    """Apps without releaseDate field are included (no filtering)."""
+    item = _itunes_item(release_date=None)
+    http = _make_async_http({"results": [item]})
+
+    client = AppStoreClient()
+
+    with patch("outbound.appstore.client.httpx.AsyncClient", return_value=http):
+        result = await client.search_apps(["app"])
+
+    assert len(result) == 1
+    assert result[0].launched_at is None
 
 
 @pytest.mark.asyncio
@@ -204,19 +276,6 @@ async def test_search_apps_tagline_is_always_none():
         result = await client.search_apps(["app"])
 
     assert result[0].tagline is None
-
-
-@pytest.mark.asyncio
-async def test_search_apps_launched_at_is_always_none():
-    item = _itunes_item()
-    http = _make_async_http({"results": [item]})
-
-    client = AppStoreClient()
-
-    with patch("outbound.appstore.client.httpx.AsyncClient", return_value=http):
-        result = await client.search_apps(["app"])
-
-    assert result[0].launched_at is None
 
 
 @pytest.mark.asyncio
@@ -354,7 +413,166 @@ async def test_search_apps_sends_correct_itunes_params():
     call_kwargs = http.get.call_args.kwargs
     assert call_kwargs["params"]["term"] == "todo"
     assert call_kwargs["params"]["entity"] == "software"
-    assert call_kwargs["params"]["limit"] == 10
+    # fetch_limit = limit*3 = 30, capped at 200
+    assert call_kwargs["params"]["limit"] == 30
+
+
+@pytest.mark.asyncio
+async def test_search_apps_fetches_more_candidates():
+    """search uses limit*3 as the actual fetch limit for filtering headroom."""
+    http = _make_async_http({"results": []})
+
+    client = AppStoreClient()
+
+    with patch("outbound.appstore.client.httpx.AsyncClient", return_value=http):
+        await client.search_apps(["test"], limit=10)
+
+    call_kwargs = http.get.call_args.kwargs
+    assert call_kwargs["params"]["limit"] == 30  # 10 * 3
+
+
+# ---------------------------------------------------------------------------
+# AppStoreClient.fetch_new_apps
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_fetch_new_apps_returns_products():
+    rss_data = {
+        "feed": {
+            "results": [
+                {
+                    "id": "999",
+                    "name": "New App",
+                    "url": "https://apps.apple.com/app/id999",
+                    "releaseDate": "2026-02-20",
+                    "artworkUrl100": "https://example.com/icon.png",
+                    "genres": ["Productivity"],
+                    "genreIds": ["6007"],
+                },
+            ]
+        }
+    }
+    http = _make_async_http(rss_data)
+
+    client = AppStoreClient()
+
+    with patch("outbound.appstore.client.httpx.AsyncClient", return_value=http):
+        result = await client.fetch_new_apps()
+
+    assert len(result) == 1
+    p = result[0]
+    assert p.external_id == "999"
+    assert p.name == "New App"
+    assert p.source == "app_store"
+    assert p.category == "Productivity"
+    assert p.image_url == "https://example.com/icon.png"
+
+
+@pytest.mark.asyncio
+async def test_fetch_new_apps_filters_by_genre_id():
+    rss_data = {
+        "feed": {
+            "results": [
+                {
+                    "id": "1",
+                    "name": "App A",
+                    "genres": ["Productivity"],
+                    "genreIds": ["6007"],
+                },
+                {
+                    "id": "2",
+                    "name": "App B",
+                    "genres": ["Games"],
+                    "genreIds": ["6014"],
+                },
+            ]
+        }
+    }
+    http = _make_async_http(rss_data)
+
+    client = AppStoreClient()
+
+    with patch("outbound.appstore.client.httpx.AsyncClient", return_value=http):
+        result = await client.fetch_new_apps(genre_id=6007)
+
+    assert len(result) == 1
+    assert result[0].name == "App A"
+
+
+@pytest.mark.asyncio
+async def test_fetch_new_apps_no_genre_filter_returns_all():
+    rss_data = {
+        "feed": {
+            "results": [
+                {"id": "1", "name": "App A", "genres": ["Productivity"], "genreIds": ["6007"]},
+                {"id": "2", "name": "App B", "genres": ["Games"], "genreIds": ["6014"]},
+            ]
+        }
+    }
+    http = _make_async_http(rss_data)
+
+    client = AppStoreClient()
+
+    with patch("outbound.appstore.client.httpx.AsyncClient", return_value=http):
+        result = await client.fetch_new_apps()
+
+    assert len(result) == 2
+
+
+@pytest.mark.asyncio
+async def test_fetch_new_apps_empty_feed_returns_empty():
+    rss_data = {"feed": {"results": []}}
+    http = _make_async_http(rss_data)
+
+    client = AppStoreClient()
+
+    with patch("outbound.appstore.client.httpx.AsyncClient", return_value=http):
+        result = await client.fetch_new_apps()
+
+    assert result == []
+
+
+@pytest.mark.asyncio
+async def test_fetch_new_apps_http_error_returns_empty(caplog):
+    import logging
+
+    bad_resp = MagicMock()
+    bad_resp.raise_for_status = MagicMock(side_effect=Exception("HTTP 500"))
+
+    http = AsyncMock()
+    http.__aenter__ = AsyncMock(return_value=http)
+    http.__aexit__ = AsyncMock(return_value=False)
+    http.get = AsyncMock(return_value=bad_resp)
+
+    client = AppStoreClient()
+
+    with (
+        patch("outbound.appstore.client.httpx.AsyncClient", return_value=http),
+        caplog.at_level(logging.ERROR, logger="outbound.appstore.client"),
+    ):
+        result = await client.fetch_new_apps()
+
+    assert result == []
+
+
+@pytest.mark.asyncio
+async def test_fetch_new_apps_category_none_when_genres_empty():
+    rss_data = {
+        "feed": {
+            "results": [
+                {"id": "1", "name": "App A", "genres": [], "genreIds": []},
+            ]
+        }
+    }
+    http = _make_async_http(rss_data)
+
+    client = AppStoreClient()
+
+    with patch("outbound.appstore.client.httpx.AsyncClient", return_value=http):
+        result = await client.fetch_new_apps()
+
+    assert result[0].category is None
 
 
 # ---------------------------------------------------------------------------

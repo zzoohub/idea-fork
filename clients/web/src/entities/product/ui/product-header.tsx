@@ -1,6 +1,8 @@
+"use client";
+
+import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { Icon } from "@/src/shared/ui/icon";
-import { Badge } from "@/src/shared/ui/badge";
 import { isSafeUrl } from "@/src/shared/lib/sanitize-url";
 
 interface ProductHeaderProps {
@@ -9,7 +11,6 @@ interface ProductHeaderProps {
   category: string;
   description?: string;
   websiteUrl?: string;
-  status?: string;
   className?: string;
 }
 
@@ -19,7 +20,6 @@ export function ProductHeader({
   category,
   description,
   websiteUrl,
-  status,
   className,
 }: ProductHeaderProps) {
   const t = useTranslations("productHeader");
@@ -57,16 +57,9 @@ export function ProductHeader({
 
       {/* Center: name, status, description, metadata */}
       <div className="min-w-0 flex-1 space-y-2">
-        <div className="flex flex-wrap items-center gap-3">
-          <h1 className="text-3xl font-bold text-slate-900 dark:text-slate-50 leading-tight">
-            {name}
-          </h1>
-          {status && (
-            <Badge variant="positive">
-              {status}
-            </Badge>
-          )}
-        </div>
+        <h1 className="text-3xl font-bold text-slate-900 dark:text-slate-50 leading-tight">
+          {name}
+        </h1>
 
         {description && (
           <p className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed max-w-xl">
@@ -94,25 +87,42 @@ export function ProductHeader({
         </div>
       </div>
 
-      {/* Right: CTA button */}
+      {/* Right: Share button */}
       <div className="shrink-0 self-center sm:self-start">
-        <button
-          type="button"
-          className={[
-            "inline-flex items-center gap-2",
-            "px-5 py-2.5 rounded-xl",
-            "bg-[#137fec] text-white text-sm font-semibold",
-            "shadow-lg shadow-[#137fec]/20",
-            "hover:bg-[#0f6bca] active:bg-[#0d5eaf]",
-            "transition-colors duration-150",
-            "cursor-pointer",
-            "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#137fec]",
-          ].join(" ")}
-        >
-          <Icon name="bell-ring" size={18} />
-          {t("trackChanges")}
-        </button>
+        <ShareButton />
       </div>
     </div>
+  );
+}
+
+function ShareButton() {
+  const t = useTranslations("productHeader");
+  const [copied, setCopied] = useState(false);
+
+  const handleShare = async () => {
+    await navigator.clipboard.writeText(window.location.href);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  return (
+    <button
+      type="button"
+      onClick={handleShare}
+      className={[
+        "inline-flex items-center gap-2",
+        "px-5 py-2.5 rounded-xl",
+        "text-sm font-semibold",
+        "transition-colors duration-150",
+        "cursor-pointer",
+        "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#137fec]",
+        copied
+          ? "bg-emerald-500 text-white shadow-lg shadow-emerald-500/20"
+          : "bg-[#137fec] text-white shadow-lg shadow-[#137fec]/20 hover:bg-[#0f6bca] active:bg-[#0d5eaf]",
+      ].join(" ")}
+    >
+      <Icon name={copied ? "check" : "link"} size={18} />
+      {copied ? t("copied") : t("share")}
+    </button>
   );
 }

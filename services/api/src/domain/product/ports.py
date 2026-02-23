@@ -1,7 +1,7 @@
 from typing import Protocol
 
 from domain.post.models import Post
-from domain.product.models import Product, ProductListParams, ProductMetrics
+from domain.product.models import Product, ProductListParams, ProductMetrics, RelatedBrief
 
 
 class ProductRepository(Protocol):
@@ -14,3 +14,7 @@ class ProductRepository(Protocol):
     ) -> list[Post]: ...
 
     async def get_product_metrics(self, product_id: int) -> ProductMetrics: ...
+
+    async def get_related_briefs(
+        self, product_id: int, limit: int = 3
+    ) -> list[RelatedBrief]: ...

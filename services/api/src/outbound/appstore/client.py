@@ -1,7 +1,7 @@
 import asyncio
 import logging
 import re
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 
 import httpx
 from tenacity import retry, stop_after_attempt, wait_exponential
@@ -14,6 +14,9 @@ _ITUNES_SEARCH_URL = "https://itunes.apple.com/search"
 _ITUNES_REVIEWS_URL = (
     "https://itunes.apple.com/{country}/rss/customerreviews/page={page}/id={app_id}/json"
 )
+_APPLE_RSS_NEW_APPS_URL = (
+    "https://rss.applemarketingtools.com/api/v2/us/apps/most-recent/{limit}/apps.json"
+)
 _SLUG_RE = re.compile(r"[^a-z0-9]+")
 
 
@@ -23,22 +26,41 @@ def _slugify(name: str) -> str:
     return slug.strip("-")
 
 
+def _parse_release_date(raw: str | None) -> datetime | None:
+    """Parse ISO 8601 releaseDate from iTunes API, e.g. '2024-01-15T08:00:00Z'."""
+    if not raw:
+        return None
+    try:
+        return datetime.fromisoformat(raw.replace("Z", "+00:00"))
+    except (ValueError, TypeError):
+        return None
+
+
 class AppStoreClient:
     async def search_apps(
-        self, keywords: list[str], limit: int = 20
+        self, keywords: list[str], limit: int = 20, max_age_days: int = 365
     ) -> list[RawProduct]:
         products: list[RawProduct] = []
         seen: set[str] = set()
+        cutoff = datetime.now(UTC) - timedelta(days=max_age_days)
+        fetch_limit = limit * 3
 
         async with httpx.AsyncClient(timeout=30) as http:
             for keyword in keywords:
                 try:
-                    items = await self._search(http, keyword, limit)
+                    items = await self._search(http, keyword, fetch_limit)
                     for item in items:
                         ext_id = str(item.get("trackId", ""))
                         if ext_id in seen:
                             continue
                         seen.add(ext_id)
+
+                        released = _parse_release_date(
+                            item.get("releaseDate")
+                        )
+                        if released is not None and released < cutoff:
+                            continue
+
                         products.append(
                             RawProduct(
                                 external_id=ext_id,
@@ -48,17 +70,67 @@ class AppStoreClient:
                                 description=item.get("description"),
                                 url=item.get("trackViewUrl"),
                                 category=item.get("primaryGenreName"),
-                                launched_at=None,
+                                launched_at=released,
                                 image_url=item.get("artworkUrl512")
                                 or item.get("artworkUrl100"),
                                 source="app_store",
                             )
                         )
+
+                        if len(products) >= limit:
+                            break
                 except Exception:
                     logger.exception("App Store search failed for %r", keyword)
                 await asyncio.sleep(0.5)
 
+                if len(products) >= limit:
+                    break
+
+        products = products[:limit]
         logger.info("Found %d apps from App Store", len(products))
+        return products
+
+    async def fetch_new_apps(
+        self, limit: int = 25, genre_id: int | None = None
+    ) -> list[RawProduct]:
+        url = _APPLE_RSS_NEW_APPS_URL.format(limit=limit)
+        products: list[RawProduct] = []
+
+        try:
+            async with httpx.AsyncClient(timeout=30) as http:
+                resp = await http.get(url)
+                resp.raise_for_status()
+                data = resp.json()
+
+            for item in data.get("feed", {}).get("results", []):
+                if genre_id is not None:
+                    genres = item.get("genreIds", [])
+                    if str(genre_id) not in genres:
+                        continue
+
+                app_id = item.get("id", "")
+                name = item.get("name", "")
+                released = _parse_release_date(item.get("releaseDate"))
+
+                products.append(
+                    RawProduct(
+                        external_id=str(app_id),
+                        name=name,
+                        slug=f"{_slugify(name)}-{app_id}",
+                        tagline=None,
+                        description=None,
+                        url=item.get("url"),
+                        category=item.get("genres", [None])[0] if item.get("genres") else None,
+                        launched_at=released,
+                        image_url=item.get("artworkUrl100"),
+                        source="app_store",
+                    )
+                )
+
+            logger.info("Fetched %d new apps from Apple RSS", len(products))
+        except Exception:
+            logger.exception("Apple RSS new apps fetch failed")
+
         return products
 
     async def fetch_reviews(

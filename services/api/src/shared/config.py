@@ -72,6 +72,7 @@ class Settings(BaseSettings):
     PIPELINE_APPSTORE_KEYWORDS: str = ""
     PIPELINE_APPSTORE_REVIEW_PAGES: int = 3
     PIPELINE_PLAYSTORE_REVIEW_COUNT: int = 100
+    PIPELINE_APPSTORE_MAX_AGE_DAYS: int = 365
 
     # Product Hunt
     PRODUCTHUNT_API_TOKEN: str = ""

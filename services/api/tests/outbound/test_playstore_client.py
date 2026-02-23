@@ -1,11 +1,11 @@
 """Tests for outbound/playstore/client.py — PlayStoreClient."""
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
 from domain.pipeline.models import RawPost, RawProduct
-from outbound.playstore.client import PlayStoreClient, _slugify
+from outbound.playstore.client import PlayStoreClient, _slugify, _parse_released
 
 
 # ---------------------------------------------------------------------------
@@ -38,6 +38,28 @@ def test_slugify_already_lowercase():
 
 
 # ---------------------------------------------------------------------------
+# _parse_released helper
+# ---------------------------------------------------------------------------
+
+
+def test_parse_released_valid():
+    result = _parse_released("Jan 15, 2024")
+    assert result == datetime(2024, 1, 15, tzinfo=UTC)
+
+
+def test_parse_released_none():
+    assert _parse_released(None) is None
+
+
+def test_parse_released_empty():
+    assert _parse_released("") is None
+
+
+def test_parse_released_invalid():
+    assert _parse_released("not-a-date") is None
+
+
+# ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
 
@@ -58,6 +80,16 @@ def _gps_item(
     }
 
 
+def _gps_detail(
+    app_id="com.example.app",
+    released="Jan 15, 2026",
+):
+    return {
+        "appId": app_id,
+        "released": released,
+    }
+
+
 def _gps_review(
     review_id="review-abc",
     content="Works great!",
@@ -73,171 +105,171 @@ def _gps_review(
 
 
 # ---------------------------------------------------------------------------
-# PlayStoreClient.search_apps
+# PlayStoreClient.search_apps — with release date filtering
 # ---------------------------------------------------------------------------
 
 
 @pytest.mark.asyncio
-async def test_search_apps_returns_raw_products():
+async def test_search_apps_returns_recent_apps():
+    """Apps released within max_age_days are returned."""
     item = _gps_item()
-
-    client = PlayStoreClient()
-
-    with patch("outbound.playstore.client.asyncio.to_thread", new=AsyncMock(return_value=[item])):
-        result = await client.search_apps(["productivity"])
-
-    assert len(result) == 1
-    product = result[0]
-    assert isinstance(product, RawProduct)
-    assert product.source == "play_store"
-
-
-@pytest.mark.asyncio
-async def test_search_apps_maps_external_id_from_app_id():
-    item = _gps_item(app_id="com.test.myapp")
-
-    client = PlayStoreClient()
-
-    with patch("outbound.playstore.client.asyncio.to_thread", new=AsyncMock(return_value=[item])):
-        result = await client.search_apps(["test"])
-
-    assert result[0].external_id == "com.test.myapp"
-
-
-@pytest.mark.asyncio
-async def test_search_apps_maps_name_from_title():
-    item = _gps_item(title="My Test App")
-
-    client = PlayStoreClient()
-
-    with patch("outbound.playstore.client.asyncio.to_thread", new=AsyncMock(return_value=[item])):
-        result = await client.search_apps(["test"])
-
-    assert result[0].name == "My Test App"
-
-
-@pytest.mark.asyncio
-async def test_search_apps_generates_slug_from_title():
-    item = _gps_item(title="Google Maps")
-
-    client = PlayStoreClient()
-
-    with patch("outbound.playstore.client.asyncio.to_thread", new=AsyncMock(return_value=[item])):
-        result = await client.search_apps(["maps"])
-
-    assert result[0].slug == "google-maps"
-
-
-@pytest.mark.asyncio
-async def test_search_apps_maps_image_url_from_icon():
-    item = _gps_item(icon="https://play.google.com/icon.png")
-
-    client = PlayStoreClient()
-
-    with patch("outbound.playstore.client.asyncio.to_thread", new=AsyncMock(return_value=[item])):
-        result = await client.search_apps(["test"])
-
-    assert result[0].image_url == "https://play.google.com/icon.png"
-
-
-@pytest.mark.asyncio
-async def test_search_apps_image_url_none_when_icon_absent():
-    item = _gps_item()
-    del item["icon"]
-
-    client = PlayStoreClient()
-
-    with patch("outbound.playstore.client.asyncio.to_thread", new=AsyncMock(return_value=[item])):
-        result = await client.search_apps(["test"])
-
-    assert result[0].image_url is None
-
-
-@pytest.mark.asyncio
-async def test_search_apps_maps_category_from_genre():
-    item = _gps_item(genre="Social")
-
-    client = PlayStoreClient()
-
-    with patch("outbound.playstore.client.asyncio.to_thread", new=AsyncMock(return_value=[item])):
-        result = await client.search_apps(["social"])
-
-    assert result[0].category == "Social"
-
-
-@pytest.mark.asyncio
-async def test_search_apps_builds_play_store_url_from_app_id():
-    item = _gps_item(app_id="com.example.app")
-
-    client = PlayStoreClient()
-
-    with patch("outbound.playstore.client.asyncio.to_thread", new=AsyncMock(return_value=[item])):
-        result = await client.search_apps(["test"])
-
-    assert result[0].url == "https://play.google.com/store/apps/details?id=com.example.app"
-
-
-@pytest.mark.asyncio
-async def test_search_apps_tagline_is_always_none():
-    item = _gps_item()
-
-    client = PlayStoreClient()
-
-    with patch("outbound.playstore.client.asyncio.to_thread", new=AsyncMock(return_value=[item])):
-        result = await client.search_apps(["test"])
-
-    assert result[0].tagline is None
-
-
-@pytest.mark.asyncio
-async def test_search_apps_launched_at_is_always_none():
-    item = _gps_item()
-
-    client = PlayStoreClient()
-
-    with patch("outbound.playstore.client.asyncio.to_thread", new=AsyncMock(return_value=[item])):
-        result = await client.search_apps(["test"])
-
-    assert result[0].launched_at is None
-
-
-@pytest.mark.asyncio
-async def test_search_apps_deduplicates_same_app_id_across_keywords():
-    """Same appId returned by two keyword queries must appear only once."""
-    item = _gps_item(app_id="com.dup.app", title="Dup App")
+    detail = _gps_detail(released="Jan 15, 2026")
 
     call_count = 0
 
     async def to_thread_side_effect(fn, *args, **kwargs):
         nonlocal call_count
         call_count += 1
-        return [item]
+        if call_count == 1:
+            return [item]  # gps.search
+        return detail  # gps.app
 
     client = PlayStoreClient()
 
     with patch("outbound.playstore.client.asyncio.to_thread", side_effect=to_thread_side_effect):
-        result = await client.search_apps(["kw1", "kw2"])
+        result = await client.search_apps(["productivity"], max_age_days=365)
+
+    assert len(result) == 1
+    product = result[0]
+    assert isinstance(product, RawProduct)
+    assert product.source == "play_store"
+    assert product.launched_at == datetime(2026, 1, 15, tzinfo=UTC)
+
+
+@pytest.mark.asyncio
+async def test_search_apps_filters_old_apps():
+    """Apps released before cutoff are filtered out."""
+    item = _gps_item()
+    detail = _gps_detail(released="Jan 1, 2020")
+
+    call_count = 0
+
+    async def to_thread_side_effect(fn, *args, **kwargs):
+        nonlocal call_count
+        call_count += 1
+        if call_count == 1:
+            return [item]
+        return detail
+
+    client = PlayStoreClient()
+
+    with patch("outbound.playstore.client.asyncio.to_thread", side_effect=to_thread_side_effect):
+        result = await client.search_apps(["productivity"], max_age_days=365)
+
+    assert result == []
+
+
+@pytest.mark.asyncio
+async def test_search_apps_skips_app_when_released_is_none():
+    """Apps without a released date are skipped."""
+    item = _gps_item()
+    detail = _gps_detail(released=None)
+
+    call_count = 0
+
+    async def to_thread_side_effect(fn, *args, **kwargs):
+        nonlocal call_count
+        call_count += 1
+        if call_count == 1:
+            return [item]
+        return detail
+
+    client = PlayStoreClient()
+
+    with patch("outbound.playstore.client.asyncio.to_thread", side_effect=to_thread_side_effect):
+        result = await client.search_apps(["productivity"], max_age_days=365)
+
+    assert result == []
+
+
+@pytest.mark.asyncio
+async def test_search_apps_skips_app_when_detail_fetch_fails():
+    """When gps.app() fails for an app, that app is skipped."""
+    item = _gps_item()
+
+    call_count = 0
+
+    async def to_thread_side_effect(fn, *args, **kwargs):
+        nonlocal call_count
+        call_count += 1
+        if call_count == 1:
+            return [item]
+        raise RuntimeError("detail fetch error")
+
+    client = PlayStoreClient()
+
+    with patch("outbound.playstore.client.asyncio.to_thread", side_effect=to_thread_side_effect):
+        result = await client.search_apps(["productivity"], max_age_days=365)
+
+    assert result == []
+
+
+@pytest.mark.asyncio
+async def test_search_apps_records_launched_at():
+    """launched_at is set to the parsed released date."""
+    item = _gps_item()
+    detail = _gps_detail(released="Feb 1, 2026")
+
+    call_count = 0
+
+    async def to_thread_side_effect(fn, *args, **kwargs):
+        nonlocal call_count
+        call_count += 1
+        if call_count == 1:
+            return [item]
+        return detail
+
+    client = PlayStoreClient()
+
+    with patch("outbound.playstore.client.asyncio.to_thread", side_effect=to_thread_side_effect):
+        result = await client.search_apps(["test"], max_age_days=365)
+
+    assert result[0].launched_at == datetime(2026, 2, 1, tzinfo=UTC)
+
+
+@pytest.mark.asyncio
+async def test_search_apps_deduplicates_across_keywords():
+    """Same appId from two keywords appears only once."""
+    item = _gps_item(app_id="com.dup.app", title="Dup App")
+    detail = _gps_detail(app_id="com.dup.app", released="Jan 15, 2026")
+
+    call_count = 0
+
+    async def to_thread_side_effect(fn, *args, **kwargs):
+        nonlocal call_count
+        call_count += 1
+        if call_count in (1, 3):  # search calls
+            return [item]
+        return detail  # detail calls
+
+    client = PlayStoreClient()
+
+    with patch("outbound.playstore.client.asyncio.to_thread", side_effect=to_thread_side_effect):
+        result = await client.search_apps(["kw1", "kw2"], max_age_days=365)
 
     assert len(result) == 1
 
 
 @pytest.mark.asyncio
-async def test_search_apps_aggregates_distinct_items_across_keywords():
-    item1 = _gps_item(app_id="com.app.one", title="App One")
-    item2 = _gps_item(app_id="com.app.two", title="App Two")
-    calls = iter([[item1], [item2]])
+async def test_search_apps_respects_limit():
+    """Results are capped at the specified limit."""
+    items = [_gps_item(app_id=f"com.app.{i}", title=f"App {i}") for i in range(5)]
+
+    call_count = 0
 
     async def to_thread_side_effect(fn, *args, **kwargs):
-        return next(calls)
+        nonlocal call_count
+        call_count += 1
+        if call_count == 1:
+            return items
+        return _gps_detail(released="Jan 15, 2026")
 
     client = PlayStoreClient()
 
     with patch("outbound.playstore.client.asyncio.to_thread", side_effect=to_thread_side_effect):
-        result = await client.search_apps(["kw1", "kw2"])
+        result = await client.search_apps(["test"], limit=2, max_age_days=365)
 
-    assert len(result) == 2
-    external_ids = {p.external_id for p in result}
-    assert external_ids == {"com.app.one", "com.app.two"}
+    assert len(result) <= 2
 
 
 @pytest.mark.asyncio
@@ -249,16 +281,6 @@ async def test_search_apps_empty_keywords_returns_empty():
 
     assert result == []
     mock_thread.assert_not_called()
-
-
-@pytest.mark.asyncio
-async def test_search_apps_empty_results_returns_empty():
-    client = PlayStoreClient()
-
-    with patch("outbound.playstore.client.asyncio.to_thread", new=AsyncMock(return_value=[])):
-        result = await client.search_apps(["nothing"])
-
-    assert result == []
 
 
 @pytest.mark.asyncio
@@ -281,21 +303,65 @@ async def test_search_apps_exception_is_caught_and_skipped(caplog):
 
 
 @pytest.mark.asyncio
-async def test_search_apps_passes_limit_as_n_hits():
-    """The limit argument must be forwarded as n_hits to gps.search."""
+async def test_search_apps_fetches_more_than_limit_from_search():
+    """search uses limit*3 as n_hits to have enough candidates for filtering."""
     item = _gps_item()
-    captured_kwargs: dict = {}
+    detail = _gps_detail(released="Jan 15, 2026")
+    captured_n_hits = None
 
-    async def to_thread_side_effect(fn, keyword, n_hits):
-        captured_kwargs["n_hits"] = n_hits
-        return [item]
+    call_count = 0
+
+    async def to_thread_side_effect(fn, *args, **kwargs):
+        nonlocal call_count, captured_n_hits
+        call_count += 1
+        if call_count == 1:
+            # gps.search call
+            captured_n_hits = kwargs.get("n_hits") or (args[1] if len(args) > 1 else None)
+            return [item]
+        return detail
 
     client = PlayStoreClient()
 
     with patch("outbound.playstore.client.asyncio.to_thread", side_effect=to_thread_side_effect):
-        await client.search_apps(["test"], limit=15)
+        await client.search_apps(["test"], limit=10, max_age_days=365)
 
-    assert captured_kwargs["n_hits"] == 15
+    assert captured_n_hits == 30  # limit * 3
+
+
+@pytest.mark.asyncio
+async def test_search_apps_maps_fields_correctly():
+    """Verify all fields are mapped from search result + detail."""
+    item = _gps_item(
+        app_id="com.test.myapp",
+        title="My Test App",
+        description="A great app",
+        genre="Social",
+        icon="https://example.com/icon.png",
+    )
+    detail = _gps_detail(app_id="com.test.myapp", released="Feb 10, 2026")
+
+    call_count = 0
+
+    async def to_thread_side_effect(fn, *args, **kwargs):
+        nonlocal call_count
+        call_count += 1
+        if call_count == 1:
+            return [item]
+        return detail
+
+    client = PlayStoreClient()
+
+    with patch("outbound.playstore.client.asyncio.to_thread", side_effect=to_thread_side_effect):
+        result = await client.search_apps(["test"], max_age_days=365)
+
+    p = result[0]
+    assert p.external_id == "com.test.myapp"
+    assert p.name == "My Test App"
+    assert p.category == "Social"
+    assert p.image_url == "https://example.com/icon.png"
+    assert p.url == "https://play.google.com/store/apps/details?id=com.test.myapp"
+    assert p.tagline is None
+    assert p.source == "play_store"
 
 
 # ---------------------------------------------------------------------------

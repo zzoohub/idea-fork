@@ -48,6 +48,7 @@ const FAKE_PRODUCT_DETAIL: ProductDetail = {
       sentiment: "negative",
     },
   ],
+  related_briefs: [],
 };
 
 describe("fetchProducts", () => {
