@@ -18,6 +18,8 @@ export default defineConfig({
         "src/**/index.ts",
         "src/views/**",
         "src/widgets/**",
+        "src/shared/i18n/**",
+        "src/shared/api/types.ts",
       ],
       thresholds: {
         lines: 100,

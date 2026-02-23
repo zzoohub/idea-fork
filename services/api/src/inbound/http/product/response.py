@@ -21,6 +21,7 @@ class ProductListResponseData(BaseModel):
     image_url: str | None
     category: str | None
     source: str
+    sources: list[str]
     launched_at: datetime | None
     complaint_count: int
     trending_score: float
@@ -38,6 +39,7 @@ class ProductListResponseData(BaseModel):
             image_url=product.image_url,
             category=product.category,
             source=product.source,
+            sources=product.sources if product.sources else [product.source],
             launched_at=product.launched_at,
             complaint_count=product.complaint_count,
             trending_score=product.trending_score,

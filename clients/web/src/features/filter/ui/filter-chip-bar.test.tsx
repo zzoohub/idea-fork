@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from "vitest";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { screen, fireEvent } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { renderWithIntl } from "@/src/shared/test/with-intl";
 import { FilterChipBar } from "./filter-chip-bar";
 
 const TAGS = [
@@ -16,7 +17,7 @@ const TAGS = [
 describe("FilterChipBar", () => {
   describe("rendering", () => {
     it("renders a group with accessible label", () => {
-      render(
+      renderWithIntl(
         <FilterChipBar tags={TAGS} activeTag={null} onTagChange={vi.fn()} />
       );
       expect(
@@ -25,14 +26,14 @@ describe("FilterChipBar", () => {
     });
 
     it("renders the All chip", () => {
-      render(
+      renderWithIntl(
         <FilterChipBar tags={TAGS} activeTag={null} onTagChange={vi.fn()} />
       );
       expect(screen.getByRole("button", { name: "All" })).toBeInTheDocument();
     });
 
     it("renders visible tags (default visibleCount=6)", () => {
-      render(
+      renderWithIntl(
         <FilterChipBar tags={TAGS} activeTag={null} onTagChange={vi.fn()} />
       );
       expect(
@@ -45,7 +46,7 @@ describe("FilterChipBar", () => {
     });
 
     it("renders overflow trigger chip when tags exceed visibleCount", () => {
-      render(
+      renderWithIntl(
         <FilterChipBar tags={TAGS} activeTag={null} onTagChange={vi.fn()} />
       );
       // 7 tags, visibleCount=6 -> 1 overflow -> "+1"
@@ -53,7 +54,7 @@ describe("FilterChipBar", () => {
     });
 
     it("does not render overflow trigger when tags <= visibleCount", () => {
-      render(
+      renderWithIntl(
         <FilterChipBar
           tags={[{ label: "A", value: "a" }, { label: "B", value: "b" }, { label: "C", value: "c" }]}
           activeTag={null}
@@ -66,7 +67,7 @@ describe("FilterChipBar", () => {
 
   describe("active state", () => {
     it("All chip is active (active variant) when activeTag=null", () => {
-      render(
+      renderWithIntl(
         <FilterChipBar tags={TAGS} activeTag={null} onTagChange={vi.fn()} />
       );
       const allBtn = screen.getByRole("button", { name: "All" });
@@ -74,7 +75,7 @@ describe("FilterChipBar", () => {
     });
 
     it("tag chip is active when its tag matches activeTag", () => {
-      render(
+      renderWithIntl(
         <FilterChipBar tags={TAGS} activeTag="react" onTagChange={vi.fn()} />
       );
       expect(
@@ -83,7 +84,7 @@ describe("FilterChipBar", () => {
     });
 
     it("All chip is inactive when a tag is active", () => {
-      render(
+      renderWithIntl(
         <FilterChipBar tags={TAGS} activeTag="react" onTagChange={vi.fn()} />
       );
       expect(
@@ -96,7 +97,7 @@ describe("FilterChipBar", () => {
     it("calls onTagChange with tag value (slug) when a visible tag is clicked", async () => {
       const user = userEvent.setup();
       const handleChange = vi.fn();
-      render(
+      renderWithIntl(
         <FilterChipBar
           tags={TAGS}
           activeTag={null}
@@ -110,7 +111,7 @@ describe("FilterChipBar", () => {
     it("calls onTagChange with null when clicking the active tag (deselect)", async () => {
       const user = userEvent.setup();
       const handleChange = vi.fn();
-      render(
+      renderWithIntl(
         <FilterChipBar
           tags={TAGS}
           activeTag="react"
@@ -124,7 +125,7 @@ describe("FilterChipBar", () => {
     it("calls onTagChange with null when clicking All", async () => {
       const user = userEvent.setup();
       const handleChange = vi.fn();
-      render(
+      renderWithIntl(
         <FilterChipBar
           tags={TAGS}
           activeTag="react"
@@ -139,7 +140,7 @@ describe("FilterChipBar", () => {
   describe("overflow dropdown", () => {
     it("opens dropdown when overflow trigger is clicked", async () => {
       const user = userEvent.setup();
-      render(
+      renderWithIntl(
         <FilterChipBar tags={TAGS} activeTag={null} onTagChange={vi.fn()} />
       );
       await user.click(screen.getByRole("button", { name: "+1" }));
@@ -148,7 +149,7 @@ describe("FilterChipBar", () => {
 
     it("shows overflow tags in the dropdown", async () => {
       const user = userEvent.setup();
-      render(
+      renderWithIntl(
         <FilterChipBar tags={TAGS} activeTag={null} onTagChange={vi.fn()} />
       );
       await user.click(screen.getByRole("button", { name: "+1" }));
@@ -159,7 +160,7 @@ describe("FilterChipBar", () => {
     it("calls onTagChange and closes dropdown when overflow tag is clicked", async () => {
       const user = userEvent.setup();
       const handleChange = vi.fn();
-      render(
+      renderWithIntl(
         <FilterChipBar
           tags={TAGS}
           activeTag={null}
@@ -174,7 +175,7 @@ describe("FilterChipBar", () => {
 
     it("closes dropdown on outside click", async () => {
       const user = userEvent.setup();
-      render(
+      renderWithIntl(
         <div>
           <FilterChipBar
             tags={TAGS}
@@ -192,7 +193,7 @@ describe("FilterChipBar", () => {
 
     it("closes dropdown on Escape key", async () => {
       const user = userEvent.setup();
-      render(
+      renderWithIntl(
         <FilterChipBar tags={TAGS} activeTag={null} onTagChange={vi.fn()} />
       );
       await user.click(screen.getByRole("button", { name: "+1" }));
@@ -203,7 +204,7 @@ describe("FilterChipBar", () => {
 
     it("does not add event listeners when dropdown is closed", () => {
       // Render with overflow but no open -- shouldn't throw
-      render(
+      renderWithIntl(
         <FilterChipBar tags={TAGS} activeTag={null} onTagChange={vi.fn()} />
       );
       // Pressing escape while closed does nothing
@@ -213,7 +214,7 @@ describe("FilterChipBar", () => {
 
     it("does not close dropdown when a non-Escape key is pressed", async () => {
       const user = userEvent.setup();
-      render(
+      renderWithIntl(
         <FilterChipBar tags={TAGS} activeTag={null} onTagChange={vi.fn()} />
       );
       await user.click(screen.getByRole("button", { name: "+1" }));
@@ -224,7 +225,7 @@ describe("FilterChipBar", () => {
     });
 
     it("overflow trigger chip shows active variant when an overflow tag is active", () => {
-      render(
+      renderWithIntl(
         <FilterChipBar
           tags={TAGS}
           activeTag="typescript"
@@ -237,7 +238,7 @@ describe("FilterChipBar", () => {
     });
 
     it("overflow trigger chip shows inactive variant when no overflow tag is active", () => {
-      render(
+      renderWithIntl(
         <FilterChipBar tags={TAGS} activeTag={null} onTagChange={vi.fn()} />
       );
       const overflowTrigger = screen.getByRole("button", { name: "+1" });
@@ -246,7 +247,7 @@ describe("FilterChipBar", () => {
 
     it("toggles dropdown closed when overflow trigger is clicked again", async () => {
       const user = userEvent.setup();
-      render(
+      renderWithIntl(
         <FilterChipBar tags={TAGS} activeTag={null} onTagChange={vi.fn()} />
       );
       await user.click(screen.getByRole("button", { name: "+1" }));
@@ -258,7 +259,7 @@ describe("FilterChipBar", () => {
 
   describe("visibleCount prop", () => {
     it("respects custom visibleCount", () => {
-      render(
+      renderWithIntl(
         <FilterChipBar
           tags={[
             { label: "A", value: "a" },
@@ -281,7 +282,7 @@ describe("FilterChipBar", () => {
     it("calls onTagChange with null when active overflow tag is clicked", async () => {
       const user = userEvent.setup();
       const handleChange = vi.fn();
-      render(
+      renderWithIntl(
         <FilterChipBar
           tags={TAGS}
           activeTag="typescript"
@@ -296,7 +297,7 @@ describe("FilterChipBar", () => {
 
   describe("without typeFilters prop", () => {
     it("renders only the All chip and visible tag chips (no type filter chips)", () => {
-      render(
+      renderWithIntl(
         <FilterChipBar
           tags={[{ label: "A", value: "a" }, { label: "B", value: "b" }]}
           activeTag={null}
@@ -310,7 +311,7 @@ describe("FilterChipBar", () => {
     });
 
     it("does not render any divider element when typeFilters is not provided", () => {
-      const { container } = render(
+      const { container } = renderWithIntl(
         <FilterChipBar
           tags={[{ label: "A", value: "a" }]}
           activeTag={null}
@@ -322,7 +323,7 @@ describe("FilterChipBar", () => {
     });
 
     it("renders an empty tag list with only the All chip", () => {
-      render(
+      renderWithIntl(
         <FilterChipBar
           tags={[]}
           activeTag={null}

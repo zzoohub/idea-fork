@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { useTranslations } from "next-intl";
 import { SearchInput, Icon } from "@/src/shared/ui";
 
 /* --------------------------------------------------------------------------
@@ -14,6 +15,7 @@ interface SearchOverlayProps {
   value: string;
   onChange: (value: string) => void;
   onClear: () => void;
+  onSubmit?: (value: string) => void;
 }
 
 export function SearchOverlay({
@@ -22,9 +24,12 @@ export function SearchOverlay({
   value,
   onChange,
   onClear,
+  onSubmit,
 }: SearchOverlayProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const previousFocusRef = useRef<HTMLElement | null>(null);
+  const tSearch = useTranslations("search");
+  const tA11y = useTranslations("accessibility");
 
   /* Auto-focus input on open, restore focus on close */
   useEffect(() => {
@@ -71,7 +76,7 @@ export function SearchOverlay({
     <div
       role="dialog"
       aria-modal="true"
-      aria-label="Search"
+      aria-label={tA11y("openSearch")}
       className={[
         "fixed inset-0 z-[100]",
         "bg-bg-primary",
@@ -89,14 +94,23 @@ export function SearchOverlay({
       aria-hidden={!isOpen}
     >
       {/* Header: input + close button */}
-      <div className="flex items-center gap-space-sm p-layout-xs">
+      <form
+        className="flex items-center gap-space-sm p-layout-xs"
+        onSubmit={(e) => {
+          e.preventDefault();
+          if (value.trim() && onSubmit) {
+            onSubmit(value);
+            onClose();
+          }
+        }}
+      >
         <SearchInput
           ref={inputRef}
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          placeholder="Search products, briefs..."
+          placeholder={tSearch("placeholder")}
           className="flex-1"
-          aria-label="Search query"
+          aria-label={tA11y("searchBriefsAndProducts")}
         />
         <button
           type="button"
@@ -112,17 +126,17 @@ export function SearchOverlay({
             transitionDuration: "var(--duration-fast)",
             transitionTimingFunction: "var(--ease-out)",
           }}
-          aria-label="Close search"
+          aria-label={tA11y("closeSearch")}
         >
           <Icon name="close" size={20} />
         </button>
-      </div>
+      </form>
 
       {/* Body: future search results would render here */}
       <div className="flex-1 px-layout-xs pt-space-lg">
         {value.length === 0 && (
           <p className="text-body-sm text-text-tertiary text-center mt-space-xl">
-            Type to start searching
+            {tSearch("helpText")}
           </p>
         )}
       </div>

@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { renderWithIntl } from "@/src/shared/test/with-intl";
 import { SortDropdown } from "./sort-dropdown";
 
 const OPTIONS = [
@@ -12,12 +13,12 @@ const OPTIONS = [
 describe("SortDropdown", () => {
   describe("rendering", () => {
     it("renders a select element with aria-label", () => {
-      render(<SortDropdown options={OPTIONS} />);
+      renderWithIntl(<SortDropdown options={OPTIONS} />);
       expect(screen.getByRole("combobox", { name: "Sort by" })).toBeInTheDocument();
     });
 
     it("renders all options", () => {
-      render(<SortDropdown options={OPTIONS} />);
+      renderWithIntl(<SortDropdown options={OPTIONS} />);
       expect(screen.getByRole("option", { name: "Newest" })).toBeInTheDocument();
       expect(screen.getByRole("option", { name: "Oldest" })).toBeInTheDocument();
       expect(
@@ -26,12 +27,12 @@ describe("SortDropdown", () => {
     });
 
     it("shows the selected value", () => {
-      render(<SortDropdown options={OPTIONS} value="oldest" />);
+      renderWithIntl(<SortDropdown options={OPTIONS} value="oldest" />);
       expect(screen.getByRole("combobox")).toHaveValue("oldest");
     });
 
     it("renders with no selected value (uncontrolled)", () => {
-      render(<SortDropdown options={OPTIONS} />);
+      renderWithIntl(<SortDropdown options={OPTIONS} />);
       const select = screen.getByRole("combobox");
       expect(select).toBeInTheDocument();
     });
@@ -41,7 +42,7 @@ describe("SortDropdown", () => {
     it("fires onChange with selected value", async () => {
       const user = userEvent.setup();
       const handleChange = vi.fn();
-      render(
+      renderWithIntl(
         <SortDropdown options={OPTIONS} value="newest" onChange={handleChange} />
       );
       await user.selectOptions(screen.getByRole("combobox"), "oldest");
@@ -50,7 +51,7 @@ describe("SortDropdown", () => {
 
     it("does not throw when onChange is not provided", async () => {
       const user = userEvent.setup();
-      render(<SortDropdown options={OPTIONS} value="newest" />);
+      renderWithIntl(<SortDropdown options={OPTIONS} value="newest" />);
       // No onChange — selecting should not throw
       await user.selectOptions(screen.getByRole("combobox"), "oldest");
     });
@@ -58,7 +59,7 @@ describe("SortDropdown", () => {
 
   describe("className", () => {
     it("merges custom className on wrapper", () => {
-      const { container } = render(
+      const { container } = renderWithIntl(
         <SortDropdown options={OPTIONS} className="my-class" />
       );
       expect(container.firstChild).toHaveClass("my-class");

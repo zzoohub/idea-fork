@@ -33,6 +33,26 @@ class ProductHuntClient(Protocol):
     async def fetch_recent_products(self, limit: int = 30) -> list[RawProduct]: ...
 
 
+class AppStoreClient(Protocol):
+    async def search_apps(
+        self, keywords: list[str], limit: int = 20
+    ) -> list[RawProduct]: ...
+
+    async def fetch_reviews(
+        self, app_id: str, country: str = "us", pages: int = 3
+    ) -> list[RawPost]: ...
+
+
+class PlayStoreClient(Protocol):
+    async def search_apps(
+        self, keywords: list[str], limit: int = 20
+    ) -> list[RawProduct]: ...
+
+    async def fetch_reviews(
+        self, app_id: str, count: int = 100
+    ) -> list[RawPost]: ...
+
+
 class LlmClient(Protocol):
     async def tag_posts(
         self, posts: list[Post], *, existing_tags: list[str] | None = None,
@@ -79,3 +99,5 @@ class PipelineRepository(Protocol):
     async def save_brief(self, cluster_id: int, draft: BriefDraft) -> None: ...
 
     async def find_related_products(self, keyword: str) -> list[RawProduct]: ...
+
+    async def update_product_scores(self) -> int: ...

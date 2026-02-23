@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
+import { useTranslations } from "next-intl";
+import { Link } from "@/src/shared/i18n/navigation";
 import {
   Icon,
   ErrorState,
@@ -33,6 +34,9 @@ export function BriefDetailPage({ slug }: BriefDetailPageProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showAllSources, setShowAllSources] = useState(false);
+  const t = useTranslations("briefDetail");
+  const tCommon = useTranslations("common");
+  const tA11y = useTranslations("accessibility");
 
   useEffect(() => {
     let cancelled = false;
@@ -47,16 +51,16 @@ export function BriefDetailPage({ slug }: BriefDetailPageProps) {
       })
       .catch(() => {
         if (!cancelled) {
-          setError("Failed to load brief.");
+          setError(t("errors.loadFailed"));
           setLoading(false);
         }
       });
 
     return () => { cancelled = true; };
-  }, [slug]);
+  }, [slug, t]);
 
   if (loading) return <BriefDetailSkeleton />;
-  if (error || !brief) return <ErrorState message={error ?? "Brief not found."} onRetry={() => window.location.reload()} />;
+  if (error || !brief) return <ErrorState message={error ?? t("errors.notFound")} onRetry={() => window.location.reload()} />;
 
   /* Map API data to component interfaces */
   const parsed = extractDemandSignals(brief.demand_signals);
@@ -116,14 +120,14 @@ export function BriefDetailPage({ slug }: BriefDetailPageProps) {
         {/* ================================================================ */}
         <article className="min-w-0" aria-labelledby="brief-title">
           {/* Breadcrumbs */}
-          <nav aria-label="Breadcrumb" className="mb-6">
+          <nav aria-label={tA11y("breadcrumb")} className="mb-6">
             <ol className="flex items-center gap-1.5 text-sm">
               <li>
                 <Link
                   href="/briefs"
                   className="text-slate-400 hover:text-slate-200 transition-colors no-underline"
                 >
-                  Briefs
+                  {t("breadcrumbBriefs")}
                 </Link>
               </li>
               <li aria-hidden="true">
@@ -157,21 +161,6 @@ export function BriefDetailPage({ slug }: BriefDetailPageProps) {
               className={[
                 "inline-flex items-center gap-2",
                 "px-4 py-2.5 rounded-lg",
-                "border border-[#283039] bg-transparent",
-                "text-sm font-semibold text-slate-300",
-                "hover:border-slate-500 hover:text-white",
-                "transition-colors cursor-pointer",
-              ].join(" ")}
-              aria-label="Save this brief"
-            >
-              <Icon name="bookmark" size={18} />
-              Save
-            </button>
-            <button
-              type="button"
-              className={[
-                "inline-flex items-center gap-2",
-                "px-4 py-2.5 rounded-lg",
                 "bg-[#137fec] text-white",
                 "text-sm font-semibold",
                 "hover:bg-[#1171d4]",
@@ -179,7 +168,7 @@ export function BriefDetailPage({ slug }: BriefDetailPageProps) {
               ].join(" ")}
             >
               <Icon name="rocket" size={18} />
-              Create Project
+              {t("createProject")}
             </button>
           </div>
 
@@ -217,7 +206,7 @@ export function BriefDetailPage({ slug }: BriefDetailPageProps) {
                   id="source-posts-heading"
                   className="text-xl font-bold text-white"
                 >
-                  Key Source Posts
+                  {t("keySourcePosts")}
                 </h2>
                 <span className="text-sm text-slate-500 tabular-nums">
                   ({sourceSnapshots.length})
@@ -261,8 +250,8 @@ export function BriefDetailPage({ slug }: BriefDetailPageProps) {
                       size={18}
                     />
                     {showAllSources
-                      ? "Show fewer posts"
-                      : `Show ${remainingCount} more`}
+                      ? tCommon("showFewer")
+                      : tCommon("showMore", { count: remainingCount })}
                   </button>
                 </div>
               )}
@@ -275,7 +264,7 @@ export function BriefDetailPage({ slug }: BriefDetailPageProps) {
           {/* ---- Feedback footer ---- */}
           <section
             className="p-6 rounded-xl bg-slate-800/30 border border-slate-700/50"
-            aria-label="Rate this brief"
+            aria-label={tA11y("rateThisBrief")}
           >
             <BriefRating briefId={brief.id} />
           </section>
@@ -293,7 +282,7 @@ export function BriefDetailPage({ slug }: BriefDetailPageProps) {
                 size={18}
                 className="text-[#137fec]"
               />
-              <h3 className="text-sm font-bold text-white">Opportunity</h3>
+              <h3 className="text-sm font-bold text-white">{t("opportunity")}</h3>
             </div>
             <p className="text-sm text-slate-400 leading-relaxed">
               {brief.opportunity || brief.summary}
@@ -312,7 +301,7 @@ export function BriefDetailPage({ slug }: BriefDetailPageProps) {
               "transition-colors no-underline",
             ].join(" ")}
           >
-            View all briefs
+            {t("viewAllBriefs")}
             <Icon name="arrow-right" size={14} />
           </Link>
         </aside>
@@ -342,6 +331,7 @@ function SourcePostCard({
   post: SourcePost;
   sourceNumber: number;
 }) {
+  const tCommon = useTranslations("common");
   const platformIcon = post.source === "reddit" ? "messages-square" : "smartphone";
   const platformColor =
     post.source === "reddit" ? "text-[#FF4500]" : "text-slate-400";
@@ -385,7 +375,7 @@ function SourcePostCard({
           </div>
         </div>
         <span className="shrink-0 ml-3 text-xs font-semibold text-[#137fec] bg-[#137fec]/10 px-2.5 py-1 rounded-full">
-          Source {sourceNumber}
+          {tCommon("source", { number: sourceNumber })}
         </span>
       </div>
 

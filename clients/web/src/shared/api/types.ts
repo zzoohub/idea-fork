@@ -74,11 +74,16 @@ export interface ProductListItem {
   slug: string;
   name: string;
   description: string | null;
+  tagline: string | null;
   url: string | null;
   image_url: string | null;
   category: string | null;
+  source: string | null;
+  sources: string[];
+  launched_at: string | null;
   complaint_count: number;
   trending_score: number;
+  tags: Tag[];
 }
 
 export interface ProductPost {
@@ -94,7 +99,14 @@ export interface ProductPost {
   sentiment: string | null;
 }
 
+export interface ProductMetrics {
+  total_mentions: number;
+  negative_count: number;
+  sentiment_score: number;
+}
+
 export interface ProductDetail extends ProductListItem {
+  metrics: ProductMetrics;
   posts: ProductPost[];
 }
 

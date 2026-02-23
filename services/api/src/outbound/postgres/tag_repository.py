@@ -5,7 +5,7 @@ from sqlalchemy import func, select
 from domain.tag.models import Tag
 from outbound.postgres.database import Database
 from outbound.postgres.mapper import tag_to_domain
-from outbound.postgres.models import PostRow, PostTagRow, TagRow
+from outbound.postgres.models import PostRow, PostTagRow, ProductTagRow, TagRow
 
 
 class PostgresTagRepository:
@@ -31,6 +31,21 @@ class PostgresTagRepository:
             )
             .group_by(TagRow.id)
             .order_by(func.count(PostTagRow.post_id).desc())
+            .limit(limit)
+        )
+        async with self._db.session() as session:
+            result = await session.execute(stmt)
+            return [tag_to_domain(row) for row, _ in result.all()]
+
+    async def list_product_tags(self, limit: int = 20) -> list[Tag]:
+        stmt = (
+            select(
+                TagRow,
+                func.count(ProductTagRow.product_id).label("product_count"),
+            )
+            .join(ProductTagRow, ProductTagRow.tag_id == TagRow.id)
+            .group_by(TagRow.id)
+            .order_by(func.count(ProductTagRow.product_id).desc())
             .limit(limit)
         )
         async with self._db.session() as session:

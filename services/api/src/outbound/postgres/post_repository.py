@@ -5,7 +5,7 @@ from domain.post.models import Post, PostListParams
 from outbound.postgres.database import Database
 from outbound.postgres.mapper import post_to_domain
 from outbound.postgres.models import PostRow, PostTagRow, ProductPostRow, TagRow
-from shared.pagination import decode_cursor
+from shared.pagination import cast_cursor_value, decode_cursor
 
 SORT_COLUMN_MAP = {
     "-external_created_at": PostRow.external_created_at,
@@ -90,7 +90,7 @@ class PostgresPostRepository:
             return stmt
 
         values = decode_cursor(cursor)
-        cursor_sort_val = values.get("v")
+        cursor_sort_val = cast_cursor_value(values.get("v"), sort_col)
         cursor_id = values.get("id")
 
         return stmt.where(

@@ -1,4 +1,5 @@
-import Link from "next/link";
+import { useTranslations } from "next-intl";
+import { Link } from "@/src/shared/i18n/navigation";
 import { Icon } from "@/src/shared/ui/icon";
 import { HeatBadge } from "./heat-badge";
 import type { HeatLevel } from "@/src/shared/lib/compute-heat-level";
@@ -52,6 +53,9 @@ export function BriefCard({
   slug,
   sourcePlatforms = [],
 }: BriefCardProps) {
+  const t = useTranslations("briefCard");
+  const tCommon = useTranslations("common");
+
   return (
     <Link
       href={`/briefs/${slug}`}
@@ -69,20 +73,9 @@ export function BriefCard({
           "hover:-translate-y-1",
         ].join(" ")}
       >
-        {/* Row 1: Heat badge + Bookmark */}
-        <div className="flex justify-between items-start mb-3">
+        {/* Row 1: Heat badge */}
+        <div className="mb-3">
           <HeatBadge level={heatLevel} />
-          <button
-            type="button"
-            className="shrink-0 text-slate-400 hover:text-[#137fec] transition-colors p-0.5"
-            aria-label="Bookmark this brief"
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-            }}
-          >
-            <Icon name="bookmark" size={20} />
-          </button>
         </div>
 
         {/* Row 2: Title */}
@@ -104,16 +97,16 @@ export function BriefCard({
                 <PlatformStack platforms={sourcePlatforms} />
               )}
               <span className="text-xs text-slate-500 dark:text-[#7a8a9a] tabular-nums">
-                {complaintCount} complaint{complaintCount === 1 ? "" : "s"}
+                {t("complaints", { count: complaintCount })}
               </span>
               <span className="text-xs text-slate-400 dark:text-[#5e6e7e]" aria-hidden="true">&middot;</span>
               <span className="text-xs text-slate-500 dark:text-[#7a8a9a]">
-                across {communityCount} {communityCount === 1 ? "community" : "communities"}
+                {t("communities", { count: communityCount })}
               </span>
             </div>
             {freshness && (
               <span className="text-xs text-slate-400 dark:text-[#5e6e7e]">
-                Active {freshness}
+                {tCommon("active", { time: freshness })}
               </span>
             )}
           </div>
@@ -131,7 +124,7 @@ export function BriefCard({
               ))}
             </div>
             <span className="inline-flex items-center gap-1 text-[#137fec] text-sm font-bold shrink-0 transition-all group-hover:gap-2">
-              Read Brief
+              {t("readBrief")}
               <Icon name="arrow-right" size={16} />
             </span>
           </div>

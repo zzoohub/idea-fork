@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { Button } from "./button";
 import { Icon } from "./icon";
 
@@ -10,10 +11,13 @@ interface ErrorStateProps {
 }
 
 export function ErrorState({
-  message = "Something went wrong.",
+  message,
   onRetry,
   className,
 }: ErrorStateProps) {
+  const t = useTranslations("errorState");
+  const tCommon = useTranslations("common");
+
   return (
     <div
       className={[
@@ -27,11 +31,13 @@ export function ErrorState({
       <div className="mb-space-md text-warning">
         <Icon name="warning" size={32} />
       </div>
-      <p className="text-body text-text-secondary max-w-[320px]">{message}</p>
+      <p className="text-body text-text-secondary max-w-[320px]">
+        {message ?? t("default")}
+      </p>
       {onRetry && (
         <div className="mt-space-lg">
           <Button variant="ghost" onClick={onRetry}>
-            Try again
+            {tCommon("tryAgain")}
           </Button>
         </div>
       )}

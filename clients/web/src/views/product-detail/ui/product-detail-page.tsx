@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
+import { useTranslations } from "next-intl";
+import { Link } from "@/src/shared/i18n/navigation";
 import { Icon } from "@/src/shared/ui/icon";
 import { Badge } from "@/src/shared/ui/badge";
 import { ErrorState } from "@/src/shared/ui/error-state";
@@ -19,17 +20,19 @@ const INITIAL_VISIBLE_COUNT = 4;
 /* --------------------------------------------------------------------------
    Sentiment config
    -------------------------------------------------------------------------- */
-const SENTIMENT_CONFIG: Record<
+type SentimentLabelKey = "frustrated" | "featureRequest" | "question" | "bugReport";
+
+const SENTIMENT_VARIANT: Record<
   string,
-  { label: string; variant: "frustrated" | "request" | "question" | "bug_report" }
+  { labelKey: SentimentLabelKey; variant: "frustrated" | "request" | "question" | "bug_report" }
 > = {
-  frustrated: { label: "Frustrated", variant: "frustrated" },
-  negative: { label: "Frustrated", variant: "frustrated" },
-  request: { label: "Feature Request", variant: "request" },
-  feature_request: { label: "Feature Request", variant: "request" },
-  question: { label: "Question", variant: "question" },
-  bug_report: { label: "Bug Report", variant: "bug_report" },
-  bug: { label: "Bug Report", variant: "bug_report" },
+  frustrated: { labelKey: "frustrated", variant: "frustrated" },
+  negative: { labelKey: "frustrated", variant: "frustrated" },
+  request: { labelKey: "featureRequest", variant: "request" },
+  feature_request: { labelKey: "featureRequest", variant: "request" },
+  question: { labelKey: "question", variant: "question" },
+  bug_report: { labelKey: "bugReport", variant: "bug_report" },
+  bug: { labelKey: "bugReport", variant: "bug_report" },
 };
 
 function getSourceConfig(post: ProductPost) {
@@ -46,6 +49,12 @@ function getSourceConfig(post: ProductPost) {
   }
   if (s === "appstore" || s === "app_store") {
     return { label: "App Store", color: "bg-blue-500", icon: "A" };
+  }
+  if (s === "playstore" || s === "play_store") {
+    return { label: "Play Store", color: "bg-green-500", icon: "P" };
+  }
+  if (s === "producthunt") {
+    return { label: "Product Hunt", color: "bg-orange-600", icon: "PH" };
   }
   return { label: post.source, color: "bg-slate-500", icon: post.source[0] ?? "?" };
 }
@@ -64,6 +73,9 @@ export function ProductDetailPage({ slug }: ProductDetailPageProps) {
   const [error, setError] = useState<string | null>(null);
   const [showAllComplaints, setShowAllComplaints] = useState(false);
   const [sortBy, setSortBy] = useState<"recent" | "popular">("recent");
+  const t = useTranslations("productDetail");
+  const tCommon = useTranslations("common");
+  const tA11y = useTranslations("accessibility");
 
   useEffect(() => {
     let cancelled = false;
@@ -78,16 +90,16 @@ export function ProductDetailPage({ slug }: ProductDetailPageProps) {
       })
       .catch(() => {
         if (!cancelled) {
-          setError("Failed to load product.");
+          setError(t("errors.loadFailed"));
           setLoading(false);
         }
       });
 
     return () => { cancelled = true; };
-  }, [slug]);
+  }, [slug, t]);
 
   if (loading) return <ProductDetailSkeleton />;
-  if (error || !product) return <ErrorState message={error ?? "Product not found."} onRetry={() => window.location.reload()} />;
+  if (error || !product) return <ErrorState message={error ?? t("errors.notFound")} onRetry={() => window.location.reload()} />;
 
   const sortedPosts = [...product.posts].sort((a, b) => {
     if (sortBy === "popular") return b.score - a.score;
@@ -103,14 +115,14 @@ export function ProductDetailPage({ slug }: ProductDetailPageProps) {
   return (
     <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-10">
       {/* Breadcrumbs */}
-      <nav aria-label="Breadcrumb" className="mb-6">
+      <nav aria-label={tA11y("breadcrumb")} className="mb-6">
         <ol className="flex items-center gap-1.5 text-sm">
           <li>
             <Link
               href="/products"
               className="text-slate-500 dark:text-slate-400 hover:text-[#137fec] transition-colors duration-150 no-underline"
             >
-              Products
+              {t("breadcrumbProducts")}
             </Link>
           </li>
           <li aria-hidden="true">
@@ -133,16 +145,16 @@ export function ProductDetailPage({ slug }: ProductDetailPageProps) {
         <ProductHeader
           name={product.name}
           iconUrl={product.image_url ?? undefined}
-          category={product.category ?? "Uncategorized"}
+          category={product.category ?? tCommon("uncategorized")}
           description={product.description ?? undefined}
           websiteUrl={product.url ?? undefined}
           status="Active"
         />
 
         <ComplaintSummary
-          totalMentions={product.complaint_count}
+          totalMentions={product.metrics?.total_mentions ?? product.complaint_count}
           criticalComplaints={product.posts.length}
-          sentimentScore={Math.round(product.trending_score)}
+          sentimentScore={product.metrics?.sentiment_score ?? Math.round(product.trending_score)}
           themes={[]}
         />
       </div>
@@ -155,7 +167,7 @@ export function ProductDetailPage({ slug }: ProductDetailPageProps) {
             id="complaints-heading"
             className="text-xl font-bold text-slate-900 dark:text-slate-50"
           >
-            User Complaints
+            {t("userComplaints")}
             <span className="ml-2 text-base font-normal text-slate-500 dark:text-slate-400">
               ({sortedPosts.length})
             </span>
@@ -173,7 +185,7 @@ export function ProductDetailPage({ slug }: ProductDetailPageProps) {
               ].join(" ")}
               onClick={() => setSortBy("recent")}
             >
-              Most Recent
+              {t("sortRecent")}
             </button>
             <button
               type="button"
@@ -186,7 +198,7 @@ export function ProductDetailPage({ slug }: ProductDetailPageProps) {
               ].join(" ")}
               onClick={() => setSortBy("popular")}
             >
-              Most Popular
+              {t("sortPopular")}
             </button>
           </div>
         </div>
@@ -195,7 +207,7 @@ export function ProductDetailPage({ slug }: ProductDetailPageProps) {
         <div className="space-y-4">
           {visibleComplaints.map((complaint) => {
             const sentimentCfg = complaint.sentiment
-              ? SENTIMENT_CONFIG[complaint.sentiment]
+              ? SENTIMENT_VARIANT[complaint.sentiment]
               : undefined;
             const srcCfg = getSourceConfig(complaint);
             return (
@@ -233,7 +245,7 @@ export function ProductDetailPage({ slug }: ProductDetailPageProps) {
                   </div>
                   {sentimentCfg && (
                     <Badge variant={sentimentCfg.variant}>
-                      {sentimentCfg.label}
+                      {t(`sentiment.${sentimentCfg.labelKey}`)}
                     </Badge>
                   )}
                 </div>
@@ -264,12 +276,12 @@ export function ProductDetailPage({ slug }: ProductDetailPageProps) {
                       rel="noopener noreferrer"
                       className="inline-flex items-center gap-1 text-xs font-medium text-[#137fec] hover:text-[#0f6bca] transition-colors duration-150"
                     >
-                      View Original
+                      {tCommon("viewOriginal")}
                       <Icon name="external-link" size={14} />
                     </a>
                   ) : (
                     <span className="text-xs text-slate-400">
-                      View Original
+                      {tCommon("viewOriginal")}
                     </span>
                   )}
                 </div>
@@ -298,8 +310,8 @@ export function ProductDetailPage({ slug }: ProductDetailPageProps) {
                 size={18}
               />
               {showAllComplaints
-                ? "Show fewer complaints"
-                : `Show all ${sortedPosts.length} complaints`}
+                ? tCommon("showFewerComplaints")
+                : tCommon("showAllComplaints", { count: sortedPosts.length })}
             </button>
           </div>
         )}

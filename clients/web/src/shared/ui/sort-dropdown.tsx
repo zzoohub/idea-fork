@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { Icon } from "./icon";
 
 interface SortOption {
@@ -20,6 +21,8 @@ export function SortDropdown({
   onChange,
   className = "",
 }: SortDropdownProps) {
+  const tA11y = useTranslations("accessibility");
+
   return (
     <div className={`relative inline-flex items-center ${className}`}>
       <Icon
@@ -40,7 +43,7 @@ export function SortDropdown({
           "hover:border-border-active",
           "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus",
         ].join(" ")}
-        aria-label="Sort by"
+        aria-label={tA11y("sortBy")}
       >
         {options.map((opt) => (
           <option key={opt.value} value={opt.value}>

@@ -1,11 +1,12 @@
 import { describe, it, expect } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { screen } from "@testing-library/react";
+import { renderWithIntl } from "@/src/shared/test/with-intl";
 import { ProductHeader } from "./product-header";
 
 describe("ProductHeader", () => {
   describe("name and category", () => {
     it("renders the product name as h1", () => {
-      render(
+      renderWithIntl(
         <ProductHeader name="Acme App" category="Productivity" />
       );
       expect(
@@ -14,14 +15,14 @@ describe("ProductHeader", () => {
     });
 
     it("renders the category", () => {
-      render(<ProductHeader name="MyApp" category="Finance" />);
+      renderWithIntl(<ProductHeader name="MyApp" category="Finance" />);
       expect(screen.getByText("Finance")).toBeInTheDocument();
     });
   });
 
   describe("description", () => {
     it("renders description when provided", () => {
-      render(
+      renderWithIntl(
         <ProductHeader
           name="App"
           category="Tools"
@@ -32,7 +33,7 @@ describe("ProductHeader", () => {
     });
 
     it("does not render description when not provided", () => {
-      const { container } = render(
+      const { container } = renderWithIntl(
         <ProductHeader name="App" category="Tools" />
       );
       // Only the category text should appear, no description paragraph
@@ -42,21 +43,21 @@ describe("ProductHeader", () => {
 
   describe("status", () => {
     it("renders status badge when provided", () => {
-      render(
+      renderWithIntl(
         <ProductHeader name="App" category="Tools" status="Active" />
       );
       expect(screen.getByText("Active")).toBeInTheDocument();
     });
 
     it("does not render status badge when not provided", () => {
-      render(<ProductHeader name="App" category="Tools" />);
+      renderWithIntl(<ProductHeader name="App" category="Tools" />);
       expect(screen.queryByText("Active")).not.toBeInTheDocument();
     });
   });
 
   describe("icon / avatar", () => {
     it("renders img when iconUrl is provided", () => {
-      const { container } = render(
+      const { container } = renderWithIntl(
         <ProductHeader
           name="Acme"
           category="Tools"
@@ -69,7 +70,7 @@ describe("ProductHeader", () => {
     });
 
     it("renders letter avatar when iconUrl is not provided", () => {
-      render(<ProductHeader name="Zendesk" category="CRM" />);
+      renderWithIntl(<ProductHeader name="Zendesk" category="CRM" />);
       // First letter uppercase
       expect(screen.getByText("Z")).toBeInTheDocument();
     });
@@ -77,7 +78,7 @@ describe("ProductHeader", () => {
 
   describe("websiteUrl", () => {
     it("renders website link when websiteUrl is provided", () => {
-      render(
+      renderWithIntl(
         <ProductHeader
           name="App"
           category="Tools"
@@ -89,7 +90,7 @@ describe("ProductHeader", () => {
     });
 
     it("opens website link in new tab", () => {
-      render(
+      renderWithIntl(
         <ProductHeader
           name="App"
           category="Tools"
@@ -102,21 +103,21 @@ describe("ProductHeader", () => {
     });
 
     it("does not render website link when websiteUrl is not provided", () => {
-      render(<ProductHeader name="App" category="Tools" />);
+      renderWithIntl(<ProductHeader name="App" category="Tools" />);
       expect(screen.queryByRole("link")).not.toBeInTheDocument();
     });
   });
 
   describe("className", () => {
     it("merges custom className", () => {
-      const { container } = render(
+      const { container } = renderWithIntl(
         <ProductHeader name="App" category="Tools" className="custom-header" />
       );
       expect(container.firstChild).toHaveClass("custom-header");
     });
 
     it("renders without className prop", () => {
-      const { container } = render(
+      const { container } = renderWithIntl(
         <ProductHeader name="App" category="Tools" />
       );
       expect(container.firstChild).toBeInTheDocument();

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { RatingButtons } from "@/src/shared/ui";
 import { createRating, updateRating } from "@/src/features/rating/api";
 
@@ -24,6 +25,7 @@ export function BriefRating({
   const [submitted, setSubmitted] = useState(initialValue !== null);
   const [feedbackText, setFeedbackText] = useState("");
   const [feedbackSent, setFeedbackSent] = useState(false);
+  const t = useTranslations("briefRating");
 
   function handleRate(value: RatingValue) {
     setRating(value);
@@ -66,18 +68,14 @@ export function BriefRating({
         {!submitted ? (
           <>
             <p className="text-body-sm text-text-secondary font-semibold">
-              Was this brief useful?
+              {t("wasUseful")}
             </p>
             <RatingButtons value={rating} onChange={handleRate} />
           </>
         ) : (
           <>
             <p className="text-body-sm text-text-secondary">
-              {feedbackSent
-                ? "Thanks for your feedback."
-                : rating === "up"
-                  ? "Thanks for your feedback."
-                  : "Thanks for your feedback."}
+              {t("thanks")}
             </p>
 
             {/* Thumbs-down: slide in optional text input */}
@@ -96,7 +94,7 @@ export function BriefRating({
                   htmlFor={`feedback-${briefId}`}
                   className="text-caption text-text-tertiary"
                 >
-                  What was missing? (optional)
+                  {t("whatMissing")}
                 </label>
                 <div className="flex gap-space-sm">
                   <input
@@ -105,7 +103,7 @@ export function BriefRating({
                     value={feedbackText}
                     onChange={(e) => setFeedbackText(e.target.value)}
                     maxLength={500}
-                    placeholder="Tell us more..."
+                    placeholder={t("tellUsMore")}
                     className={[
                       "flex-1 bg-bg-tertiary text-text-primary placeholder:text-text-tertiary",
                       "rounded-card border border-border",
@@ -139,7 +137,7 @@ export function BriefRating({
                       transitionTimingFunction: "var(--ease-out)",
                     }}
                   >
-                    Send
+                    {t("send")}
                   </button>
                 </div>
               </div>

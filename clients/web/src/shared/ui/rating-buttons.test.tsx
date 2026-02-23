@@ -1,19 +1,20 @@
 import { describe, it, expect, vi } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { renderWithIntl } from "@/src/shared/test/with-intl";
 import { RatingButtons } from "./rating-buttons";
 
 describe("RatingButtons", () => {
   describe("rendering", () => {
     it("renders a group with accessible label", () => {
-      render(<RatingButtons />);
+      renderWithIntl(<RatingButtons />);
       expect(
         screen.getByRole("group", { name: "Rate this content" })
       ).toBeInTheDocument();
     });
 
     it("renders Helpful and Not helpful buttons", () => {
-      render(<RatingButtons />);
+      renderWithIntl(<RatingButtons />);
       expect(
         screen.getByRole("button", { name: "Helpful" })
       ).toBeInTheDocument();
@@ -25,7 +26,7 @@ describe("RatingButtons", () => {
 
   describe("unrated state (value=null)", () => {
     it("neither button is pressed when value is null", () => {
-      render(<RatingButtons value={null} />);
+      renderWithIntl(<RatingButtons value={null} />);
       expect(screen.getByRole("button", { name: "Helpful" })).toHaveAttribute(
         "aria-pressed",
         "false"
@@ -38,7 +39,7 @@ describe("RatingButtons", () => {
 
   describe("rated-up state (value='up')", () => {
     it("Helpful button is pressed", () => {
-      render(<RatingButtons value="up" />);
+      renderWithIntl(<RatingButtons value="up" />);
       expect(screen.getByRole("button", { name: "Helpful" })).toHaveAttribute(
         "aria-pressed",
         "true"
@@ -46,14 +47,14 @@ describe("RatingButtons", () => {
     });
 
     it("Not helpful button is not pressed", () => {
-      render(<RatingButtons value="up" />);
+      renderWithIntl(<RatingButtons value="up" />);
       expect(
         screen.getByRole("button", { name: "Not helpful" })
       ).toHaveAttribute("aria-pressed", "false");
     });
 
     it("Helpful button has positive styling", () => {
-      render(<RatingButtons value="up" />);
+      renderWithIntl(<RatingButtons value="up" />);
       expect(screen.getByRole("button", { name: "Helpful" })).toHaveClass(
         "bg-positive/15"
       );
@@ -62,14 +63,14 @@ describe("RatingButtons", () => {
 
   describe("rated-down state (value='down')", () => {
     it("Not helpful button is pressed", () => {
-      render(<RatingButtons value="down" />);
+      renderWithIntl(<RatingButtons value="down" />);
       expect(
         screen.getByRole("button", { name: "Not helpful" })
       ).toHaveAttribute("aria-pressed", "true");
     });
 
     it("Helpful button is not pressed", () => {
-      render(<RatingButtons value="down" />);
+      renderWithIntl(<RatingButtons value="down" />);
       expect(screen.getByRole("button", { name: "Helpful" })).toHaveAttribute(
         "aria-pressed",
         "false"
@@ -77,7 +78,7 @@ describe("RatingButtons", () => {
     });
 
     it("Not helpful button has negative styling", () => {
-      render(<RatingButtons value="down" />);
+      renderWithIntl(<RatingButtons value="down" />);
       expect(
         screen.getByRole("button", { name: "Not helpful" })
       ).toHaveClass("bg-negative/15");
@@ -88,7 +89,7 @@ describe("RatingButtons", () => {
     it("calls onChange with 'up' when Helpful is clicked from unrated", async () => {
       const user = userEvent.setup();
       const handleChange = vi.fn();
-      render(<RatingButtons value={null} onChange={handleChange} />);
+      renderWithIntl(<RatingButtons value={null} onChange={handleChange} />);
       await user.click(screen.getByRole("button", { name: "Helpful" }));
       expect(handleChange).toHaveBeenCalledWith("up");
     });
@@ -96,7 +97,7 @@ describe("RatingButtons", () => {
     it("calls onChange with null when Helpful is clicked while already up", async () => {
       const user = userEvent.setup();
       const handleChange = vi.fn();
-      render(<RatingButtons value="up" onChange={handleChange} />);
+      renderWithIntl(<RatingButtons value="up" onChange={handleChange} />);
       await user.click(screen.getByRole("button", { name: "Helpful" }));
       expect(handleChange).toHaveBeenCalledWith(null);
     });
@@ -104,7 +105,7 @@ describe("RatingButtons", () => {
     it("calls onChange with 'down' when Not helpful is clicked from unrated", async () => {
       const user = userEvent.setup();
       const handleChange = vi.fn();
-      render(<RatingButtons value={null} onChange={handleChange} />);
+      renderWithIntl(<RatingButtons value={null} onChange={handleChange} />);
       await user.click(screen.getByRole("button", { name: "Not helpful" }));
       expect(handleChange).toHaveBeenCalledWith("down");
     });
@@ -112,14 +113,14 @@ describe("RatingButtons", () => {
     it("calls onChange with null when Not helpful is clicked while already down", async () => {
       const user = userEvent.setup();
       const handleChange = vi.fn();
-      render(<RatingButtons value="down" onChange={handleChange} />);
+      renderWithIntl(<RatingButtons value="down" onChange={handleChange} />);
       await user.click(screen.getByRole("button", { name: "Not helpful" }));
       expect(handleChange).toHaveBeenCalledWith(null);
     });
 
     it("does not crash when onChange is not provided", async () => {
       const user = userEvent.setup();
-      render(<RatingButtons value={null} />);
+      renderWithIntl(<RatingButtons value={null} />);
       // Clicking without onChange — should not throw
       await user.click(screen.getByRole("button", { name: "Helpful" }));
     });
@@ -127,7 +128,7 @@ describe("RatingButtons", () => {
 
   describe("className", () => {
     it("merges custom className on wrapper", () => {
-      render(<RatingButtons className="custom-class" />);
+      renderWithIntl(<RatingButtons className="custom-class" />);
       expect(
         screen.getByRole("group", { name: "Rate this content" })
       ).toHaveClass("custom-class");

@@ -1,6 +1,7 @@
 "use client";
 
-import Link from "next/link";
+import { useTranslations } from "next-intl";
+import { Link } from "@/src/shared/i18n/navigation";
 import { Icon } from "@/src/shared/ui/icon";
 import { Badge } from "@/src/shared/ui/badge";
 import { isSafeUrl } from "@/src/shared/lib/sanitize-url";
@@ -28,20 +29,20 @@ interface PostCardProps {
 }
 
 /* --------------------------------------------------------------------------
-   Sentiment badge label mapping
+   Post type badge key mapping
    -------------------------------------------------------------------------- */
 
-const POST_TYPE_LABEL: Record<string, string> = {
-  need: "Need",
-  complaint: "Complaint",
-  feature_request: "Feature Request",
-  alternative_seeking: "Alternative",
-  comparison: "Comparison",
-  question: "Question",
-  review: "Review",
+const POST_TYPE_LABEL_KEY: Record<string, "need" | "complaint" | "featureRequest" | "alternative" | "comparison" | "question" | "review"> = {
+  need: "need",
+  complaint: "complaint",
+  feature_request: "featureRequest",
+  alternative_seeking: "alternative",
+  comparison: "comparison",
+  question: "question",
+  review: "review",
 };
 
-const POST_TYPE_BADGE_VARIANT: Record<string, string> = {
+const POST_TYPE_BADGE_VARIANT: Record<string, "frustrated" | "request" | "question"> = {
   complaint: "frustrated",
   feature_request: "request",
   question: "question",
@@ -120,6 +121,9 @@ export function PostCard({
   briefSlug,
   onTagClick,
 }: PostCardProps) {
+  const t = useTranslations("postCard");
+  const tFeed = useTranslations("feed.postTypes");
+
   return (
     <article
       className={[
@@ -158,9 +162,9 @@ export function PostCard({
 
         {/* Right: Badges */}
         <div className="flex items-center gap-1.5 shrink-0">
-          {postType && POST_TYPE_LABEL[postType] && (
+          {postType && POST_TYPE_LABEL_KEY[postType] && (
             <Badge variant={POST_TYPE_BADGE_VARIANT[postType] ?? "default"}>
-              {POST_TYPE_LABEL[postType]}
+              {tFeed(POST_TYPE_LABEL_KEY[postType])}
             </Badge>
           )}
         </div>
@@ -242,12 +246,12 @@ export function PostCard({
               rel="noopener noreferrer"
               className="inline-flex items-center gap-1 text-sm text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 transition-colors duration-150"
             >
-              View Original
+              {t("viewOriginal")}
               <Icon name="external-link" size={14} />
             </a>
           ) : (
             <span className="inline-flex items-center gap-1 text-sm text-slate-400 dark:text-slate-600">
-              View Original
+              {t("viewOriginal")}
             </span>
           )}
 
@@ -259,7 +263,7 @@ export function PostCard({
                 className="inline-flex items-center gap-1 text-sm font-semibold text-[#137fec] hover:text-[#0f6bd0] transition-colors duration-150"
               >
                 <Icon name="zap" size={16} />
-                Related Brief
+                {t("relatedBrief")}
               </Link>
             </>
           )}

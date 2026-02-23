@@ -22,6 +22,9 @@ query RecentProducts($first: Int!) {
         description
         url
         createdAt
+        thumbnail {
+          url
+        }
         topics(first: 1) {
           edges {
             node {
@@ -85,6 +88,8 @@ class ProductHuntApiClient:
                 url=node.get("url"),
                 category=category,
                 launched_at=launched_at,
+                image_url=node.get("thumbnail", {}).get("url"),
+                source="producthunt",
             ))
 
         logger.info("Fetched %d products from Product Hunt", len(products))

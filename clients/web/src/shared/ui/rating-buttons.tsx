@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { Icon } from "./icon";
 
 type RatingValue = "up" | "down" | null;
@@ -15,17 +16,19 @@ export function RatingButtons({
   onChange,
   className,
 }: RatingButtonsProps) {
+  const tA11y = useTranslations("accessibility");
+
   return (
     <div
       className={["inline-flex items-center gap-space-xs", className]
         .filter(Boolean)
         .join(" ")}
       role="group"
-      aria-label="Rate this content"
+      aria-label={tA11y("rateContent")}
     >
       <button
         type="button"
-        aria-label="Helpful"
+        aria-label={tA11y("helpful")}
         aria-pressed={value === "up"}
         onClick={
           onChange ? () => onChange(value === "up" ? null : "up") : undefined
@@ -47,7 +50,7 @@ export function RatingButtons({
       </button>
       <button
         type="button"
-        aria-label="Not helpful"
+        aria-label={tA11y("notHelpful")}
         aria-pressed={value === "down"}
         onClick={
           onChange

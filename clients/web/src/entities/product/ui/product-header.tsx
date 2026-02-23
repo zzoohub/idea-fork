@@ -1,3 +1,4 @@
+import { useTranslations } from "next-intl";
 import { Icon } from "@/src/shared/ui/icon";
 import { Badge } from "@/src/shared/ui/badge";
 import { isSafeUrl } from "@/src/shared/lib/sanitize-url";
@@ -21,6 +22,8 @@ export function ProductHeader({
   status,
   className,
 }: ProductHeaderProps) {
+  const t = useTranslations("productHeader");
+
   return (
     <div
       className={[
@@ -107,7 +110,7 @@ export function ProductHeader({
           ].join(" ")}
         >
           <Icon name="bell-ring" size={18} />
-          Track Changes
+          {t("trackChanges")}
         </button>
       </div>
     </div>

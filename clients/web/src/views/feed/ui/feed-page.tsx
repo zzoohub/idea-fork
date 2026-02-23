@@ -1,7 +1,10 @@
 "use client";
 
-import { useSearchParams, useRouter } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useState, Suspense } from "react";
+import { useTranslations } from "next-intl";
+import { useRouter } from "@/src/shared/i18n/navigation";
+import { useInfiniteScroll } from "@/src/shared/lib/use-infinite-scroll";
 import { Skeleton, EmptyState, ErrorState } from "@/src/shared/ui";
 import { FilterChipBar } from "@/src/features/filter/ui";
 import { PostCard } from "@/src/entities/post/ui";
@@ -13,19 +16,19 @@ import { formatRelativeTime } from "@/src/shared/lib/format-relative-time";
 /* --------------------------------------------------------------------------
    Post type tabs
    -------------------------------------------------------------------------- */
-const POST_TYPE_TABS = [
-  { key: null, label: "All" },
-  { key: "need", label: "Need" },
-  { key: "complaint", label: "Complaint" },
-  { key: "feature_request", label: "Feature Request" },
-  { key: "alternative_seeking", label: "Alternative" },
-  { key: "comparison", label: "Comparison" },
-  { key: "question", label: "Question" },
-  { key: "review", label: "Review" },
+const POST_TYPE_TAB_KEYS = [
+  { key: null, labelKey: "all" },
+  { key: "need", labelKey: "need" },
+  { key: "complaint", labelKey: "complaint" },
+  { key: "feature_request", labelKey: "featureRequest" },
+  { key: "alternative_seeking", labelKey: "alternative" },
+  { key: "comparison", labelKey: "comparison" },
+  { key: "question", labelKey: "question" },
+  { key: "review", labelKey: "review" },
 ] as const;
 
 const VALID_POST_TYPES = new Set(
-  POST_TYPE_TABS.map((t) => t.key).filter(Boolean),
+  POST_TYPE_TAB_KEYS.flatMap((t) => (t.key !== null ? [t.key] : [])),
 );
 
 /* --------------------------------------------------------------------------
@@ -65,10 +68,17 @@ const SORT_MAP: Record<string, string> = {
 function FeedPageInner() {
   const searchParams = useSearchParams();
   const router = useRouter();
+  const t = useTranslations("feed");
+  const tCommon = useTranslations("common");
+  const tA11y = useTranslations("accessibility");
 
   const activeTag = searchParams.get("tag");
   const rawPostType = searchParams.get("post_type");
-  const activePostType = VALID_POST_TYPES.has(rawPostType) ? rawPostType : null;
+  type PostTypeKey = Exclude<(typeof POST_TYPE_TAB_KEYS)[number]["key"], null>;
+  const activePostType: PostTypeKey | null =
+    rawPostType !== null && (VALID_POST_TYPES as Set<string>).has(rawPostType)
+      ? (rawPostType as PostTypeKey)
+      : null;
 
   /* State */
   const [posts, setPosts] = useState<Post[]>([]);
@@ -144,13 +154,13 @@ function FeedPageInner() {
       })
       .catch(() => {
         if (!cancelled) {
-          setError("Failed to load posts.");
+          setError(t("errors.loadFailed"));
           setLoading(false);
         }
       });
 
     return () => { cancelled = true; };
-  }, [activeTag, activePostType]);
+  }, [activeTag, activePostType, t]);
 
   /* Load more */
   const handleLoadMore = useCallback(() => {
@@ -174,6 +184,10 @@ function FeedPageInner() {
       });
   }, [nextCursor, loadingMore, activeTag, activePostType]);
 
+  const sentinelRef = useInfiniteScroll(handleLoadMore, {
+    enabled: hasNext && !loadingMore,
+  });
+
   if (loading) return <FeedSkeleton />;
   if (error) return <ErrorState message={error} onRetry={() => window.location.reload()} />;
 
@@ -183,13 +197,13 @@ function FeedPageInner() {
       <div
         className="flex items-center overflow-x-auto border-b border-slate-200 dark:border-[#283039] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         role="tablist"
-        aria-label="Filter by post type"
+        aria-label={tA11y("filterByPostType")}
       >
-        {POST_TYPE_TABS.map((tab) => {
+        {POST_TYPE_TAB_KEYS.map((tab) => {
           const isActive = activePostType === tab.key;
           return (
             <button
-              key={tab.label}
+              key={tab.labelKey}
               type="button"
               role="tab"
               aria-selected={isActive}
@@ -202,7 +216,7 @@ function FeedPageInner() {
                   : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300",
               ].join(" ")}
             >
-              {tab.label}
+              {t(`postTypes.${tab.labelKey}`)}
               {isActive && (
                 <span className="absolute inset-x-0 bottom-0 h-0.5 bg-[#137fec] rounded-full" />
               )}
@@ -223,7 +237,7 @@ function FeedPageInner() {
         <div
           className="flex flex-col gap-5"
           role="feed"
-          aria-label="User complaints feed"
+          aria-label={tA11y("complaintsAriaLabel")}
         >
           {posts.map((post) => (
             <PostCard
@@ -244,10 +258,10 @@ function FeedPageInner() {
         </div>
       ) : (
         <EmptyState
-          message="No posts match your filters."
-          suggestion="Try removing a filter or searching for something else."
+          message={t("empty.message")}
+          suggestion={t("empty.suggestion")}
           action={{
-            label: "Clear filters",
+            label: tCommon("clearFilters"),
             onClick: () => {
               router.push("/", { scroll: false });
             },
@@ -255,26 +269,13 @@ function FeedPageInner() {
         />
       )}
 
-      {/* Load More button */}
+      {/* Infinite scroll sentinel */}
       {hasNext && (
-        <button
-          type="button"
-          onClick={handleLoadMore}
-          disabled={loadingMore}
-          className={[
-            "mx-auto px-6 py-2.5",
-            "rounded-lg border border-slate-200 dark:border-[#283039]",
-            "bg-white dark:bg-[#1b2531]",
-            "text-sm font-semibold text-slate-700 dark:text-slate-300",
-            "hover:bg-slate-50 dark:hover:bg-[#232b36]",
-            "hover:border-[#137fec]/50",
-            "transition-colors duration-200",
-            "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#137fec]",
-            "disabled:opacity-50 disabled:cursor-not-allowed",
-          ].join(" ")}
-        >
-          {loadingMore ? "Loading..." : "Load More"}
-        </button>
+        <div ref={sentinelRef} className="flex justify-center py-8">
+          {loadingMore && (
+            <div className="h-6 w-6 animate-spin rounded-full border-2 border-slate-300 border-t-[#137fec]" />
+          )}
+        </div>
       )}
     </div>
   );
@@ -322,13 +323,15 @@ function FeedSkeleton() {
    -------------------------------------------------------------------------- */
 
 export function FeedPage() {
+  const t = useTranslations("feed");
+
   return (
     <section
       className="w-full px-4 py-6"
       aria-labelledby="feed-heading"
     >
       <h1 id="feed-heading" className="sr-only">
-        Complaint Feed
+        {t("heading")}
       </h1>
       <Suspense fallback={<FeedSkeleton />}>
         <FeedPageInner />

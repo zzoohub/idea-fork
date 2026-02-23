@@ -26,6 +26,8 @@ class RawProduct:
     url: str | None
     category: str | None
     launched_at: datetime | None
+    image_url: str | None = None
+    source: str = "producthunt"
 
 
 @dataclass(frozen=True)
@@ -62,6 +64,7 @@ class PipelineRunResult:
     posts_upserted: int = 0
     posts_tagged: int = 0
     clusters_created: int = 0
+    products_upserted: int = 0
     briefs_generated: int = 0
     errors: list[str] = field(default_factory=list)
 

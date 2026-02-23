@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from "vitest";
-import { render, screen, act } from "@testing-library/react";
+import { screen, act } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { renderWithIntl } from "@/src/shared/test/with-intl";
 import { SearchOverlay } from "./search-overlay";
 
 describe("SearchOverlay", () => {
@@ -8,7 +9,7 @@ describe("SearchOverlay", () => {
 
   describe("rendering", () => {
     it("renders a dialog element", () => {
-      render(
+      renderWithIntl(
         <SearchOverlay
           isOpen={true}
           onClose={noop}
@@ -20,8 +21,8 @@ describe("SearchOverlay", () => {
       expect(screen.getByRole("dialog")).toBeInTheDocument();
     });
 
-    it("has aria-label=Search on dialog", () => {
-      render(
+    it("has aria-label=Open search on dialog", () => {
+      renderWithIntl(
         <SearchOverlay
           isOpen={true}
           onClose={noop}
@@ -30,11 +31,11 @@ describe("SearchOverlay", () => {
           onClear={noop}
         />
       );
-      expect(screen.getByRole("dialog")).toHaveAttribute("aria-label", "Search");
+      expect(screen.getByRole("dialog")).toHaveAttribute("aria-label", "Open search");
     });
 
     it("renders Close search button", () => {
-      render(
+      renderWithIntl(
         <SearchOverlay
           isOpen={true}
           onClose={noop}
@@ -48,8 +49,8 @@ describe("SearchOverlay", () => {
       ).toBeInTheDocument();
     });
 
-    it("renders 'Type to start searching' hint when value is empty and open", () => {
-      render(
+    it("renders help text when value is empty and open", () => {
+      renderWithIntl(
         <SearchOverlay
           isOpen={true}
           onClose={noop}
@@ -59,12 +60,12 @@ describe("SearchOverlay", () => {
         />
       );
       expect(
-        screen.getByText("Type to start searching")
+        screen.getByText("Search briefs, products, and posts")
       ).toBeInTheDocument();
     });
 
     it("does not render hint when value is non-empty", () => {
-      render(
+      renderWithIntl(
         <SearchOverlay
           isOpen={true}
           onClose={noop}
@@ -74,14 +75,14 @@ describe("SearchOverlay", () => {
         />
       );
       expect(
-        screen.queryByText("Type to start searching")
+        screen.queryByText("Search briefs, products, and posts")
       ).not.toBeInTheDocument();
     });
   });
 
   describe("isOpen state classes", () => {
     it("applies opacity-100 class when open", () => {
-      render(
+      renderWithIntl(
         <SearchOverlay
           isOpen={true}
           onClose={noop}
@@ -94,7 +95,7 @@ describe("SearchOverlay", () => {
     });
 
     it("applies opacity-0 class when closed", () => {
-      render(
+      renderWithIntl(
         <SearchOverlay
           isOpen={false}
           onClose={noop}
@@ -108,7 +109,7 @@ describe("SearchOverlay", () => {
     });
 
     it("sets aria-hidden=true when closed", () => {
-      render(
+      renderWithIntl(
         <SearchOverlay
           isOpen={false}
           onClose={noop}
@@ -124,7 +125,7 @@ describe("SearchOverlay", () => {
     });
 
     it("sets aria-hidden=false when open", () => {
-      render(
+      renderWithIntl(
         <SearchOverlay
           isOpen={true}
           onClose={noop}
@@ -144,7 +145,7 @@ describe("SearchOverlay", () => {
     it("fires onClose when close button is clicked", async () => {
       const user = userEvent.setup();
       const handleClose = vi.fn();
-      render(
+      renderWithIntl(
         <SearchOverlay
           isOpen={true}
           onClose={handleClose}
@@ -162,7 +163,7 @@ describe("SearchOverlay", () => {
     it("fires onClose when Escape is pressed while open", async () => {
       const user = userEvent.setup();
       const handleClose = vi.fn();
-      render(
+      renderWithIntl(
         <SearchOverlay
           isOpen={true}
           onClose={handleClose}
@@ -178,7 +179,7 @@ describe("SearchOverlay", () => {
     it("does not fire onClose when Escape is pressed while closed", async () => {
       const user = userEvent.setup();
       const handleClose = vi.fn();
-      render(
+      renderWithIntl(
         <SearchOverlay
           isOpen={false}
           onClose={handleClose}
@@ -192,11 +193,70 @@ describe("SearchOverlay", () => {
     });
   });
 
+  describe("onSubmit", () => {
+    it("fires onSubmit and onClose when form is submitted with non-empty value", async () => {
+      const user = userEvent.setup();
+      const handleSubmit = vi.fn();
+      const handleClose = vi.fn();
+      renderWithIntl(
+        <SearchOverlay
+          isOpen={true}
+          onClose={handleClose}
+          value="test query"
+          onChange={noop}
+          onClear={noop}
+          onSubmit={handleSubmit}
+        />
+      );
+      const input = screen.getByRole("searchbox");
+      await user.type(input, "{Enter}");
+      expect(handleSubmit).toHaveBeenCalledWith("test query");
+      expect(handleClose).toHaveBeenCalledTimes(1);
+    });
+
+    it("does not fire onSubmit when value is empty", async () => {
+      const user = userEvent.setup();
+      const handleSubmit = vi.fn();
+      const handleClose = vi.fn();
+      renderWithIntl(
+        <SearchOverlay
+          isOpen={true}
+          onClose={handleClose}
+          value=""
+          onChange={noop}
+          onClear={noop}
+          onSubmit={handleSubmit}
+        />
+      );
+      const input = screen.getByRole("searchbox");
+      await user.type(input, "{Enter}");
+      expect(handleSubmit).not.toHaveBeenCalled();
+      expect(handleClose).not.toHaveBeenCalled();
+    });
+
+    it("does not fire when onSubmit prop is not provided", async () => {
+      const user = userEvent.setup();
+      const handleClose = vi.fn();
+      renderWithIntl(
+        <SearchOverlay
+          isOpen={true}
+          onClose={handleClose}
+          value="test"
+          onChange={noop}
+          onClear={noop}
+        />
+      );
+      const input = screen.getByRole("searchbox");
+      await user.type(input, "{Enter}");
+      expect(handleClose).not.toHaveBeenCalled();
+    });
+  });
+
   describe("onChange", () => {
     it("fires onChange when typing in the search input", async () => {
       const user = userEvent.setup();
       const handleChange = vi.fn();
-      render(
+      renderWithIntl(
         <SearchOverlay
           isOpen={true}
           onClose={noop}
@@ -212,7 +272,7 @@ describe("SearchOverlay", () => {
 
   describe("body scroll lock", () => {
     it("sets body overflow=hidden when isOpen=true", () => {
-      render(
+      renderWithIntl(
         <SearchOverlay
           isOpen={true}
           onClose={noop}
@@ -225,7 +285,7 @@ describe("SearchOverlay", () => {
     });
 
     it("clears body overflow when isOpen=false", () => {
-      render(
+      renderWithIntl(
         <SearchOverlay
           isOpen={false}
           onClose={noop}
@@ -238,7 +298,7 @@ describe("SearchOverlay", () => {
     });
 
     it("restores body overflow on unmount", () => {
-      const { unmount } = render(
+      const { unmount } = renderWithIntl(
         <SearchOverlay
           isOpen={true}
           onClose={noop}
@@ -256,7 +316,7 @@ describe("SearchOverlay", () => {
   describe("focus management", () => {
     it("auto-focuses input when isOpen transitions to true", async () => {
       vi.useFakeTimers();
-      render(
+      renderWithIntl(
         <SearchOverlay
           isOpen={true}
           onClose={noop}
@@ -277,7 +337,7 @@ describe("SearchOverlay", () => {
       document.body.appendChild(button);
       button.focus();
 
-      const { rerender } = render(
+      const { rerender } = renderWithIntl(
         <SearchOverlay
           isOpen={true}
           onClose={noop}

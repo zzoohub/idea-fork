@@ -1,3 +1,4 @@
+import { useTranslations } from "next-intl";
 import { Icon } from "@/src/shared/ui/icon";
 import { Badge } from "@/src/shared/ui/badge";
 
@@ -41,6 +42,8 @@ export function ComplaintSummary({
   themes,
   className,
 }: ComplaintSummaryProps) {
+  const t = useTranslations("complaintSummary");
+
   // Find top theme for subtitle display
   const topTheme = themes.length > 0 ? themes[0] : null;
 
@@ -53,7 +56,7 @@ export function ComplaintSummary({
         .filter(Boolean)
         .join(" ")}
       role="region"
-      aria-label="Complaint statistics"
+      aria-label={t("totalMentions")}
     >
       {/* Total Mentions Card */}
       <div className="relative overflow-hidden p-5 rounded-2xl bg-white dark:bg-[#18212F] border border-slate-200 dark:border-[#283039]">
@@ -62,7 +65,7 @@ export function ComplaintSummary({
         </div>
         <div className="relative">
           <p className="text-sm text-slate-500 dark:text-slate-400">
-            Total Mentions
+            {t("totalMentions")}
           </p>
           <div className="mt-2 flex items-baseline gap-2">
             <span className="text-3xl font-bold text-slate-900 dark:text-slate-50 tabular-nums">
@@ -71,7 +74,7 @@ export function ComplaintSummary({
             {mentionsTrend != null && <TrendBadge value={mentionsTrend} />}
           </div>
           <p className="mt-1.5 text-xs text-slate-500 dark:text-slate-400">
-            Across all platforms
+            {t("acrossAllPlatforms")}
           </p>
         </div>
       </div>
@@ -83,7 +86,7 @@ export function ComplaintSummary({
         </div>
         <div className="relative">
           <p className="text-sm text-slate-500 dark:text-slate-400">
-            Critical Complaints
+            {t("criticalComplaints")}
           </p>
           <div className="mt-2 flex items-baseline gap-2">
             <span className="text-3xl font-bold text-slate-900 dark:text-slate-50 tabular-nums">
@@ -93,8 +96,8 @@ export function ComplaintSummary({
           </div>
           <p className="mt-1.5 text-xs text-slate-500 dark:text-slate-400">
             {topTheme
-              ? `Top issue: ${topTheme.name}`
-              : "Requires immediate attention"}
+              ? t("topIssue", { name: topTheme.name })
+              : t("requiresAttention")}
           </p>
         </div>
       </div>
@@ -106,7 +109,7 @@ export function ComplaintSummary({
         </div>
         <div className="relative">
           <p className="text-sm text-slate-500 dark:text-slate-400">
-            Sentiment Score
+            {t("sentimentScore")}
           </p>
           <div className="mt-2 flex items-baseline gap-2">
             <span className="text-3xl font-bold text-slate-900 dark:text-slate-50 tabular-nums">
@@ -123,11 +126,11 @@ export function ComplaintSummary({
               aria-valuenow={sentimentScore}
               aria-valuemin={0}
               aria-valuemax={100}
-              aria-label={`Sentiment score: ${sentimentScore} out of 100`}
+              aria-label={t("sentimentAriaLabel", { score: sentimentScore })}
             />
           </div>
           <p className="mt-1.5 text-xs text-slate-500 dark:text-slate-400">
-            Based on recent analysis
+            {t("basedOnAnalysis")}
           </p>
         </div>
       </div>

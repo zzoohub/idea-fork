@@ -15,15 +15,25 @@ const FAKE_PRODUCT_LIST_ITEM: ProductListItem = {
   slug: "acme-app",
   name: "Acme App",
   description: "The best app.",
+  tagline: "Simple CRM for teams",
   url: "https://acme.com",
   image_url: "https://acme.com/logo.png",
   category: "productivity",
+  source: "reddit",
+  sources: ["reddit"],
+  launched_at: "2026-01-15T00:00:00Z",
   complaint_count: 42,
   trending_score: 0.9,
+  tags: [{ id: 1, slug: "productivity", name: "Productivity" }],
 };
 
 const FAKE_PRODUCT_DETAIL: ProductDetail = {
   ...FAKE_PRODUCT_LIST_ITEM,
+  metrics: {
+    total_mentions: 42,
+    negative_count: 10,
+    sentiment_score: 76,
+  },
   posts: [
     {
       id: 10,
@@ -96,6 +106,19 @@ describe("fetchProducts", () => {
     it("appends limit to query string as string", async () => {
       await fetchProducts({ limit: 25 });
       expect(mockApiFetch).toHaveBeenCalledWith("/products?limit=25");
+    });
+  });
+
+  describe("period param", () => {
+    it("appends period to query string", async () => {
+      await fetchProducts({ period: "30d" });
+      expect(mockApiFetch).toHaveBeenCalledWith("/products?period=30d");
+    });
+
+    it("does not append period when not provided", async () => {
+      await fetchProducts({ sort: "trending" });
+      const url = mockApiFetch.mock.calls[0][0] as string;
+      expect(url).not.toContain("period=");
     });
   });
 

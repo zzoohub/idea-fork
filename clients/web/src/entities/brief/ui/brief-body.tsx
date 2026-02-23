@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { Icon } from "@/src/shared/ui/icon";
 import { CitationRef } from "./citation-ref";
 import { DemandSignals, type DemandSignalData } from "./demand-signals";
@@ -51,6 +52,7 @@ export function BriefBody({
   platforms = [],
   className,
 }: BriefBodyProps) {
+  const t = useTranslations("briefBody");
   const citationMap = new Map(citations.map((c) => [c.id, c]));
 
   return (
@@ -74,7 +76,7 @@ export function BriefBody({
             id="brief-problem-heading"
             className="text-xl font-bold text-white"
           >
-            Problem Statement
+            {t("problemStatement")}
           </h2>
         </div>
         <div className="text-slate-300 leading-relaxed text-lg">
@@ -101,7 +103,7 @@ export function BriefBody({
               id="brief-demand-heading"
               className="text-xl font-bold text-white"
             >
-              Demand Signals
+              {t("demandSignals")}
             </h2>
           </div>
 
@@ -116,7 +118,7 @@ export function BriefBody({
               {/* Left: Platform Breakdown */}
               <div>
                 <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-4">
-                  Platform Breakdown
+                  {t("platformBreakdown")}
                 </h3>
                 <div className="flex flex-col gap-4">
                   {platforms.map((platform) => (
@@ -128,12 +130,12 @@ export function BriefBody({
               {/* Right: Volume Trend */}
               <div>
                 <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-4">
-                  Volume Trend
+                  {t("volumeTrend")}
                 </h3>
                 <div
                   className="flex items-end gap-1.5 h-24"
                   role="img"
-                  aria-label="Volume trend showing increasing activity over 30 days"
+                  aria-label={t("volumeTrendAriaLabel")}
                 >
                   {VOLUME_BARS.map((height, i) => {
                     const opacity = 0.2 + (i / (VOLUME_BARS.length - 1)) * 0.8;
@@ -151,9 +153,9 @@ export function BriefBody({
                 </div>
                 <div className="flex justify-between mt-2">
                   <span className="text-[11px] text-slate-500">
-                    30 days ago
+                    {t("thirtyDaysAgo")}
                   </span>
-                  <span className="text-[11px] text-slate-500">Today</span>
+                  <span className="text-[11px] text-slate-500">{t("today")}</span>
                 </div>
               </div>
             </div>
@@ -186,7 +188,7 @@ export function BriefBody({
                 id="brief-directions-heading"
                 className="text-xl font-bold text-white"
               >
-                Suggested Solution Directions
+                {t("suggestedDirections")}
               </h2>
             </div>
 

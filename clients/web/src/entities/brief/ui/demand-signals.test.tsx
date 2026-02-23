@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { screen } from "@testing-library/react";
+import { renderWithIntl } from "@/src/shared/test/with-intl";
 import { DemandSignals, type DemandSignalData } from "./demand-signals";
 
 const fullData: DemandSignalData = {
@@ -15,14 +16,14 @@ const fullData: DemandSignalData = {
 describe("DemandSignals", () => {
   describe("complaint line", () => {
     it("renders complaint count with time range", () => {
-      render(<DemandSignals data={fullData} />);
+      renderWithIntl(<DemandSignals data={fullData} />);
       expect(
         screen.getByText("47 complaints over 6 weeks"),
       ).toBeInTheDocument();
     });
 
     it("renders complaint count without time range when null", () => {
-      render(
+      renderWithIntl(
         <DemandSignals data={{ ...fullData, timeRange: null }} />,
       );
       expect(screen.getByText("47 complaints")).toBeInTheDocument();
@@ -31,14 +32,14 @@ describe("DemandSignals", () => {
 
   describe("subreddit line", () => {
     it("shows first 3 subreddits with +N more", () => {
-      render(<DemandSignals data={fullData} />);
+      renderWithIntl(<DemandSignals data={fullData} />);
       expect(
         screen.getByText("r/SaaS, r/startups, r/webdev + 2 more"),
       ).toBeInTheDocument();
     });
 
     it("shows all subreddits when 3 or fewer", () => {
-      render(
+      renderWithIntl(
         <DemandSignals
           data={{ ...fullData, subreddits: ["r/SaaS", "r/startups"] }}
         />,
@@ -47,7 +48,7 @@ describe("DemandSignals", () => {
     });
 
     it("hides subreddit line when empty", () => {
-      render(
+      renderWithIntl(
         <DemandSignals data={{ ...fullData, subreddits: [] }} />,
       );
       expect(screen.queryByText(/r\//)).not.toBeInTheDocument();
@@ -56,7 +57,7 @@ describe("DemandSignals", () => {
 
   describe("engagement line", () => {
     it("renders avg upvotes and comments per post", () => {
-      render(<DemandSignals data={fullData} />);
+      renderWithIntl(<DemandSignals data={fullData} />);
       expect(
         screen.getByText(/avg 142 upvotes .* 12 comments per post/),
       ).toBeInTheDocument();
@@ -65,14 +66,14 @@ describe("DemandSignals", () => {
 
   describe("community verdict line", () => {
     it("renders percentage when provided", () => {
-      render(<DemandSignals data={fullData} />);
+      renderWithIntl(<DemandSignals data={fullData} />);
       expect(
         screen.getByText("84% of users rated this valuable"),
       ).toBeInTheDocument();
     });
 
     it("hides when null", () => {
-      render(
+      renderWithIntl(
         <DemandSignals
           data={{ ...fullData, communityVerdictPct: null }}
         />,
@@ -85,12 +86,12 @@ describe("DemandSignals", () => {
 
   describe("freshness line", () => {
     it("renders most recent when provided", () => {
-      render(<DemandSignals data={fullData} />);
+      renderWithIntl(<DemandSignals data={fullData} />);
       expect(screen.getByText("Most recent: 2d ago")).toBeInTheDocument();
     });
 
     it("hides when null", () => {
-      render(
+      renderWithIntl(
         <DemandSignals data={{ ...fullData, freshness: null }} />,
       );
       expect(screen.queryByText(/Most recent/)).not.toBeInTheDocument();
@@ -99,14 +100,14 @@ describe("DemandSignals", () => {
 
   describe("className", () => {
     it("merges custom className", () => {
-      const { container } = render(
+      const { container } = renderWithIntl(
         <DemandSignals data={fullData} className="my-signals" />,
       );
       expect(container.firstChild).toHaveClass("my-signals");
     });
 
     it("renders without optional className", () => {
-      const { container } = render(<DemandSignals data={fullData} />);
+      const { container } = renderWithIntl(<DemandSignals data={fullData} />);
       expect(container.firstChild).toBeInTheDocument();
     });
   });

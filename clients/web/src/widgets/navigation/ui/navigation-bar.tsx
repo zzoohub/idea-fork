@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { useSearchParams } from "next/navigation";
+import { useLocale, useTranslations } from "next-intl";
+import { Link, usePathname, useRouter } from "@/src/shared/i18n/navigation";
 import { Icon } from "@/src/shared/ui";
 import { SearchOverlay } from "@/src/features/search/ui/search-overlay";
 
@@ -10,9 +11,9 @@ import { SearchOverlay } from "@/src/features/search/ui/search-overlay";
    Navigation items
    -------------------------------------------------------------------------- */
 const NAV_ITEMS = [
-  { label: "Feed", href: "/", icon: "house" },
-  { label: "Briefs", href: "/briefs", icon: "sparkles" },
-  { label: "Products", href: "/products", icon: "package" },
+  { labelKey: "feed", href: "/", icon: "house" },
+  { labelKey: "briefs", href: "/briefs", icon: "sparkles" },
+  { labelKey: "products", href: "/products", icon: "package" },
 ] as const;
 
 /* --------------------------------------------------------------------------
@@ -51,9 +52,33 @@ function useDarkMode() {
    -------------------------------------------------------------------------- */
 export function NavigationBar() {
   const pathname = usePathname();
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchValue, setSearchValue] = useState("");
+  const locale = useLocale();
   const { isDark, toggle: toggleDark } = useDarkMode();
+  const tNav = useTranslations("navigation");
+  const tA11y = useTranslations("accessibility");
+  const tSearch = useTranslations("search");
+
+  /* Sync desktop input with URL q param when on /search */
+  useEffect(() => {
+    if (pathname === "/search") {
+      setSearchValue(searchParams.get("q") ?? "");
+    } else {
+      setSearchValue("");
+    }
+  }, [pathname, searchParams]);
+
+  const handleSearchSubmit = useCallback(
+    (value: string) => {
+      const trimmed = value.trim().slice(0, 200);
+      if (!trimmed) return;
+      router.push(`/search?q=${encodeURIComponent(trimmed)}`);
+    },
+    [router],
+  );
 
   function isActive(href: string) {
     if (href === "/") return pathname === "/";
@@ -80,7 +105,7 @@ export function NavigationBar() {
           <Link
             href="/"
             className="flex items-center gap-2 shrink-0"
-            aria-label="idea-fork home"
+            aria-label={tA11y("homeLink")}
           >
             <span className="flex items-center justify-center size-8 rounded-lg bg-primary text-white">
               <Icon name="git-fork" size={20} />
@@ -93,7 +118,7 @@ export function NavigationBar() {
           {/* Desktop nav links (hidden on mobile) */}
           <nav
             className="hidden md:flex items-center gap-1"
-            aria-label="Main navigation"
+            aria-label={tA11y("mainNavigation")}
           >
             {NAV_ITEMS.map((item) => {
               const active = isActive(item.href);
@@ -109,7 +134,7 @@ export function NavigationBar() {
                       : "text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100",
                   ].join(" ")}
                 >
-                  {item.label}
+                  {tNav(item.labelKey)}
                   {/* Active indicator: bottom border */}
                   {active && (
                     <span
@@ -134,7 +159,15 @@ export function NavigationBar() {
             />
             <input
               type="text"
-              placeholder="Search for pain points..."
+              placeholder={tSearch("placeholder")}
+              value={searchValue}
+              onChange={(e) => setSearchValue(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  handleSearchSubmit(searchValue);
+                }
+              }}
+              maxLength={200}
               className={[
                 "w-56 lg:w-64 h-9 pl-9 pr-3",
                 "rounded-lg",
@@ -145,7 +178,7 @@ export function NavigationBar() {
                 "focus:border-primary focus:ring-1 focus:ring-primary/30",
                 "outline-none transition-all duration-150",
               ].join(" ")}
-              aria-label="Search for pain points"
+              aria-label={tA11y("searchBriefsAndProducts")}
             />
           </div>
 
@@ -160,9 +193,26 @@ export function NavigationBar() {
               "hover:bg-slate-100 dark:hover:bg-surface-dark",
               "transition-colors duration-150 cursor-pointer",
             ].join(" ")}
-            aria-label="Open search"
+            aria-label={tA11y("openSearch")}
           >
             <Icon name="search" size={22} />
+          </button>
+
+          {/* Language toggle */}
+          <button
+            type="button"
+            onClick={() => router.replace(pathname, { locale: locale === "en" ? "ko" : "en" })}
+            className={[
+              "flex items-center justify-center",
+              "size-10 rounded-lg",
+              "text-[13px] font-semibold",
+              "text-slate-500 dark:text-slate-400",
+              "hover:bg-slate-100 dark:hover:bg-surface-dark",
+              "transition-colors duration-150 cursor-pointer",
+            ].join(" ")}
+            aria-label={locale === "en" ? tA11y("switchToKorean") : tA11y("switchToEnglish")}
+          >
+            {locale === "en" ? "한" : "EN"}
           </button>
 
           {/* Dark mode toggle */}
@@ -176,7 +226,7 @@ export function NavigationBar() {
               "hover:bg-slate-100 dark:hover:bg-surface-dark",
               "transition-colors duration-150 cursor-pointer",
             ].join(" ")}
-            aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
+            aria-label={isDark ? tA11y("switchToLightMode") : tA11y("switchToDarkMode")}
           >
             <Icon
               name={isDark ? "sun" : "moon"}
@@ -184,20 +234,6 @@ export function NavigationBar() {
             />
           </button>
 
-          {/* User avatar (hidden on mobile) */}
-          <button
-            type="button"
-            className={[
-              "hidden sm:flex items-center justify-center",
-              "size-8 rounded-full",
-              "bg-primary/10 text-primary",
-              "hover:bg-primary/20",
-              "transition-colors duration-150 cursor-pointer",
-            ].join(" ")}
-            aria-label="User menu"
-          >
-            <Icon name="user" size={18} />
-          </button>
         </div>
       </header>
 
@@ -213,7 +249,7 @@ export function NavigationBar() {
           "border-t border-slate-200 dark:border-[#283039]",
           "pb-[env(safe-area-inset-bottom)]",
         ].join(" ")}
-        aria-label="Main navigation"
+        aria-label={tA11y("mainNavigation")}
       >
         <ul className="flex items-center justify-around w-full" role="list">
           {NAV_ITEMS.map((item) => {
@@ -238,7 +274,7 @@ export function NavigationBar() {
                     filled={active}
                   />
                   <span className="text-[11px] font-semibold leading-tight">
-                    {item.label}
+                    {tNav(item.labelKey)}
                   </span>
                 </Link>
               </li>
@@ -256,6 +292,7 @@ export function NavigationBar() {
         value={searchValue}
         onChange={setSearchValue}
         onClear={() => setSearchValue("")}
+        onSubmit={handleSearchSubmit}
       />
     </>
   );

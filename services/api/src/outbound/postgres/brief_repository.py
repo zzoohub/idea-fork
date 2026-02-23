@@ -4,7 +4,7 @@ from domain.brief.models import Brief, BriefListParams
 from outbound.postgres.database import Database
 from outbound.postgres.mapper import brief_to_domain
 from outbound.postgres.models import BriefRow
-from shared.pagination import decode_cursor
+from shared.pagination import cast_cursor_value, decode_cursor
 
 SORT_COLUMN_MAP = {
     "-published_at": BriefRow.published_at,
@@ -54,7 +54,7 @@ class PostgresBriefRepository:
             return stmt
 
         values = decode_cursor(cursor)
-        cursor_sort_val = values.get("v")
+        cursor_sort_val = cast_cursor_value(values.get("v"), sort_col)
         cursor_id = values.get("id")
 
         return stmt.where(

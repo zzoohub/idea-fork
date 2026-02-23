@@ -1,0 +1,226 @@
+{
+  "metadata": {
+    "title": "Idea Fork",
+    "description": "Discover product opportunities from real user complaints across Reddit, App Store, and more."
+  },
+  "common": {
+    "all": "All",
+    "tryAgain": "Try again",
+    "clearFilter": "Clear filter",
+    "clearFilters": "Clear filters",
+    "clearSearch": "Clear Search",
+    "active": "Active {time}",
+    "viewAll": "View all {count} {label}",
+    "showMore": "Show {count} more",
+    "showFewer": "Show fewer posts",
+    "showAllComplaints": "Show all {count} complaints",
+    "showFewerComplaints": "Show fewer complaints",
+    "source": "Source {number}",
+    "viewOriginal": "View Original",
+    "uncategorized": "Uncategorized"
+  },
+  "accessibility": {
+    "skipToContent": "Skip to content",
+    "homeLink": "idea-fork home",
+    "mainNavigation": "Main navigation",
+    "openSearch": "Open search",
+    "closeSearch": "Close search",
+    "switchToLightMode": "Switch to light mode",
+    "switchToDarkMode": "Switch to dark mode",
+    "searchBriefsAndProducts": "Search briefs and products",
+    "filterByPostType": "Filter by post type",
+    "filterByContentType": "Filter by content type",
+    "filterByCategory": "Filter by category",
+    "complaintsAriaLabel": "User complaints feed",
+    "briefsAriaLabel": "AI-generated briefs",
+    "loadingPosts": "Loading posts",
+    "loadingBriefs": "Loading briefs",
+    "loadingSearchResults": "Loading search results",
+    "rateContent": "Rate this content",
+    "rateThisBrief": "Rate this brief",
+    "helpful": "Helpful",
+    "notHelpful": "Not helpful",
+    "sortBy": "Sort by",
+    "breadcrumb": "Breadcrumb",
+    "complaintStatistics": "Complaint statistics",
+    "switchToKorean": "Switch to Korean",
+    "switchToEnglish": "Switch to English"
+  },
+  "navigation": {
+    "feed": "Feed",
+    "briefs": "Briefs",
+    "products": "Products"
+  },
+  "feed": {
+    "heading": "Complaint Feed",
+    "postTypes": {
+      "all": "All",
+      "need": "Need",
+      "complaint": "Complaint",
+      "featureRequest": "Feature Request",
+      "alternative": "Alternative",
+      "comparison": "Comparison",
+      "question": "Question",
+      "review": "Review"
+    },
+    "errors": {
+      "loadFailed": "Failed to load posts."
+    },
+    "empty": {
+      "message": "No posts match your filters.",
+      "suggestion": "Try removing a filter or searching for something else."
+    }
+  },
+  "briefs": {
+    "heading": "AI Briefs",
+    "description": "Product opportunities synthesized from real user complaints across Reddit, Twitter, and other platforms.",
+    "sortOptions": {
+      "trending": "Trending",
+      "newest": "Newest",
+      "sources": "Sources"
+    },
+    "errors": {
+      "loadFailed": "Failed to load briefs."
+    },
+    "empty": {
+      "message": "No briefs available yet.",
+      "suggestion": "Check back soon as new briefs are generated from incoming complaints."
+    }
+  },
+  "briefDetail": {
+    "breadcrumbBriefs": "Briefs",
+    "createProject": "Create Project",
+    "keySourcePosts": "Key Source Posts",
+    "opportunity": "Opportunity",
+    "viewAllBriefs": "View all briefs",
+    "errors": {
+      "loadFailed": "Failed to load brief.",
+      "notFound": "Brief not found."
+    }
+  },
+  "products": {
+    "heading": "Products",
+    "description": "Explore products and uncover gaps worth building for.",
+    "sortOptions": {
+      "mostSignals": "Most Signals",
+      "trending": "Trending"
+    },
+    "periods": {
+      "all": "All time",
+      "7d": "This week",
+      "30d": "This month",
+      "90d": "3 months"
+    },
+    "categories": {
+      "saas": "SaaS",
+      "designTools": "Design Tools",
+      "projectManagement": "Project Management",
+      "fintech": "Fintech",
+      "marketplace": "Marketplace",
+      "entertainment": "Entertainment"
+    },
+    "errors": {
+      "loadFailed": "Failed to load products."
+    },
+    "empty": {
+      "message": "No products match this filter.",
+      "suggestion": "Try selecting a different category or clear the filter."
+    }
+  },
+  "productDetail": {
+    "breadcrumbProducts": "Products",
+    "userComplaints": "User Complaints",
+    "sortRecent": "Most Recent",
+    "sortPopular": "Most Popular",
+    "errors": {
+      "loadFailed": "Failed to load product.",
+      "notFound": "Product not found."
+    },
+    "sentiment": {
+      "frustrated": "Frustrated",
+      "featureRequest": "Feature Request",
+      "question": "Question",
+      "bugReport": "Bug Report"
+    }
+  },
+  "search": {
+    "heading": "Search Results",
+    "placeholder": "Search briefs, products...",
+    "helpText": "Search briefs, products, and posts",
+    "resultsFor": "Results for \"{query}\"",
+    "resultCount": "{count, plural, one {# result} other {# results}}",
+    "tabs": {
+      "all": "All",
+      "briefs": "Briefs",
+      "products": "Products",
+      "posts": "Posts"
+    },
+    "errors": {
+      "searchFailed": "Search failed. Please try again."
+    },
+    "empty": {
+      "message": "No results for \"{query}\"",
+      "suggestion": "Try different keywords or check your spelling."
+    }
+  },
+  "briefCard": {
+    "readBrief": "Read Brief",
+    "complaints": "{count, plural, one {# complaint} other {# complaints}}",
+    "communities": "across {count, plural, one {# community} other {# communities}}"
+  },
+  "productCard": {
+    "exploreGaps": "Explore Gaps",
+    "signals": "{count} signals"
+  },
+  "postCard": {
+    "viewOriginal": "View Original",
+    "relatedBrief": "Related Brief"
+  },
+  "briefBody": {
+    "problemStatement": "Problem Statement",
+    "demandSignals": "Demand Signals",
+    "suggestedDirections": "Suggested Solution Directions",
+    "platformBreakdown": "Platform Breakdown",
+    "volumeTrend": "Volume Trend",
+    "volumeTrendAriaLabel": "Volume trend showing increasing activity over 30 days",
+    "thirtyDaysAgo": "30 days ago",
+    "today": "Today"
+  },
+  "demandSignals": {
+    "complaintsOverTime": "{count} complaints over {timeRange}",
+    "complaints": "{count} complaints",
+    "upvotesAndComments": "avg {avgScore} upvotes \u00b7 {avgComments} comments per post",
+    "ratedValuable": "{percent}% of users rated this valuable",
+    "mostRecent": "Most recent: {time}",
+    "more": "+ {count} more"
+  },
+  "heatBadge": {
+    "hot": "Hot",
+    "growing": "Growing",
+    "steady": "Steady",
+    "new": "New"
+  },
+  "complaintSummary": {
+    "totalMentions": "Total Mentions",
+    "acrossAllPlatforms": "Across all platforms",
+    "criticalComplaints": "Critical Complaints",
+    "topIssue": "Top issue: {name}",
+    "requiresAttention": "Requires immediate attention",
+    "sentimentScore": "Sentiment Score",
+    "basedOnAnalysis": "Based on recent analysis",
+    "sentimentAriaLabel": "Sentiment score: {score} out of 100"
+  },
+  "productHeader": {
+    "trackChanges": "Track Changes"
+  },
+  "briefRating": {
+    "wasUseful": "Was this brief useful?",
+    "thanks": "Thanks for your feedback.",
+    "whatMissing": "What was missing? (optional)",
+    "tellUsMore": "Tell us more...",
+    "send": "Send"
+  },
+  "errorState": {
+    "default": "Something went wrong."
+  }
+}

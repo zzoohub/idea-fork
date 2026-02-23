@@ -2,7 +2,7 @@ import logging
 import re
 from datetime import UTC, datetime
 
-from sqlalchemy import select, text, update
+from sqlalchemy import func, select, text, update
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -70,24 +70,30 @@ class PostgresPipelineRepository:
 
         async with self._db.session() as session:
             now = datetime.now(UTC).replace(tzinfo=None)
-            rows = [
-                {
-                    "created_at": now,
-                    "updated_at": now,
-                    "external_created_at": p.external_created_at.replace(tzinfo=None)
-                    if p.external_created_at.tzinfo
-                    else p.external_created_at,
-                    "source": p.source,
-                    "external_id": p.external_id,
-                    "subreddit": p.subreddit,
-                    "title": p.title,
-                    "body": p.body,
-                    "external_url": p.external_url,
-                    "score": p.score,
-                    "num_comments": p.num_comments,
-                }
-                for p in posts
-            ]
+            seen: set[tuple[str, str]] = set()
+            rows: list[dict] = []
+            for p in posts:
+                key = (p.source, p.external_id)
+                if key in seen:
+                    continue
+                seen.add(key)
+                rows.append(
+                    {
+                        "created_at": now,
+                        "updated_at": now,
+                        "external_created_at": p.external_created_at.replace(tzinfo=None)
+                        if p.external_created_at.tzinfo
+                        else p.external_created_at,
+                        "source": p.source,
+                        "external_id": p.external_id,
+                        "subreddit": p.subreddit,
+                        "title": p.title,
+                        "body": p.body,
+                        "external_url": p.external_url,
+                        "score": p.score,
+                        "num_comments": p.num_comments,
+                    }
+                )
 
             stmt = pg_insert(PostRow).values(rows)
             stmt = stmt.on_conflict_do_update(
@@ -297,7 +303,7 @@ class PostgresPipelineRepository:
                 {
                     "created_at": now,
                     "updated_at": now,
-                    "source": "producthunt",
+                    "source": p.source,
                     "external_id": p.external_id,
                     "name": p.name,
                     "slug": p.slug,
@@ -305,6 +311,7 @@ class PostgresPipelineRepository:
                     "description": p.description,
                     "url": p.url,
                     "category": p.category,
+                    "image_url": p.image_url,
                     "launched_at": p.launched_at.replace(tzinfo=None)
                     if p.launched_at and p.launched_at.tzinfo
                     else p.launched_at,
@@ -319,6 +326,9 @@ class PostgresPipelineRepository:
                     "name": stmt.excluded.name,
                     "tagline": stmt.excluded.tagline,
                     "description": stmt.excluded.description,
+                    "image_url": func.coalesce(
+                        ProductRow.image_url, stmt.excluded.image_url
+                    ),
                     "updated_at": now,
                 },
             )
@@ -327,7 +337,10 @@ class PostgresPipelineRepository:
             for p in products:
                 if p.category:
                     product_row = await session.execute(
-                        select(ProductRow).where(ProductRow.slug == p.slug)
+                        select(ProductRow).where(
+                            ProductRow.source == p.source,
+                            ProductRow.slug == p.slug,
+                        )
                     )
                     prod = product_row.scalars().first()
                     if prod:
@@ -356,6 +369,30 @@ class PostgresPipelineRepository:
             )
             link_stmt = link_stmt.on_conflict_do_nothing()
             await session.execute(link_stmt)
+
+    async def update_product_scores(self) -> int:
+        async with self._db.session() as session:
+            result = await session.execute(
+                text("""
+                    UPDATE product SET
+                        complaint_count = sub.cnt,
+                        trending_score = sub.cnt * (
+                            1.0 / (EXTRACT(EPOCH FROM now() - COALESCE(product.created_at, now())) / 86400 + 1)
+                        ),
+                        updated_at = now()
+                    FROM (
+                        SELECT prt.product_id, COUNT(DISTINCT pt.post_id) AS cnt
+                        FROM product_tag prt
+                        JOIN post_tag pt ON pt.tag_id = prt.tag_id
+                        JOIN post p ON p.id = pt.post_id
+                        WHERE p.deleted_at IS NULL
+                        GROUP BY prt.product_id
+                    ) sub
+                    WHERE product.id = sub.product_id
+                """)
+            )
+            await session.commit()
+            return result.rowcount
 
     async def find_related_products(self, keyword: str) -> list[RawProduct]:
         async with self._db.session() as session:

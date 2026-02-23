@@ -27,6 +27,7 @@ class Product:
     complaint_count: int
     trending_score: float
     tags: list[PostTag] = field(default_factory=list)
+    sources: list[str] = field(default_factory=list)
 
 
 @dataclass(frozen=True)
@@ -41,3 +42,4 @@ class ProductListParams:
     limit: int = 20
     sort: str = "-trending_score"
     category: str | None = None
+    period: str | None = None

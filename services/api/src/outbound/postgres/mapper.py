@@ -85,6 +85,7 @@ def product_to_domain(row: ProductRow) -> Product:
         complaint_count=row.complaint_count,
         trending_score=float(row.trending_score),
         tags=[PostTag(slug=t.slug, name=t.name) for t in row.tags],
+        sources=[row.source],
     )
 
 

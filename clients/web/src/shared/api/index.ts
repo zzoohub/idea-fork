@@ -9,6 +9,7 @@ export type {
   BriefDetail,
   ProductListItem,
   ProductDetail,
+  ProductMetrics,
   ProductPost,
   Rating,
 } from "./types";

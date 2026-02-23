@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
+import { useTranslations } from "next-intl";
 import { Chip } from "@/src/shared/ui";
 
 /* --------------------------------------------------------------------------
@@ -24,6 +25,8 @@ export function FilterChipBar({
   const [overflowOpen, setOverflowOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
+  const tCommon = useTranslations("common");
+  const tA11y = useTranslations("accessibility");
 
   const visibleTags = tags.slice(0, visibleCount);
   const overflowTags = tags.slice(visibleCount);
@@ -82,7 +85,7 @@ export function FilterChipBar({
     <div
       className="relative"
       role="group"
-      aria-label="Filter by category"
+      aria-label={tA11y("filterByCategory")}
     >
       {/* Scrollable chip row */}
       <div
@@ -99,7 +102,7 @@ export function FilterChipBar({
           aria-pressed={activeTag === null}
           onClick={() => handleTagClick(null)}
         >
-          All
+          {tCommon("all")}
         </Chip>
 
         {/* Visible category tags */}

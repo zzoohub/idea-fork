@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { renderWithIntl } from "@/src/shared/test/with-intl";
 import { BriefBody } from "./brief-body";
 import type { DemandSignalData } from "./demand-signals";
 
@@ -45,21 +46,21 @@ const CONTENT = {
 describe("BriefBody", () => {
   describe("problem section", () => {
     it("renders the Problem Statement heading", () => {
-      render(
+      renderWithIntl(
         <BriefBody content={CONTENT} citations={CITATIONS} />,
       );
       expect(screen.getByRole("heading", { name: "Problem Statement" })).toBeInTheDocument();
     });
 
     it("renders plain text parts of the problem", () => {
-      render(
+      renderWithIntl(
         <BriefBody content={CONTENT} citations={CITATIONS} />,
       );
       expect(screen.getByText(/Users face friction at checkout./)).toBeInTheDocument();
     });
 
     it("renders citation reference buttons", () => {
-      render(
+      renderWithIntl(
         <BriefBody content={CONTENT} citations={CITATIONS} />,
       );
       expect(
@@ -75,7 +76,7 @@ describe("BriefBody", () => {
         ...CONTENT,
         problem: "No citation here [99] but text continues.",
       };
-      render(
+      renderWithIntl(
         <BriefBody content={contentWithUnknownCitation} citations={CITATIONS} />,
       );
       expect(screen.getByText("[99]")).toBeInTheDocument();
@@ -84,7 +85,7 @@ describe("BriefBody", () => {
 
   describe("demand signals section", () => {
     it("renders Demand Signals heading when data is provided", () => {
-      render(
+      renderWithIntl(
         <BriefBody content={CONTENT} citations={CITATIONS} />,
       );
       expect(
@@ -93,7 +94,7 @@ describe("BriefBody", () => {
     });
 
     it("renders structured metric lines", () => {
-      render(
+      renderWithIntl(
         <BriefBody content={CONTENT} citations={CITATIONS} />,
       );
       expect(screen.getByText("47 complaints over 6 weeks")).toBeInTheDocument();
@@ -102,7 +103,7 @@ describe("BriefBody", () => {
 
     it("does not render Demand Signals section when data is null", () => {
       const contentNull = { ...CONTENT, demandSignals: null };
-      render(<BriefBody content={contentNull} citations={CITATIONS} />);
+      renderWithIntl(<BriefBody content={contentNull} citations={CITATIONS} />);
       expect(
         screen.queryByRole("heading", { name: "Demand Signals" }),
       ).not.toBeInTheDocument();
@@ -111,7 +112,7 @@ describe("BriefBody", () => {
 
   describe("suggested directions section", () => {
     it("renders Suggested Solution Directions heading when list is non-empty", () => {
-      render(
+      renderWithIntl(
         <BriefBody content={CONTENT} citations={CITATIONS} />,
       );
       expect(
@@ -120,7 +121,7 @@ describe("BriefBody", () => {
     });
 
     it("renders each direction title", () => {
-      render(
+      renderWithIntl(
         <BriefBody content={CONTENT} citations={CITATIONS} />,
       );
       expect(screen.getByText("Direction 1")).toBeInTheDocument();
@@ -128,7 +129,7 @@ describe("BriefBody", () => {
     });
 
     it("renders each direction description", () => {
-      render(
+      renderWithIntl(
         <BriefBody content={CONTENT} citations={CITATIONS} />,
       );
       expect(screen.getByText(/Description for direction 1/)).toBeInTheDocument();
@@ -137,7 +138,7 @@ describe("BriefBody", () => {
 
     it("does not render Suggested Solution Directions section when list is empty", () => {
       const contentEmpty = { ...CONTENT, suggestedDirections: [] };
-      render(<BriefBody content={contentEmpty} citations={CITATIONS} />);
+      renderWithIntl(<BriefBody content={contentEmpty} citations={CITATIONS} />);
       expect(
         screen.queryByRole("heading", { name: "Suggested Solution Directions" }),
       ).not.toBeInTheDocument();
@@ -146,7 +147,7 @@ describe("BriefBody", () => {
 
   describe("className", () => {
     it("merges custom className", () => {
-      const { container } = render(
+      const { container } = renderWithIntl(
         <BriefBody
           content={CONTENT}
           citations={CITATIONS}
@@ -157,7 +158,7 @@ describe("BriefBody", () => {
     });
 
     it("renders without className", () => {
-      const { container } = render(
+      const { container } = renderWithIntl(
         <BriefBody content={CONTENT} citations={CITATIONS} />,
       );
       expect(container.firstChild).toBeInTheDocument();
@@ -167,7 +168,7 @@ describe("BriefBody", () => {
   describe("citation expansion integration", () => {
     it("expands citation when citation button is clicked", async () => {
       const user = userEvent.setup();
-      render(
+      renderWithIntl(
         <BriefBody content={CONTENT} citations={CITATIONS} />,
       );
       await user.click(
@@ -183,7 +184,7 @@ describe("BriefBody", () => {
         { name: "Reddit", color: "bg-[#FF4500]", percentage: 62, postCount: 29 },
         { name: "Twitter", color: "bg-[#1DA1F2]", percentage: 28, postCount: 13 },
       ];
-      render(
+      renderWithIntl(
         <BriefBody content={CONTENT} citations={CITATIONS} platforms={platforms} />,
       );
       expect(screen.getByText("Reddit")).toBeInTheDocument();
@@ -191,7 +192,7 @@ describe("BriefBody", () => {
     });
 
     it("does not render platform breakdown when platforms is empty", () => {
-      render(
+      renderWithIntl(
         <BriefBody content={CONTENT} citations={CITATIONS} platforms={[]} />,
       );
       expect(screen.queryByText("Platform Breakdown")).not.toBeInTheDocument();

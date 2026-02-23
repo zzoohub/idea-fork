@@ -28,6 +28,8 @@ from outbound.postgres.post_repository import PostgresPostRepository
 from outbound.postgres.product_repository import PostgresProductRepository
 from outbound.postgres.rating_repository import PostgresRatingRepository
 from outbound.postgres.tag_repository import PostgresTagRepository
+from outbound.appstore.client import AppStoreClient
+from outbound.playstore.client import PlayStoreClient
 from outbound.producthunt.client import ProductHuntApiClient
 from outbound.reddit.client import RedditApiClient
 from outbound.rss.client import RssFeedClient
@@ -67,6 +69,13 @@ def create_app() -> FastAPI:
     )
     subreddits = [s.strip() for s in settings.PIPELINE_SUBREDDITS.split(",")]
     rss_feeds = [f.strip() for f in settings.PIPELINE_RSS_FEEDS.split(",") if f.strip()]
+    appstore_keywords = [
+        k.strip()
+        for k in settings.PIPELINE_APPSTORE_KEYWORDS.split(",")
+        if k.strip()
+    ]
+    appstore_client = AppStoreClient() if appstore_keywords else None
+    playstore_client = PlayStoreClient() if appstore_keywords else None
     pipeline_service = PipelineService(
         repo=pipeline_repo,
         reddit=reddit_client,
@@ -77,6 +86,11 @@ def create_app() -> FastAPI:
         subreddits=subreddits,
         rss_feeds=rss_feeds,
         fetch_limit=settings.PIPELINE_FETCH_LIMIT,
+        appstore=appstore_client,
+        playstore=playstore_client,
+        appstore_keywords=appstore_keywords,
+        appstore_review_pages=settings.PIPELINE_APPSTORE_REVIEW_PAGES,
+        playstore_review_count=settings.PIPELINE_PLAYSTORE_REVIEW_COUNT,
     )
 
     @asynccontextmanager

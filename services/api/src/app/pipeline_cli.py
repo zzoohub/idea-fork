@@ -4,7 +4,9 @@ import logging
 import sys
 
 from domain.pipeline.service import PipelineService
+from outbound.appstore.client import AppStoreClient
 from outbound.llm.client import GeminiLlmClient
+from outbound.playstore.client import PlayStoreClient
 from outbound.postgres.database import Database
 from outbound.postgres.pipeline_repository import PostgresPipelineRepository
 from outbound.producthunt.client import ProductHuntApiClient
@@ -82,6 +84,14 @@ async def main() -> int:
 
         subreddits = [s.strip() for s in settings.PIPELINE_SUBREDDITS.split(",")]
         rss_feeds = [f.strip() for f in settings.PIPELINE_RSS_FEEDS.split(",") if f.strip()]
+        appstore_keywords = [
+            k.strip()
+            for k in settings.PIPELINE_APPSTORE_KEYWORDS.split(",")
+            if k.strip()
+        ]
+
+        appstore = AppStoreClient() if appstore_keywords else None
+        playstore = PlayStoreClient() if appstore_keywords else None
 
         service = PipelineService(
             repo=repo,
@@ -93,14 +103,20 @@ async def main() -> int:
             subreddits=subreddits,
             rss_feeds=rss_feeds,
             fetch_limit=settings.PIPELINE_FETCH_LIMIT,
+            appstore=appstore,
+            playstore=playstore,
+            appstore_keywords=appstore_keywords,
+            appstore_review_pages=settings.PIPELINE_APPSTORE_REVIEW_PAGES,
+            playstore_review_count=settings.PIPELINE_PLAYSTORE_REVIEW_COUNT,
         )
 
         result = await service.run()
 
         logger.info(
-            "Pipeline complete: fetched=%d upserted=%d tagged=%d clusters=%d briefs=%d errors=%d",
+            "Pipeline complete: fetched=%d upserted=%d products=%d tagged=%d clusters=%d briefs=%d errors=%d",
             result.posts_fetched,
             result.posts_upserted,
+            result.products_upserted,
             result.posts_tagged,
             result.clusters_created,
             result.briefs_generated,

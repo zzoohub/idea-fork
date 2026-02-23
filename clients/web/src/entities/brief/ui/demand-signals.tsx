@@ -1,3 +1,4 @@
+import { useTranslations } from "next-intl";
 import { Icon } from "@/src/shared/ui/icon";
 
 export interface DemandSignalData {
@@ -16,6 +17,7 @@ interface DemandSignalsProps {
 }
 
 export function DemandSignals({ data, className }: DemandSignalsProps) {
+  const t = useTranslations("demandSignals");
   const {
     complaintCount,
     timeRange,
@@ -31,12 +33,12 @@ export function DemandSignals({ data, className }: DemandSignalsProps) {
   const remaining = subreddits.length - MAX_VISIBLE_SUBS;
 
   const complaintLabel = timeRange
-    ? `${complaintCount} complaints over ${timeRange}`
-    : `${complaintCount} complaints`;
+    ? t("complaintsOverTime", { count: complaintCount, timeRange })
+    : t("complaints", { count: complaintCount });
 
   const subredditLabel =
     visibleSubs.length > 0
-      ? visibleSubs.join(", ") + (remaining > 0 ? ` + ${remaining} more` : "")
+      ? visibleSubs.join(", ") + (remaining > 0 ? ` ${t("more", { count: remaining })}` : "")
       : null;
 
   return (
@@ -49,16 +51,19 @@ export function DemandSignals({ data, className }: DemandSignalsProps) {
       )}
       <MetricLine
         icon="trending-up"
-        text={`avg ${Math.round(avgScore)} upvotes \u00b7 ${Math.round(avgCommentsPerPost)} comments per post`}
+        text={t("upvotesAndComments", {
+          avgScore: Math.round(avgScore),
+          avgComments: Math.round(avgCommentsPerPost),
+        })}
       />
       {communityVerdictPct != null && (
         <MetricLine
           icon="thumbs-up"
-          text={`${Math.round(communityVerdictPct)}% of users rated this valuable`}
+          text={t("ratedValuable", { percent: Math.round(communityVerdictPct) })}
         />
       )}
       {freshness && (
-        <MetricLine icon="clock" text={`Most recent: ${freshness}`} />
+        <MetricLine icon="clock" text={t("mostRecent", { time: freshness })} />
       )}
     </div>
   );

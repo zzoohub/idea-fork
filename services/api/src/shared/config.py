@@ -17,8 +17,47 @@ class Settings(BaseSettings):
     REDDIT_USER_AGENT: str = "idea-fork/0.1.0"
 
     # Pipeline
-    PIPELINE_SUBREDDITS: str = "SaaS,SideProject,AskReddit,healthcare,BlockchainStartups,Web3,FinancialPlanning,ContentCreators,mentalhealth,Supplements,MealPrepSunday,personalfinance,CryptoCurrency,ecommerce,smallbusiness"
-    PIPELINE_FETCH_LIMIT: int = 30
+    PIPELINE_SUBREDDITS: str = (
+        # Business & Startups
+        "SaaS,SideProject,smallbusiness,ecommerce,Entrepreneur,startups,"
+        # Finance & Crypto
+        "personalfinance,FinancialPlanning,CryptoCurrency,BlockchainStartups,Web3,investing,"
+        # Health & Medical
+        "healthcare,mentalhealth,Supplements,loseit,Nutrition,AskDocs,"
+        # Fitness
+        "Fitness,bodyweightfitness,"
+        # Food
+        "MealPrepSunday,Cooking,EatCheapAndHealthy,"
+        # Productivity
+        "productivity,Notion,"
+        # Education
+        "learnprogramming,GetStudying,"
+        # Social & Content
+        "ContentCreators,socialmedia,Instagram,"
+        # Entertainment
+        "movies,cordcutters,"
+        # Travel
+        "travel,digitalnomad,"
+        # Music
+        "WeAreTheMusicMakers,"
+        # Photography
+        "photography,"
+        # Utilities & Automation
+        "selfhosted,automation,"
+        # Shopping
+        "BuyItForLife,"
+        # Lifestyle
+        "selfimprovement,minimalism,"
+        # News & Tech
+        "technology,technews,"
+        # Communication
+        "discordapp,"
+        # Developer Tools
+        "webdev,devops,"
+        # General
+        "AskReddit,marketing"
+    )
+    PIPELINE_FETCH_LIMIT: int = 20
 
     # RSS
     PIPELINE_RSS_FEEDS: str = "https://hnrss.org/newest?points=50,https://techcrunch.com/feed/"
@@ -28,6 +67,11 @@ class Settings(BaseSettings):
     LLM_MODEL: str = "gemini-2.5-flash"
     LLM_LITE_MODEL: str = "gemini-2.5-flash-lite"
     LLM_BRIEF_TEMPERATURE: float = 0.9
+
+    # App Store / Play Store
+    PIPELINE_APPSTORE_KEYWORDS: str = ""
+    PIPELINE_APPSTORE_REVIEW_PAGES: int = 3
+    PIPELINE_PLAYSTORE_REVIEW_COUNT: int = 100
 
     # Product Hunt
     PRODUCTHUNT_API_TOKEN: str = ""

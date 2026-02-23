@@ -3,8 +3,10 @@ import logging
 
 from domain.pipeline.models import PipelineRunResult
 from domain.pipeline.ports import (
+    AppStoreClient,
     LlmClient,
     PipelineRepository,
+    PlayStoreClient,
     ProductHuntClient,
     RedditClient,
     RssClient,
@@ -43,6 +45,11 @@ class PipelineService:
         subreddits: list[str],
         rss_feeds: list[str] | None = None,
         fetch_limit: int = 100,
+        appstore: AppStoreClient | None = None,
+        playstore: PlayStoreClient | None = None,
+        appstore_keywords: list[str] | None = None,
+        appstore_review_pages: int = 3,
+        playstore_review_count: int = 100,
     ) -> None:
         self._repo = repo
         self._reddit = reddit
@@ -53,6 +60,11 @@ class PipelineService:
         self._subreddits = subreddits
         self._rss_feeds = rss_feeds or []
         self._fetch_limit = fetch_limit
+        self._appstore = appstore
+        self._playstore = playstore
+        self._appstore_keywords = appstore_keywords or []
+        self._appstore_review_pages = appstore_review_pages
+        self._playstore_review_count = playstore_review_count
 
     async def run(self) -> PipelineRunResult:
         result = PipelineRunResult()
@@ -68,6 +80,7 @@ class PipelineService:
         try:
             await self._stage_fetch(result)
             await self._stage_tag(result)
+            await self._stage_score_products(result)
             await self._stage_cluster(result)
             await self._stage_brief(result)
         finally:
@@ -103,10 +116,91 @@ class PipelineService:
                 products = await self._producthunt.fetch_recent_products()
                 if products:
                     count = await self._repo.upsert_products(products)
+                    result.products_upserted += count
                     logger.info("Upserted %d products from Product Hunt", count)
             except Exception:
                 logger.exception("Product Hunt fetch failed")
                 result.errors.append("Product Hunt fetch failed")
+
+            # App Store
+            if self._appstore and self._appstore_keywords:
+                try:
+                    app_products = await self._appstore.search_apps(
+                        self._appstore_keywords
+                    )
+                    if app_products:
+                        count = await self._repo.upsert_products(app_products)
+                        result.products_upserted += count
+                        logger.info(
+                            "Upserted %d products from App Store", count
+                        )
+
+                    # Fetch reviews for discovered apps
+                    for product in app_products:
+                        try:
+                            reviews = await self._appstore.fetch_reviews(
+                                product.external_id,
+                                pages=self._appstore_review_pages,
+                            )
+                            if reviews:
+                                upserted = await self._repo.upsert_posts(
+                                    reviews
+                                )
+                                result.posts_fetched += len(reviews)
+                                result.posts_upserted += upserted
+                                logger.info(
+                                    "Upserted %d App Store reviews for %s",
+                                    upserted,
+                                    product.name,
+                                )
+                        except Exception:
+                            logger.exception(
+                                "App Store review fetch failed for %s",
+                                product.external_id,
+                            )
+                except Exception:
+                    logger.exception("App Store fetch failed")
+                    result.errors.append("App Store fetch failed")
+
+            # Play Store
+            if self._playstore and self._appstore_keywords:
+                try:
+                    play_products = await self._playstore.search_apps(
+                        self._appstore_keywords
+                    )
+                    if play_products:
+                        count = await self._repo.upsert_products(play_products)
+                        result.products_upserted += count
+                        logger.info(
+                            "Upserted %d products from Play Store", count
+                        )
+
+                    # Fetch reviews for discovered apps
+                    for product in play_products:
+                        try:
+                            reviews = await self._playstore.fetch_reviews(
+                                product.external_id,
+                                count=self._playstore_review_count,
+                            )
+                            if reviews:
+                                upserted = await self._repo.upsert_posts(
+                                    reviews
+                                )
+                                result.posts_fetched += len(reviews)
+                                result.posts_upserted += upserted
+                                logger.info(
+                                    "Upserted %d Play Store reviews for %s",
+                                    upserted,
+                                    product.name,
+                                )
+                        except Exception:
+                            logger.exception(
+                                "Play Store review fetch failed for %s",
+                                product.external_id,
+                            )
+                except Exception:
+                    logger.exception("Play Store fetch failed")
+                    result.errors.append("Play Store fetch failed")
         except Exception:
             logger.exception("Fetch stage failed")
             result.errors.append("Fetch stage failed")
@@ -146,6 +240,14 @@ class PipelineService:
         except Exception:
             logger.exception("Tag stage failed")
             result.errors.append("Tag stage failed")
+
+    async def _stage_score_products(self, result: PipelineRunResult) -> None:
+        try:
+            updated = await self._repo.update_product_scores()
+            logger.info("Updated scores for %d products", updated)
+        except Exception:
+            logger.exception("Score products stage failed")
+            result.errors.append("Score products stage failed")
 
     async def _stage_cluster(self, result: PipelineRunResult) -> None:
         try:

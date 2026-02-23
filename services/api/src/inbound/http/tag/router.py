@@ -30,3 +30,15 @@ async def list_trending_tags(
     tags = await svc.list_trending_tags(days, limit)
     cache_collection(response)
     return envelope([TagResponseData.from_domain(t).model_dump() for t in tags])
+
+
+@router.get("/by-products")
+async def list_product_tags(
+    request: Request,
+    response: Response,
+    limit: int = Query(20, ge=1, le=60),
+):
+    svc = _get_service(request)
+    tags = await svc.list_product_tags(limit)
+    cache_collection(response)
+    return envelope([TagResponseData.from_domain(t).model_dump() for t in tags])
