@@ -15,7 +15,7 @@ _ITUNES_REVIEWS_URL = (
     "https://itunes.apple.com/{country}/rss/customerreviews/page={page}/id={app_id}/json"
 )
 _APPLE_RSS_NEW_APPS_URL = (
-    "https://rss.applemarketingtools.com/api/v2/us/apps/most-recent/{limit}/apps.json"
+    "https://rss.marketingtools.apple.com/api/v2/us/apps/most-recent/{limit}/apps.json"
 )
 _SLUG_RE = re.compile(r"[^a-z0-9]+")
 
@@ -97,7 +97,7 @@ class AppStoreClient:
         products: list[RawProduct] = []
 
         try:
-            async with httpx.AsyncClient(timeout=30) as http:
+            async with httpx.AsyncClient(timeout=30, follow_redirects=True) as http:
                 resp = await http.get(url)
                 resp.raise_for_status()
                 data = resp.json()
