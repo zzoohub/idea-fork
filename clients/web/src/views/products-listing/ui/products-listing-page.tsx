@@ -151,11 +151,11 @@ export function ProductsListingPage() {
                 key={opt.value}
                 type="button"
                 className={[
-                  "px-3 py-1.5 rounded-full text-xs font-medium transition-colors duration-150 cursor-pointer",
+                  "px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors duration-150 cursor-pointer",
                   "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#137fec]",
                   activePeriod === opt.value
-                    ? "bg-[#137fec] text-white shadow-sm"
-                    : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700",
+                    ? "text-primary border border-primary/40 bg-primary/5 dark:bg-primary/10"
+                    : "text-slate-500 dark:text-slate-400 border border-transparent hover:text-slate-700 dark:hover:text-slate-300 hover:border-slate-300 dark:hover:border-slate-600",
                 ].join(" ")}
                 onClick={() => setActivePeriod(opt.value)}
               >

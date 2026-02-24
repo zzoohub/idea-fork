@@ -42,7 +42,7 @@ export function Chip({
   const sharedClasses = [
     "inline-flex items-center justify-center gap-1.5",
     "h-9 px-3.5",
-    "rounded-full",
+    "rounded-full whitespace-nowrap",
     "text-body-sm font-semibold",
     "transition-colors",
     VARIANT_CLASSES[variant],
