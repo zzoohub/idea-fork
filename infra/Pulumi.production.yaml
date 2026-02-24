@@ -5,7 +5,7 @@ config:
   idea-fork:cloudRunMemory: 1Gi
   idea-fork:cloudRunMinInstances: "0"
   idea-fork:cloudRunMaxInstances: "3"
-  idea-fork:corsAllowedOrigins: https://idea-fork.com
+  idea-fork:corsAllowedOrigins: https://idea-fork.zzooapp.com
   idea-fork:pipelineSchedule: 0 14 * * *
   idea-fork:pipelineTimezone: America/New_York
   idea-fork:neonOrgId: org-gentle-glade-20464679
