@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import { withSentryConfig } from "@sentry/nextjs";
 import createNextIntlPlugin from "next-intl/plugin";
 
 const withNextIntl = createNextIntlPlugin("./src/shared/i18n/request.ts");
@@ -34,7 +35,7 @@ const nextConfig: NextConfig = {
               "img-src 'self' data: https:",
               isDev
                 ? "connect-src 'self' ws://localhost:* http://localhost:*"
-                : "connect-src 'self'",
+                : "connect-src 'self' https://*.ingest.sentry.io",
               "frame-ancestors 'none'",
             ].join("; "),
           },
@@ -44,4 +45,14 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default withNextIntl(nextConfig);
+export default withSentryConfig(withNextIntl(nextConfig), {
+  org: process.env.SENTRY_ORG,
+  project: process.env.SENTRY_PROJECT,
+  silent: !process.env.CI,
+  sourcemaps: {
+    deleteSourcemapsAfterUpload: true,
+  },
+  bundleSizeOptimizations: {
+    excludeTracing: true,
+  },
+});

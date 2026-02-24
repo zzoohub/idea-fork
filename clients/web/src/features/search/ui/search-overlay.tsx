@@ -3,6 +3,7 @@
 import { useEffect, useRef } from "react";
 import { useTranslations } from "next-intl";
 import { SearchInput, Icon } from "@/src/shared/ui";
+import { gsap, useReducedMotion, DURATION, EASE } from "@/src/shared/lib/gsap";
 
 /* --------------------------------------------------------------------------
    SearchOverlay
@@ -28,23 +29,58 @@ export function SearchOverlay({
 }: SearchOverlayProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const previousFocusRef = useRef<HTMLElement | null>(null);
+  const overlayRef = useRef<HTMLDivElement>(null);
+  const formRef = useRef<HTMLFormElement>(null);
+  const reducedMotion = useReducedMotion();
   const tSearch = useTranslations("search");
   const tA11y = useTranslations("accessibility");
 
-  /* Auto-focus input on open, restore focus on close */
+  /* GSAP open/close animation */
   useEffect(() => {
+    const overlay = overlayRef.current;
+    const form = formRef.current;
+    if (!overlay) return;
+
     if (isOpen) {
       previousFocusRef.current = document.activeElement as HTMLElement;
-      /* Delay focus to after transition starts */
-      const timer = setTimeout(() => {
-        inputRef.current?.focus();
-      }, 50);
+
+      if (reducedMotion) {
+        gsap.set(overlay, { opacity: 1, y: 0 });
+      } else {
+        const tl = gsap.timeline();
+        tl.fromTo(
+          overlay,
+          { opacity: 0, y: 8 },
+          { opacity: 1, y: 0, duration: DURATION.normal, ease: EASE.out },
+        );
+        if (form) {
+          tl.fromTo(
+            form,
+            { opacity: 0, y: -10 },
+            { opacity: 1, y: 0, duration: DURATION.fast, ease: EASE.out },
+            "-=0.1",
+          );
+        }
+      }
+
+      const timer = setTimeout(() => inputRef.current?.focus(), 50);
       return () => clearTimeout(timer);
-    } else if (previousFocusRef.current) {
-      previousFocusRef.current.focus();
-      previousFocusRef.current = null;
+    } else {
+      if (reducedMotion) {
+        gsap.set(overlay, { opacity: 0, y: 8 });
+      } else {
+        gsap.to(overlay, {
+          opacity: 0, y: 8,
+          duration: DURATION.fast, ease: EASE.out,
+        });
+      }
+
+      if (previousFocusRef.current) {
+        previousFocusRef.current.focus();
+        previousFocusRef.current = null;
+      }
     }
-  }, [isOpen]);
+  }, [isOpen, reducedMotion]);
 
   /* Escape key closes */
   useEffect(() => {
@@ -74,27 +110,17 @@ export function SearchOverlay({
 
   return (
     <div
+      ref={overlayRef}
       role="dialog"
       aria-modal="true"
       aria-label={tA11y("searchDialog")}
-      className={[
-        "fixed inset-0 z-[100]",
-        "bg-bg-primary",
-        "flex flex-col",
-        "transition-all",
-        isOpen
-          ? "opacity-100 translate-y-0 pointer-events-auto"
-          : "opacity-0 translate-y-[8px] pointer-events-none",
-      ].join(" ")}
-      style={{
-        transitionDuration: "var(--duration-normal)",
-        transitionTimingFunction: "var(--ease-out)",
-      }}
-      /* Prevent underlying interaction when open */
+      className="fixed inset-0 z-[100] bg-bg-primary flex flex-col"
+      style={{ opacity: isOpen ? undefined : 0, transform: isOpen ? undefined : "translateY(8px)", pointerEvents: isOpen ? "auto" : "none" }}
       aria-hidden={!isOpen}
     >
       {/* Header: input + close button */}
       <form
+        ref={formRef}
         className="flex items-center gap-space-sm p-layout-xs"
         onSubmit={(e) => {
           e.preventDefault();

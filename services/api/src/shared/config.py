@@ -77,6 +77,10 @@ class Settings(BaseSettings):
     # Product Hunt
     PRODUCTHUNT_API_TOKEN: str = ""
 
+    # Sentry
+    SENTRY_DSN: str = ""
+    SENTRY_ENVIRONMENT: str = "development"
+
     model_config = {"env_file": ".env", "env_prefix": "", "case_sensitive": True}
 
     @model_validator(mode="after")

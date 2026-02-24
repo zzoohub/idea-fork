@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useCallback } from "react";
 import { SourceSnippet } from "@/src/shared/ui/source-snippet";
+import { gsap, useReducedMotion, DURATION, EASE } from "@/src/shared/lib/gsap";
 
 interface Citation {
   source: string;
@@ -18,6 +19,30 @@ interface CitationRefProps {
 
 export function CitationRef({ number, citation }: CitationRefProps) {
   const [expanded, setExpanded] = useState(false);
+  const contentRef = useRef<HTMLSpanElement>(null);
+  const reducedMotion = useReducedMotion();
+
+  const toggle = useCallback(() => {
+    if (expanded) {
+      // Collapse — set state immediately so content unmounts
+      setExpanded(false);
+    } else {
+      // Expand
+      setExpanded(true);
+      if (!reducedMotion) {
+        // Wait for React to render content, then animate from 0 to auto
+        requestAnimationFrame(() => {
+          const el = contentRef.current;
+          if (!el) return;
+          gsap.fromTo(
+            el,
+            { height: 0, opacity: 0 },
+            { height: "auto", opacity: 1, duration: DURATION.slow, ease: EASE.out },
+          );
+        });
+      }
+    }
+  }, [expanded, reducedMotion]);
 
   return (
     <span className="inline">
@@ -25,7 +50,7 @@ export function CitationRef({ number, citation }: CitationRefProps) {
         type="button"
         aria-expanded={expanded}
         aria-label={`Citation ${number}: ${citation.sourceName}`}
-        onClick={() => setExpanded((prev) => !prev)}
+        onClick={toggle}
         className="relative inline-flex cursor-pointer items-center justify-center align-super"
         style={{
           /* 44x44 tap target around small visual */
@@ -42,10 +67,8 @@ export function CitationRef({ number, citation }: CitationRefProps) {
 
       {expanded && (
         <span
+          ref={contentRef}
           className="block overflow-hidden"
-          style={{
-            animation: `citationExpand var(--duration-normal) var(--ease-out) forwards`,
-          }}
         >
           <span className="block pt-space-sm pb-space-xs">
             <SourceSnippet

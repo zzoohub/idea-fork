@@ -6,6 +6,7 @@ import { useTranslations } from "next-intl";
 import { useRouter } from "@/src/shared/i18n/navigation";
 import { useInfiniteScroll } from "@/src/shared/lib/use-infinite-scroll";
 import { Skeleton, EmptyState, ErrorState, SortDropdown } from "@/src/shared/ui";
+import { useScrollReveal } from "@/src/shared/lib/gsap";
 import { BriefCard } from "@/src/entities/brief/ui";
 import { fetchBriefs } from "@/src/entities/brief/api";
 import type { BriefListItem } from "@/src/shared/api";
@@ -102,6 +103,8 @@ function BriefsListingInner() {
     enabled: hasNext && !loadingMore,
   });
 
+  const gridRef = useScrollReveal();
+
   if (loading) return <BriefsListingSkeleton />;
   if (error) return <ErrorState message={error} onRetry={() => window.location.reload()} />;
 
@@ -137,6 +140,7 @@ function BriefsListingInner() {
       {/* Brief grid */}
       {briefs.length > 0 ? (
         <div
+          ref={gridRef}
           className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-8"
           role="feed"
           aria-label="AI-generated briefs"

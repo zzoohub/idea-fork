@@ -293,16 +293,7 @@
   }
 }
 
-@keyframes citationExpand {
-  from {
-    max-height: 0;
-    opacity: 0;
-  }
-  to {
-    max-height: 200px;
-    opacity: 1;
-  }
-}
+/* citationExpand removed — replaced by GSAP animation */
 
 /* --------------------------------------------------------------------------
    Base Styles
@@ -383,4 +374,11 @@ body {
 .hide-scrollbar {
   -ms-overflow-style: none;
   scrollbar-width: none;
+}
+
+/* --------------------------------------------------------------------------
+   Utility: GSAP reveal (prevents hydration flash for animated elements)
+   -------------------------------------------------------------------------- */
+.gsap-reveal {
+  opacity: 0;
 }

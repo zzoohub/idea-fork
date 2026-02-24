@@ -1,7 +1,9 @@
 "use client";
 
+import { useCallback } from "react";
 import { useTranslations } from "next-intl";
 import { Icon } from "./icon";
+import { gsap, useReducedMotion, PRESET } from "@/src/shared/lib/gsap";
 
 type RatingValue = "up" | "down" | null;
 
@@ -17,6 +19,17 @@ export function RatingButtons({
   className,
 }: RatingButtonsProps) {
   const tA11y = useTranslations("accessibility");
+  const reducedMotion = useReducedMotion();
+
+  const handleClick = useCallback(
+    (e: React.MouseEvent<HTMLButtonElement>, rating: RatingValue) => {
+      if (!reducedMotion) {
+        gsap.fromTo(e.currentTarget, ...PRESET.scalePress.keyframes);
+      }
+      onChange?.(value === rating ? null : rating);
+    },
+    [reducedMotion, onChange, value],
+  );
 
   return (
     <div
@@ -30,9 +43,7 @@ export function RatingButtons({
         type="button"
         aria-label={tA11y("helpful")}
         aria-pressed={value === "up"}
-        onClick={
-          onChange ? () => onChange(value === "up" ? null : "up") : undefined
-        }
+        onClick={(e) => handleClick(e, "up")}
         className={[
           "inline-flex items-center justify-center",
           "min-w-[48px] min-h-[48px] rounded-card",
@@ -52,11 +63,7 @@ export function RatingButtons({
         type="button"
         aria-label={tA11y("notHelpful")}
         aria-pressed={value === "down"}
-        onClick={
-          onChange
-            ? () => onChange(value === "down" ? null : "down")
-            : undefined
-        }
+        onClick={(e) => handleClick(e, "down")}
         className={[
           "inline-flex items-center justify-center",
           "min-w-[48px] min-h-[48px] rounded-card",

@@ -21,6 +21,7 @@ dependencies = [
     "feedparser>=6.0.0",
     "pytrends>=4.9.0",
     "google-play-scraper>=1.2.0",
+    "sentry-sdk[fastapi]>=2.19.0",
 ]
 
 [dependency-groups]

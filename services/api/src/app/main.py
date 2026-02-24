@@ -1,6 +1,7 @@
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
+import sentry_sdk
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from slowapi.errors import RateLimitExceeded
@@ -39,6 +40,15 @@ from shared.config import get_settings
 
 def create_app() -> FastAPI:
     settings = get_settings()
+
+    if settings.SENTRY_DSN:
+        sentry_sdk.init(
+            dsn=settings.SENTRY_DSN,
+            environment=settings.SENTRY_ENVIRONMENT,
+            traces_sample_rate=0.0,
+            enable_tracing=False,
+            send_default_pii=False,
+        )
 
     db = Database(settings.API_DATABASE_URL)
 
@@ -144,6 +154,8 @@ def create_app() -> FastAPI:
 
     @app.exception_handler(Exception)
     async def _unhandled_handler(request: Request, exc: Exception) -> Response:
+        if settings.SENTRY_DSN:
+            sentry_sdk.capture_exception(exc)
         return JSONResponse(
             status_code=500,
             content={

@@ -1,3 +1,5 @@
+"use client";
+
 import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { Link } from "@/src/shared/i18n/navigation";
@@ -6,6 +8,7 @@ import { HeatBadge } from "@/src/entities/brief/ui/heat-badge";
 import type { HeatLevel } from "@/src/shared/lib/compute-heat-level";
 import { formatSource } from "@/src/shared/lib/format-source";
 import type { Tag } from "@/src/shared/api/types";
+import { useCardHover } from "@/src/shared/lib/gsap";
 
 interface ProductCardProps {
   name: string;
@@ -37,16 +40,23 @@ export function ProductCard({
   tags,
 }: ProductCardProps) {
   const t = useTranslations("productCard");
+  const cardRef = useCardHover<HTMLAnchorElement>({
+    arrowSelector: "[data-arrow]",
+    iconSelector: "[data-product-icon]",
+  });
 
   return (
     <Link
+      ref={cardRef}
       href={`/products/${slug}`}
-      className="group flex flex-col h-full rounded-xl border border-slate-200 dark:border-[#2d3b4a] bg-white dark:bg-[#1c242e] p-5 no-underline transition-all duration-300 hover:border-primary/50 hover:shadow-lg hover:shadow-primary/5"
+      className="group flex flex-col h-full rounded-xl border border-slate-200 dark:border-[#2d3b4a] bg-white dark:bg-[#1c242e] p-5 no-underline transition-colors duration-200"
     >
       {/* Row 1: Icon + Name/Category + HeatBadge */}
       <div className="flex justify-between items-start mb-3">
         <div className="flex items-center gap-3 min-w-0">
-          <ProductIcon name={name} iconUrl={iconUrl} iconBg={iconBg} productUrl={productUrl} />
+          <span data-product-icon className="inline-flex">
+            <ProductIcon name={name} iconUrl={iconUrl} iconBg={iconBg} productUrl={productUrl} />
+          </span>
           <div className="min-w-0">
             <h3 className="font-bold text-lg text-slate-900 dark:text-slate-100 group-hover:text-primary truncate transition-colors">
               {name}
@@ -97,11 +107,9 @@ export function ProductCard({
         <span className="text-primary font-bold text-sm group-hover:underline">
           {t("exploreGaps")}
         </span>
-        <Icon
-          name="arrow-right"
-          size={16}
-          className="text-primary transition-transform duration-200 group-hover:translate-x-0.5"
-        />
+        <span data-arrow className="inline-flex text-primary">
+          <Icon name="arrow-right" size={16} />
+        </span>
       </div>
     </Link>
   );

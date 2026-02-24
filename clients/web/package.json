@@ -12,6 +12,9 @@
     "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
+    "@gsap/react": "^2.1.2",
+    "@sentry/nextjs": "^10.39.0",
+    "gsap": "^3.14.2",
     "lucide-react": "^0.575.0",
     "next": "16.1.6",
     "next-intl": "^4.8.3",

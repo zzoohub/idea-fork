@@ -16,6 +16,7 @@ import { isSafeUrl } from "@/src/shared/lib/sanitize-url";
 import { fetchProduct } from "@/src/entities/product/api";
 import type { ProductDetail, ProductPost } from "@/src/shared/api";
 import { formatRelativeTime } from "@/src/shared/lib/format-relative-time";
+import { useStaggerReveal, useScrollReveal } from "@/src/shared/lib/gsap";
 
 const INITIAL_VISIBLE_COUNT = 3;
 
@@ -157,6 +158,10 @@ export function ProductDetailPage({ slug }: ProductDetailPageProps) {
     return () => { cancelled = true; };
   }, [slug, t]);
 
+  const headerRef = useStaggerReveal({ selector: "> *", stagger: 0.1 });
+  const complaintsRef = useScrollReveal({ selector: "> article" });
+  const relatedRef = useScrollReveal();
+
   if (loading) return <ProductDetailSkeleton />;
   if (error || !product) return <ErrorState message={error ?? t("errors.notFound")} onRetry={() => window.location.reload()} />;
 
@@ -219,7 +224,7 @@ export function ProductDetailPage({ slug }: ProductDetailPageProps) {
       </nav>
 
       {/* Header */}
-      <div className="space-y-6 mb-10">
+      <div ref={headerRef} className="space-y-6 mb-10">
         <ProductHeader
           name={product.name}
           iconUrl={product.image_url ?? undefined}
@@ -344,7 +349,7 @@ export function ProductDetailPage({ slug }: ProductDetailPageProps) {
             }}
           />
         ) : (
-          <div className="space-y-4">
+          <div ref={complaintsRef} className="space-y-4">
             {visibleComplaints.map((complaint) => {
               const badge = complaint.sentiment
                 ? SENTIMENT_BADGE[complaint.sentiment]
@@ -470,7 +475,7 @@ export function ProductDetailPage({ slug }: ProductDetailPageProps) {
         </h2>
 
         {product.related_briefs.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div ref={relatedRef} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {product.related_briefs.map((brief) => (
               <Link
                 key={brief.id}

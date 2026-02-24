@@ -1,8 +1,11 @@
+"use client";
+
 import { useTranslations } from "next-intl";
 import { Link } from "@/src/shared/i18n/navigation";
 import { Icon } from "@/src/shared/ui/icon";
 import { HeatBadge } from "./heat-badge";
 import type { HeatLevel } from "@/src/shared/lib/compute-heat-level";
+import { useCardHover } from "@/src/shared/lib/gsap";
 
 interface SourcePlatform {
   name: string;
@@ -55,6 +58,7 @@ export function BriefCard({
 }: BriefCardProps) {
   const t = useTranslations("briefCard");
   const tCommon = useTranslations("common");
+  const cardRef = useCardHover<HTMLElement>({ arrowSelector: "[data-arrow]" });
 
   return (
     <Link
@@ -62,15 +66,14 @@ export function BriefCard({
       className="group no-underline"
     >
       <article
+        ref={cardRef}
         className={[
           "flex flex-col h-full",
           "bg-white dark:bg-[#1c2127]",
           "rounded-xl",
           "border border-slate-200 dark:border-[#3b4754]",
           "p-5",
-          "hover:border-[#137fec]/50 hover:shadow-lg hover:shadow-[#137fec]/10",
-          "transition-all duration-300",
-          "hover:-translate-y-1",
+          "transition-colors duration-200",
         ].join(" ")}
       >
         {/* Row 1: Heat badge */}
@@ -123,9 +126,11 @@ export function BriefCard({
                 </span>
               ))}
             </div>
-            <span className="inline-flex items-center gap-1 text-[#137fec] text-sm font-bold shrink-0 transition-all group-hover:gap-2">
+            <span className="inline-flex items-center gap-1 text-[#137fec] text-sm font-bold shrink-0">
               {t("readBrief")}
-              <Icon name="arrow-right" size={16} />
+              <span data-arrow className="inline-flex">
+                <Icon name="arrow-right" size={16} />
+              </span>
             </span>
           </div>
         </div>

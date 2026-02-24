@@ -1,11 +1,12 @@
 "use client";
 
 import { useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useState, Suspense } from "react";
+import { useCallback, useEffect, useState, useRef, Suspense } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "@/src/shared/i18n/navigation";
 import { useInfiniteScroll } from "@/src/shared/lib/use-infinite-scroll";
 import { Skeleton, EmptyState, ErrorState } from "@/src/shared/ui";
+import { useScrollReveal, gsap, useGSAP, useReducedMotion } from "@/src/shared/lib/gsap";
 import { FilterChipBar } from "@/src/features/filter/ui";
 import { PostCard } from "@/src/entities/post/ui";
 import { fetchPosts } from "@/src/entities/post/api";
@@ -188,6 +189,29 @@ function FeedPageInner() {
     enabled: hasNext && !loadingMore,
   });
 
+  const feedRef = useScrollReveal();
+  const reducedMotion = useReducedMotion();
+  const tabRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  const tabIndicatorRef = useRef<HTMLSpanElement>(null);
+  const activeTabIndex = POST_TYPE_TAB_KEYS.findIndex((t) => t.key === activePostType);
+
+  useGSAP(() => {
+    const indicator = tabIndicatorRef.current;
+    const activeTab = tabRefs.current[activeTabIndex];
+    if (!indicator || !activeTab) return;
+    const parent = activeTab.parentElement;
+    if (!parent) return;
+    const tabRect = activeTab.getBoundingClientRect();
+    const parentRect = parent.getBoundingClientRect();
+    const x = tabRect.left - parentRect.left;
+    const width = tabRect.width;
+    if (reducedMotion) {
+      gsap.set(indicator, { x, width, opacity: 1 });
+    } else {
+      gsap.to(indicator, { x, width, opacity: 1, duration: 0.25, ease: "power2.out" });
+    }
+  }, { dependencies: [activeTabIndex, reducedMotion] });
+
   if (loading) return <FeedSkeleton />;
   if (error) return <ErrorState message={error} onRetry={() => window.location.reload()} />;
 
@@ -195,15 +219,16 @@ function FeedPageInner() {
     <div className="flex flex-col gap-5 w-full max-w-3xl mx-auto pb-10">
       {/* Post type tabs */}
       <div
-        className="flex items-center overflow-x-auto border-b border-slate-200 dark:border-[#283039] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        className="flex items-center overflow-x-auto border-b border-slate-200 dark:border-[#283039] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden relative"
         role="tablist"
         aria-label={tA11y("filterByPostType")}
       >
-        {POST_TYPE_TAB_KEYS.map((tab) => {
+        {POST_TYPE_TAB_KEYS.map((tab, index) => {
           const isActive = activePostType === tab.key;
           return (
             <button
               key={tab.labelKey}
+              ref={(el) => { tabRefs.current[index] = el; }}
               type="button"
               role="tab"
               aria-selected={isActive}
@@ -217,12 +242,15 @@ function FeedPageInner() {
               ].join(" ")}
             >
               {t(`postTypes.${tab.labelKey}`)}
-              {isActive && (
-                <span className="absolute inset-x-0 bottom-0 h-0.5 bg-[#137fec] rounded-full" />
-              )}
             </button>
           );
         })}
+        <span
+          ref={tabIndicatorRef}
+          className="absolute bottom-0 left-0 h-0.5 bg-[#137fec] rounded-full"
+          style={{ opacity: 0, width: 0 }}
+          aria-hidden="true"
+        />
       </div>
 
       {/* Tag filter */}
@@ -235,6 +263,7 @@ function FeedPageInner() {
       {/* Feed cards */}
       {posts.length > 0 ? (
         <div
+          ref={feedRef}
           className="flex flex-col gap-5"
           role="feed"
           aria-label={tA11y("complaintsAriaLabel")}

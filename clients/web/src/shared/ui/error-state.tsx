@@ -3,6 +3,7 @@
 import { useTranslations } from "next-intl";
 import { Button } from "./button";
 import { Icon } from "./icon";
+import { useStaggerReveal } from "@/src/shared/lib/gsap";
 
 interface ErrorStateProps {
   message?: string;
@@ -17,9 +18,11 @@ export function ErrorState({
 }: ErrorStateProps) {
   const t = useTranslations("errorState");
   const tCommon = useTranslations("common");
+  const containerRef = useStaggerReveal({ stagger: 0.1 });
 
   return (
     <div
+      ref={containerRef}
       className={[
         "flex flex-col items-center justify-center py-layout-lg text-center",
         className,

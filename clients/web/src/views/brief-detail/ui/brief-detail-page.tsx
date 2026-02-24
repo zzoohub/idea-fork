@@ -7,6 +7,7 @@ import {
   Icon,
   ErrorState,
 } from "@/src/shared/ui";
+import { useStaggerReveal } from "@/src/shared/lib/gsap";
 import { isSafeUrl } from "@/src/shared/lib/sanitize-url";
 import {
   BriefBody,
@@ -58,6 +59,8 @@ export function BriefDetailPage({ slug }: BriefDetailPageProps) {
 
     return () => { cancelled = true; };
   }, [slug, t]);
+
+  const articleRef = useStaggerReveal({ selector: "> *", stagger: 0.1 });
 
   if (loading) return <BriefDetailSkeleton />;
   if (error || !brief) return <ErrorState message={error ?? t("errors.notFound")} onRetry={() => window.location.reload()} />;
@@ -118,7 +121,7 @@ export function BriefDetailPage({ slug }: BriefDetailPageProps) {
         {/* ================================================================ */}
         {/* MAIN COLUMN                                                      */}
         {/* ================================================================ */}
-        <article className="min-w-0" aria-labelledby="brief-title">
+        <article ref={articleRef} className="min-w-0" aria-labelledby="brief-title">
           {/* Breadcrumbs */}
           <nav aria-label={tA11y("breadcrumb")} className="mb-6">
             <ol className="flex items-center gap-1.5 text-sm">

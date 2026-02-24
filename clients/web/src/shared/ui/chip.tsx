@@ -1,7 +1,8 @@
 "use client";
 
-import { type ButtonHTMLAttributes, type HTMLAttributes, type Ref } from "react";
+import { type ButtonHTMLAttributes, type HTMLAttributes, type Ref, useCallback } from "react";
 import { Icon } from "./icon";
+import { gsap, useReducedMotion, PRESET } from "@/src/shared/lib/gsap";
 
 const VARIANT_CLASSES = {
   active:
@@ -62,6 +63,19 @@ export function Chip({
     </>
   );
 
+  const reducedMotion = useReducedMotion();
+
+  const handleClick = useCallback(
+    (e: React.MouseEvent<HTMLButtonElement>) => {
+      if (!reducedMotion) {
+        gsap.fromTo(e.currentTarget, ...PRESET.scalePop.keyframes);
+      }
+      const onClick = (props as ButtonHTMLAttributes<HTMLButtonElement>).onClick;
+      onClick?.(e);
+    },
+    [reducedMotion, props],
+  );
+
   if (!interactive) {
     return (
       <span
@@ -74,12 +88,16 @@ export function Chip({
     );
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { onClick: _onClick, ...buttonProps } = props as ButtonHTMLAttributes<HTMLButtonElement>;
+
   return (
     <button
       ref={ref as Ref<HTMLButtonElement>}
       type="button"
       className={sharedClasses}
-      {...(props as ButtonHTMLAttributes<HTMLButtonElement>)}
+      onClick={handleClick}
+      {...buttonProps}
     >
       {content}
     </button>

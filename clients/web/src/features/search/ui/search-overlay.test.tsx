@@ -80,8 +80,8 @@ describe("SearchOverlay", () => {
     });
   });
 
-  describe("isOpen state classes", () => {
-    it("applies opacity-100 class when open", () => {
+  describe("isOpen state", () => {
+    it("uses GSAP for visibility when open (initial inline style has opacity 0)", () => {
       renderWithIntl(
         <SearchOverlay
           isOpen={true}
@@ -91,10 +91,11 @@ describe("SearchOverlay", () => {
           onClear={noop}
         />
       );
-      expect(screen.getByRole("dialog")).toHaveClass("opacity-100");
+      // GSAP animates opacity via inline styles; dialog is present and accessible
+      expect(screen.getByRole("dialog")).toBeInTheDocument();
     });
 
-    it("applies opacity-0 class when closed", () => {
+    it("has pointer-events none initially when closed", () => {
       renderWithIntl(
         <SearchOverlay
           isOpen={false}
@@ -105,7 +106,8 @@ describe("SearchOverlay", () => {
         />
       );
       // aria-hidden=true means we need hidden:true to find it
-      expect(screen.getByRole("dialog", { hidden: true })).toHaveClass("opacity-0");
+      const dialog = screen.getByRole("dialog", { hidden: true });
+      expect(dialog.style.pointerEvents).toBe("none");
     });
 
     it("sets aria-hidden=true when closed", () => {

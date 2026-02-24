@@ -1,6 +1,10 @@
+"use client";
+
+import { useRef } from "react";
 import { useTranslations } from "next-intl";
 import { Icon } from "@/src/shared/ui/icon";
 import type { HeatLevel } from "@/src/shared/lib/compute-heat-level";
+import { gsap, useGSAP, useReducedMotion } from "@/src/shared/lib/gsap";
 
 interface HeatBadgeProps {
   level: HeatLevel;
@@ -38,6 +42,23 @@ export function HeatBadge({ level, className }: HeatBadgeProps) {
   const t = useTranslations("heatBadge");
   const config = LEVEL_STYLE[level];
   const label = t(level);
+  const iconRef = useRef<HTMLSpanElement>(null);
+  const reducedMotion = useReducedMotion();
+
+  useGSAP(
+    () => {
+      if (level !== "hot" || reducedMotion || !iconRef.current) return;
+
+      gsap.to(iconRef.current, {
+        scale: 1.2,
+        duration: 0.4,
+        ease: "power1.inOut",
+        yoyo: true,
+        repeat: 3,
+      });
+    },
+    { dependencies: [level, reducedMotion] },
+  );
 
   return (
     <span
@@ -51,12 +72,14 @@ export function HeatBadge({ level, className }: HeatBadgeProps) {
       role="status"
       aria-label={label}
     >
-      <Icon
-        name={config.icon}
-        size={14}
-        className={config.iconClass}
-        filled
-      />
+      <span ref={iconRef} className="inline-flex">
+        <Icon
+          name={config.icon}
+          size={14}
+          className={config.iconClass}
+          filled
+        />
+      </span>
       {label}
     </span>
   );

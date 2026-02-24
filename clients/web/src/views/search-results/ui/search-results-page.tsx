@@ -5,6 +5,7 @@ import { useEffect, useState, useCallback, useMemo, useRef, Suspense } from "rea
 import { useTranslations } from "next-intl";
 import { useRouter } from "@/src/shared/i18n/navigation";
 import { Skeleton, EmptyState, ErrorState } from "@/src/shared/ui";
+import { useScrollReveal } from "@/src/shared/lib/gsap";
 import { BriefCard } from "@/src/entities/brief/ui";
 import { ProductCard } from "@/src/entities/product/ui";
 import { PostCard } from "@/src/entities/post/ui";
@@ -317,6 +318,9 @@ function AllResults({
   onViewAll: (type: ContentType) => void;
 }) {
   const t = useTranslations("search");
+  const briefsGridRef = useScrollReveal();
+  const productsGridRef = useScrollReveal();
+  const postsListRef = useScrollReveal();
   return (
     <div className="flex flex-col gap-8">
       {briefs.length > 0 && (
@@ -324,7 +328,7 @@ function AllResults({
           <h2 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">
             {t("tabs.briefs")}
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div ref={briefsGridRef} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {briefs.slice(0, PREVIEW_LIMIT).map((brief) => (
               <BriefCardItem key={brief.id} brief={brief} />
             ))}
@@ -346,7 +350,7 @@ function AllResults({
             <h2 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">
               {t("tabs.products")}
             </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div ref={productsGridRef} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {products.slice(0, PREVIEW_LIMIT).map((product) => (
                 <ProductCardItem key={product.slug} product={product} />
               ))}
@@ -369,7 +373,7 @@ function AllResults({
             <h2 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">
               {t("tabs.posts")}
             </h2>
-            <div className="flex flex-col gap-5 max-w-3xl mx-auto">
+            <div ref={postsListRef} className="flex flex-col gap-5 max-w-3xl mx-auto">
               {posts.slice(0, PREVIEW_LIMIT).map((post) => (
                 <PostCardItem key={post.id} post={post} query={query} />
               ))}

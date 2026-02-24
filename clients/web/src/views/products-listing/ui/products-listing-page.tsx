@@ -6,6 +6,7 @@ import { useInfiniteScroll } from "@/src/shared/lib/use-infinite-scroll";
 import { ProductCard } from "@/src/entities/product/ui";
 import { FilterChipBar } from "@/src/features/filter/ui";
 import { SortDropdown, ErrorState } from "@/src/shared/ui";
+import { useScrollReveal } from "@/src/shared/lib/gsap";
 import { fetchProducts } from "@/src/entities/product/api";
 import { fetchProductTags } from "@/src/entities/tag/api";
 import { computeHeatLevel } from "@/src/shared/lib/compute-heat-level";
@@ -119,6 +120,8 @@ export function ProductsListingPage() {
     enabled: hasNext && !loadingMore,
   });
 
+  const gridRef = useScrollReveal();
+
   if (loading) return <ProductsListingSkeleton />;
   if (error) return <ErrorState message={error} onRetry={() => window.location.reload()} />;
 
@@ -172,7 +175,7 @@ export function ProductsListingPage() {
       {/* Product grid */}
       {products.length > 0 ? (
         <>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div ref={gridRef} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {products.map((product) => (
               <ProductCard
                 key={product.slug}

@@ -1,6 +1,7 @@
 "use client";
 
 import { Button } from "./button";
+import { useStaggerReveal } from "@/src/shared/lib/gsap";
 
 interface EmptyStateProps {
   message: string;
@@ -18,8 +19,11 @@ export function EmptyState({
   action,
   className,
 }: EmptyStateProps) {
+  const containerRef = useStaggerReveal({ stagger: 0.1 });
+
   return (
     <div
+      ref={containerRef}
       className={[
         "flex flex-col items-center justify-center py-layout-lg text-center",
         className,

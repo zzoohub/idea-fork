@@ -1,11 +1,12 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { Link, usePathname, useRouter } from "@/src/shared/i18n/navigation";
 import { Icon } from "@/src/shared/ui";
 import { SearchOverlay } from "@/src/features/search/ui/search-overlay";
+import { gsap, useGSAP, useReducedMotion } from "@/src/shared/lib/gsap";
 
 /* --------------------------------------------------------------------------
    Navigation items
@@ -61,6 +62,10 @@ export function NavigationBar() {
   const tNav = useTranslations("navigation");
   const tA11y = useTranslations("accessibility");
   const tSearch = useTranslations("search");
+  const reducedMotion = useReducedMotion();
+  const navLinkRefs = useRef<(HTMLAnchorElement | null)[]>([]);
+  const indicatorRef = useRef<HTMLSpanElement>(null);
+  const darkIconRef = useRef<HTMLSpanElement>(null);
 
   /* Sync desktop input with URL q param when on /search */
   useEffect(() => {
@@ -84,6 +89,29 @@ export function NavigationBar() {
     if (href === "/") return pathname === "/";
     return pathname.startsWith(href);
   }
+
+  const activeNavIndex = NAV_ITEMS.findIndex((item) => isActive(item.href));
+
+  // Slide indicator to active nav link
+  useGSAP(() => {
+    const indicator = indicatorRef.current;
+    const activeLink = navLinkRefs.current[activeNavIndex];
+    if (!indicator || !activeLink) return;
+
+    const parent = activeLink.parentElement;
+    if (!parent) return;
+
+    const linkRect = activeLink.getBoundingClientRect();
+    const parentRect = parent.getBoundingClientRect();
+    const left = linkRect.left - parentRect.left + 12; // px-3 = 12px padding
+    const width = linkRect.width - 24; // minus both sides px-3
+
+    if (reducedMotion) {
+      gsap.set(indicator, { x: left, width, opacity: 1 });
+    } else {
+      gsap.to(indicator, { x: left, width, opacity: 1, duration: 0.25, ease: "power2.out" });
+    }
+  }, { dependencies: [activeNavIndex, reducedMotion] });
 
   return (
     <>
@@ -117,14 +145,15 @@ export function NavigationBar() {
 
           {/* Desktop nav links (hidden on mobile) */}
           <nav
-            className="hidden md:flex items-center gap-1"
+            className="hidden md:flex items-center gap-1 relative"
             aria-label={tA11y("mainNavigation")}
           >
-            {NAV_ITEMS.map((item) => {
+            {NAV_ITEMS.map((item, index) => {
               const active = isActive(item.href);
               return (
                 <Link
                   key={item.href}
+                  ref={(el) => { navLinkRefs.current[index] = el; }}
                   href={item.href}
                   aria-current={active ? "page" : undefined}
                   className={[
@@ -135,16 +164,16 @@ export function NavigationBar() {
                   ].join(" ")}
                 >
                   {tNav(item.labelKey)}
-                  {/* Active indicator: bottom border */}
-                  {active && (
-                    <span
-                      className="absolute bottom-0 left-3 right-3 h-[2px] bg-primary rounded-full"
-                      aria-hidden="true"
-                    />
-                  )}
                 </Link>
               );
             })}
+            {/* Persistent sliding indicator */}
+            <span
+              ref={indicatorRef}
+              className="absolute bottom-0 left-0 h-[2px] bg-primary rounded-full"
+              style={{ opacity: 0, width: 0 }}
+              aria-hidden="true"
+            />
           </nav>
         </div>
 
@@ -220,7 +249,12 @@ export function NavigationBar() {
           {/* Dark mode toggle */}
           <button
             type="button"
-            onClick={toggleDark}
+            onClick={() => {
+              toggleDark();
+              if (!reducedMotion && darkIconRef.current) {
+                gsap.fromTo(darkIconRef.current, { rotate: -90, scale: 0.5 }, { rotate: 0, scale: 1, duration: 0.35, ease: "back.out(2)" });
+              }
+            }}
             className={[
               "flex items-center justify-center",
               "size-10 rounded-lg",
@@ -230,10 +264,12 @@ export function NavigationBar() {
             ].join(" ")}
             aria-label={isDark ? tA11y("switchToLightMode") : tA11y("switchToDarkMode")}
           >
-            <Icon
-              name={isDark ? "sun" : "moon"}
-              size={20}
-            />
+            <span ref={darkIconRef} className="inline-flex">
+              <Icon
+                name={isDark ? "sun" : "moon"}
+                size={20}
+              />
+            </span>
           </button>
 
         </div>
