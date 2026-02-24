@@ -1,0 +1,27 @@
+import * as pulumi from "@pulumi/pulumi";
+
+const config = new pulumi.Config();
+const gcpConfig = new pulumi.Config("gcp");
+
+export const gcpProject = gcpConfig.require("project");
+export const gcpRegion = gcpConfig.get("region") ?? "us-east4";
+
+// Cloud Run sizing
+export const cloudRunCpu = config.get("cloudRunCpu") ?? "1";
+export const cloudRunMemory = config.get("cloudRunMemory") ?? "1Gi";
+export const cloudRunMinInstances = config.getNumber("cloudRunMinInstances") ?? 0;
+export const cloudRunMaxInstances = config.getNumber("cloudRunMaxInstances") ?? 3;
+
+// Neon
+export const neonOrgId = config.require("neonOrgId");
+export const neonRegion = config.get("neonRegion") ?? "aws-us-east-1";
+
+// Secrets
+export const googleApiKey = config.requireSecret("googleApiKey");
+export const internalSecret = config.requireSecret("internalSecret");
+export const sentryDsn = config.getSecret("sentryDsn") ?? pulumi.output("");
+
+// App config
+export const corsAllowedOrigins = config.get("corsAllowedOrigins") ?? "https://idea-fork.com";
+export const pipelineSchedule = config.get("pipelineSchedule") ?? "0 14 * * *";
+export const pipelineTimezone = config.get("pipelineTimezone") ?? "America/New_York";

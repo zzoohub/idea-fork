@@ -131,7 +131,24 @@ test: api-test web-test mobile-test
 
 check: lint test
 
-# ─── Build ────────────────────────────────────────────────────────────────────
+# ─── Docker ───────────────────────────────────────────────────────────────────
 
-build service:
-    docker build -t {{ service }} -f services/{{ service }}/Dockerfile .
+api-docker-build:
+    docker build -t idea-fork-api -f services/api/Dockerfile .
+
+api-docker-run:
+    docker run --rm -p 8080:8080 --env-file services/api/.env idea-fork-api
+
+# ─── Infra (Pulumi) ──────────────────────────────────────────────────────────
+
+infra-install:
+    cd infra && bun install
+
+infra-preview:
+    cd infra && pulumi preview --stack production
+
+infra-up:
+    cd infra && pulumi up --stack production
+
+infra-destroy:
+    cd infra && pulumi destroy --stack production

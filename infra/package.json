@@ -1,0 +1,16 @@
+{
+  "name": "idea-fork-infra",
+  "private": true,
+  "main": "index.ts",
+  "dependencies": {
+    "@pulumi/docker-build": "^0.0.8",
+    "@pulumi/gcp": "^8.0.0",
+    "@pulumi/pulumi": "^3.0.0",
+    "@pulumi/neon": "file:sdks/neon"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.0.0"
+  },
+  "trustedDependencies": ["@pulumi/neon"]
+}

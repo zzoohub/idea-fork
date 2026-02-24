@@ -1,0 +1,9 @@
+name: idea-fork
+runtime: nodejs
+description: idea-fork infrastructure — Cloud Run API + Pipeline cron
+packages:
+  neon:
+    source: terraform-provider
+    version: 1.1.0
+    parameters:
+      - kislerdm/neon

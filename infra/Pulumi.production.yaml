@@ -1,0 +1,18 @@
+config:
+  gcp:project: idea-fork
+  gcp:region: us-east4
+  idea-fork:cloudRunCpu: "1"
+  idea-fork:cloudRunMemory: 1Gi
+  idea-fork:cloudRunMinInstances: "0"
+  idea-fork:cloudRunMaxInstances: "3"
+  idea-fork:corsAllowedOrigins: https://idea-fork.com
+  idea-fork:pipelineSchedule: 0 14 * * *
+  idea-fork:pipelineTimezone: America/New_York
+  idea-fork:neonOrgId: org-gentle-glade-20464679
+  idea-fork:neonRegion: aws-us-east-1
+  neon:apiKey:
+    secure: AAABAD3QsYitY8fTkvHWdwnWaksSjwU5y30JpEihLjIfLsNxJqFyWaljwlbQg5e9uzYxvcAZPqFNxUVyoOY4uIN5kBUUlkgC1R3ER2Hqlp6NMQ5jkoIfMRBTquXdtQc5yQn1EKw=
+  idea-fork:googleApiKey:
+    secure: AAABADMK3jCXz1NSdykYsGh4MWL6HvqocGH0FROtfVeyvvxhce1zYbdXqAzR2poJdrrlzyWro8xiXjdrXyrvAXHOJFPYT7w=
+  idea-fork:internalSecret:
+    secure: AAABAGGz8mAoslPqN0n7M7ToXnczR1y/PJTMEtObkWWwKPYk25j5tmu64RUfwcwFQegnK7g2skc/iB8DID1KpdBZM5rUF91gW5HBkWWn1xmEIXBLqtn/Yy4pxHqHAhyo

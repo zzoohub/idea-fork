@@ -1,0 +1,40 @@
+# Git
+.git
+.gitignore
+
+# IDE
+.idea
+.vscode
+*.swp
+
+# Node
+**/node_modules
+**/.next
+**/coverage
+
+# Python
+**/__pycache__
+**/.venv
+**/.pytest_cache
+**/.ruff_cache
+**/*.pyc
+
+# Docker
+**/Dockerfile
+**/.dockerignore
+
+# Docs & config
+docs/
+biz/
+tasks/
+README.md
+CLAUDE.md
+workflow.md
+docker-compose.yml
+*.md
+
+# Clients (not needed for API build)
+clients/
+
+# Infra
+infra/
