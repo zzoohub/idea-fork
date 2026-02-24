@@ -99,6 +99,7 @@ export class ApiService extends pulumi.ComponentResource {
       {
         name: "idea-fork-api",
         location: args.region,
+        deletionProtection: false,
         ingress: "INGRESS_TRAFFIC_ALL",
         template: {
           serviceAccount: sa.email,
