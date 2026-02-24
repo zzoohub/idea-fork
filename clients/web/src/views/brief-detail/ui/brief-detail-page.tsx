@@ -22,6 +22,7 @@ import { extractSubreddits } from "@/src/shared/lib/extract-subreddits";
 import { computeHeatLevel } from "@/src/shared/lib/compute-heat-level";
 import { formatTimeRange } from "@/src/shared/lib/format-time-range";
 import { formatRelativeTime } from "@/src/shared/lib/format-relative-time";
+import { trackBriefViewed, trackBriefSourceClicked } from "@/src/shared/analytics";
 
 /* --------------------------------------------------------------------------
    BriefDetailPage
@@ -59,6 +60,16 @@ export function BriefDetailPage({ slug }: BriefDetailPageProps) {
 
     return () => { cancelled = true; };
   }, [slug, t]);
+
+  useEffect(() => {
+    if (brief) {
+      trackBriefViewed({
+        brief_id: brief.id,
+        brief_title: brief.title,
+        source_post_count: brief.source_count,
+      });
+    }
+  }, [brief]);
 
   const articleRef = useStaggerReveal({ selector: "> *", stagger: 0.1 });
 
@@ -231,6 +242,7 @@ export function BriefDetailPage({ slug }: BriefDetailPageProps) {
                       username: snap.username ? String(snap.username) : undefined,
                     }}
                     sourceNumber={idx + 1}
+                    briefId={brief.id}
                   />
                 ))}
               </div>
@@ -330,9 +342,11 @@ interface SourcePost {
 function SourcePostCard({
   post,
   sourceNumber,
+  briefId,
 }: {
   post: SourcePost;
   sourceNumber: number;
+  briefId: number;
 }) {
   const tCommon = useTranslations("common");
   const platformIcon = post.source === "reddit" ? "messages-square" : "smartphone";
@@ -345,9 +359,19 @@ function SourcePostCard({
     ? { href: safeHref, target: "_blank" as const, rel: "noopener noreferrer" }
     : {};
 
+  const handleClick = () => {
+    trackBriefSourceClicked({
+      brief_id: briefId,
+      post_id: post.id,
+      platform: post.source,
+      source_position: sourceNumber,
+    });
+  };
+
   return (
     <Tag
       {...linkProps}
+      onClick={handleClick}
       className={[
         "group block p-5 rounded-xl",
         "bg-[#1a242d] border border-[#283039]",

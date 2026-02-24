@@ -184,7 +184,7 @@ List posts with filtering, sorting, keyword search, and keyset pagination.
 
 **Keyset implementation:** Cursor encodes `{ external_created_at, id }` (or the active sort field + id). SQL uses `WHERE (sort_col, id) < (cursor_sort_val, cursor_id)`.
 
-**Caching:** `Cache-Control: public, max-age=60`. Feed data is refreshed by pipeline (hourly/daily), so 60s staleness is acceptable.
+**Caching:** `Cache-Control: public, max-age=60`. Feed data is refreshed by pipeline (daily), so 60s staleness is acceptable.
 
 #### `GET /v1/posts/{id}`
 
@@ -684,7 +684,7 @@ All endpoints may return `500` for unexpected server errors.
 
 | Endpoint | Cache-Control | Rationale |
 |---|---|---|
-| `GET /v1/posts` | `public, max-age=60` | Feed refreshed by pipeline (hourly/daily). 60s staleness OK. |
+| `GET /v1/posts` | `public, max-age=60` | Feed refreshed by pipeline (daily). 60s staleness OK. |
 | `GET /v1/posts/{id}` | `public, max-age=300` | Post content rarely changes after ingestion. |
 | `GET /v1/tags` | `public, max-age=3600` | Tags change infrequently. |
 | `GET /v1/tags/trending` | `public, max-age=60` | Trending tags shift with new data. |

@@ -2,6 +2,22 @@ import "@testing-library/jest-dom";
 import { vi } from "vitest";
 import { useRef } from "react";
 
+// Mock posthog-js — all calls are no-ops in tests
+vi.mock("posthog-js", () => ({
+  default: {
+    init: vi.fn(),
+    capture: vi.fn(),
+    register: vi.fn(),
+    identify: vi.fn(),
+    reset: vi.fn(),
+  },
+}));
+
+// Mock posthog-js/react — passthrough provider
+vi.mock("posthog-js/react", () => ({
+  PostHogProvider: ({ children }: { children: React.ReactNode }) => children,
+}));
+
 // Mock matchMedia for GSAP ScrollTrigger in jsdom
 Object.defineProperty(window, "matchMedia", {
   writable: true,

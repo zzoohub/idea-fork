@@ -17,6 +17,7 @@ import { fetchProduct } from "@/src/entities/product/api";
 import type { ProductDetail, ProductPost } from "@/src/shared/api";
 import { formatRelativeTime } from "@/src/shared/lib/format-relative-time";
 import { useStaggerReveal, useScrollReveal } from "@/src/shared/lib/gsap";
+import { trackProductViewed, trackProductComplaintClicked } from "@/src/shared/analytics";
 
 const INITIAL_VISIBLE_COUNT = 3;
 
@@ -158,6 +159,15 @@ export function ProductDetailPage({ slug }: ProductDetailPageProps) {
     return () => { cancelled = true; };
   }, [slug, t]);
 
+  useEffect(() => {
+    if (product) {
+      trackProductViewed({
+        product_id: product.id,
+        product_name: product.name,
+      });
+    }
+  }, [product]);
+
   const headerRef = useStaggerReveal({ selector: "> *", stagger: 0.1 });
   const complaintsRef = useScrollReveal({ selector: "> article" });
   const relatedRef = useScrollReveal();
@@ -186,7 +196,14 @@ export function ProductDetailPage({ slug }: ProductDetailPageProps) {
 
   const remainingCount = sortedPosts.length - INITIAL_VISIBLE_COUNT;
 
-  const toggleExpanded = (id: number) => {
+  const toggleExpanded = (id: number, post: ProductPost) => {
+    if (!expandedIds.has(id)) {
+      trackProductComplaintClicked({
+        product_id: product.id,
+        post_id: id,
+        platform: post.source,
+      });
+    }
     setExpandedIds((prev) => {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id);
@@ -366,7 +383,7 @@ export function ProductDetailPage({ slug }: ProductDetailPageProps) {
                     "hover:border-[#137fec]/50",
                     "transition-all duration-200",
                   ].join(" ")}
-                  onClick={() => toggleExpanded(complaint.id)}
+                  onClick={() => toggleExpanded(complaint.id, complaint)}
                 >
                   {/* Title */}
                   <h3 className="text-base font-semibold text-slate-900 dark:text-slate-50 group-hover:text-[#137fec] transition-colors duration-150 mb-2">

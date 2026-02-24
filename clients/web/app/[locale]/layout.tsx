@@ -6,6 +6,7 @@ import { notFound } from "next/navigation";
 import { routing } from "@/src/shared/i18n/routing";
 import "@/src/app/globals.css";
 import { NavigationBar } from "@/src/widgets/navigation/ui";
+import { PostHogProvider } from "@/src/shared/analytics";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -52,34 +53,36 @@ export default async function LocaleLayout({
     <html lang={locale} className="dark">
       <body className={`${inter.variable} antialiased`}>
         <NextIntlClientProvider messages={messages}>
-          {/* Skip to content — first focusable element for keyboard users */}
-          <a
-            href="#main-content"
-            className={[
-              "sr-only focus:not-sr-only",
-              "fixed top-space-sm left-space-sm z-[100]",
-              "rounded-card bg-interactive px-space-lg py-space-sm",
-              "text-body-sm font-semibold text-white",
-              "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus",
-            ].join(" ")}
-          >
-            {t("skipToContent")}
-          </a>
+          <PostHogProvider>
+            {/* Skip to content — first focusable element for keyboard users */}
+            <a
+              href="#main-content"
+              className={[
+                "sr-only focus:not-sr-only",
+                "fixed top-space-sm left-space-sm z-[100]",
+                "rounded-card bg-interactive px-space-lg py-space-sm",
+                "text-body-sm font-semibold text-white",
+                "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus",
+              ].join(" ")}
+            >
+              {t("skipToContent")}
+            </a>
 
-          <NavigationBar />
+            <NavigationBar />
 
-          {/* Main content area with padding for fixed nav bars */}
-          <main
-            id="main-content"
-            className={[
-              /* Desktop: account for fixed 56px top bar */
-              "md:pt-[56px]",
-              /* Mobile: sticky top bar handled by the browser, bottom tab bar needs clearance */
-              "pb-[72px] md:pb-0",
-            ].join(" ")}
-          >
-            {children}
-          </main>
+            {/* Main content area with padding for fixed nav bars */}
+            <main
+              id="main-content"
+              className={[
+                /* Desktop: account for fixed 56px top bar */
+                "md:pt-[56px]",
+                /* Mobile: sticky top bar handled by the browser, bottom tab bar needs clearance */
+                "pb-[72px] md:pb-0",
+              ].join(" ")}
+            >
+              {children}
+            </main>
+          </PostHogProvider>
         </NextIntlClientProvider>
       </body>
     </html>

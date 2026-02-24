@@ -55,9 +55,9 @@ class Settings(BaseSettings):
         # Developer Tools
         "webdev,devops,"
         # General
-        "AskReddit,marketing"
+        "marketing"
     )
-    PIPELINE_FETCH_LIMIT: int = 20
+    PIPELINE_FETCH_LIMIT: int = 50
 
     # RSS
     PIPELINE_RSS_FEEDS: str = "https://hnrss.org/newest?points=50,https://techcrunch.com/feed/"

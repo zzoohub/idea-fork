@@ -35,7 +35,7 @@ const nextConfig: NextConfig = {
               "img-src 'self' data: https:",
               isDev
                 ? "connect-src 'self' ws://localhost:* http://localhost:*"
-                : "connect-src 'self' https://*.ingest.sentry.io",
+                : "connect-src 'self' https://*.ingest.sentry.io https://us.i.posthog.com",
               "frame-ancestors 'none'",
             ].join("; "),
           },

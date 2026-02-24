@@ -83,14 +83,14 @@ Builders (indie hackers, early-stage founders, PMs) spend 5+ hours/week manually
 ### 2.1 Goals
 
 - Serve feed pages with < 200ms TTFB (p95) for SEO and user experience
-- Ingest and tag 10K+ posts/day across all sources (Reddit, App Store, Google Play, Product Hunt) with ≤ $5/day LLM cost
+- Ingest and tag ~4K posts/day across all sources (Reddit 50/subreddit × 44 subs, App Store, Google Play, RSS) with ≤ $5/day LLM cost
 - Generate briefs from post clusters with full source attribution (every claim → source post)
 - Support 500 WAU within 3 months with zero-login browsing
 - Deploy and operate as a solo developer with < 2 hours/week ops overhead
 
 ### 2.2 Non-Goals
 
-- **Real-time ingestion** — batch processing on a schedule (hourly/daily) is sufficient for MVP
+- **Real-time ingestion** — batch processing on a daily schedule is sufficient for MVP
 - **User accounts / authentication** — MVP is fully anonymous. Session-based ratings only
 - **Multi-region deployment** — single region (us-east) is sufficient for global MVP audience
 - **Paid tier / billing** — validate demand first; waitlist only
@@ -373,7 +373,7 @@ No distributed tracing in MVP — single service, no inter-service calls to trac
 **Expected load (MVP):**
 - 500 WAU → ~100 DAU → ~10 concurrent users peak
 - ~50 req/s peak (page loads + API calls)
-- 10K+ posts/day ingested across all sources (Reddit, App Store, Google Play, Product Hunt), ~100 briefs/week generated
+- ~4K posts/day ingested across all sources (Reddit, App Store, Google Play, RSS), ~100 briefs/week generated
 
 **Bottleneck analysis:**
 
@@ -381,7 +381,7 @@ No distributed tracing in MVP — single service, no inter-service calls to trac
 |---|---|
 | Feed listing query (filter + sort + paginate) | PostgreSQL indexes on tags, created_at. pg_trgm for keyword search. |
 | Brief detail page (brief + source posts join) | Pre-computed source post references stored in brief row (denormalized JSON array of post IDs + snippets). |
-| Pipeline LLM calls (tagging 10K posts) | Batch tagging with smaller model (Haiku/GPT-4o-mini). Async HTTP calls. Budget-throttled. |
+| Pipeline LLM calls (tagging ~4K posts) | Batch tagging with Gemini Flash. Async HTTP calls. Budget-throttled. |
 | Cold starts (Cloud Run) | Min instances = 1 for API service during business hours. Pipeline cold start acceptable (not user-facing). |
 
 **Scaling triggers (post-MVP):**
@@ -441,7 +441,7 @@ Feature flags (via PostHog) for:
 | ~~1~~ | ~~Clustering algorithm~~ — **Resolved**: Embedding clustering (Gemini Embedding + HDBSCAN). Cheaper, scalable, automatic cluster count. LLM used only for labeling each cluster. | — | — | zzoo |
 | 2 | Brief generation — one LLM call per brief or chain-of-thought with multiple calls? | A: Single call (cheaper, faster) B: Multi-step (research → outline → write, higher quality) | Test both, compare quality ratings | zzoo |
 | 3 | Feed search — PostgreSQL full-text search (pg_trgm + tsvector) vs. external search service? | A: PostgreSQL built-in (simpler, no extra infra) B: Typesense/Meilisearch (better relevance, more ops) | Evaluate pg FTS quality on sample data | zzoo |
-| 4 | Pipeline scheduling — hourly vs. daily? | A: Hourly (fresher data, higher LLM cost) B: Daily (cheaper, acceptable for MVP) | Estimate LLM cost per run, user expectations for freshness | zzoo |
+| ~~4~~ | ~~Pipeline scheduling — hourly vs. daily?~~ — **Resolved**: Daily (once per day). Cheaper, acceptable freshness for MVP. | — | — | zzoo |
 | ~~5~~ | ~~Korean localization~~ — **Resolved**: MVP. `next-intl` with Korean + English from day one. | — | — | zzoo |
 
 ---

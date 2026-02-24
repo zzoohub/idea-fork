@@ -13,6 +13,7 @@ import { fetchPosts } from "@/src/entities/post/api";
 import { fetchTags } from "@/src/entities/tag/api";
 import type { Post, Tag } from "@/src/shared/api";
 import { formatRelativeTime } from "@/src/shared/lib/format-relative-time";
+import { trackFeedPostClicked, trackFeedFiltered } from "@/src/shared/analytics";
 
 /* --------------------------------------------------------------------------
    Post type tabs
@@ -106,12 +107,18 @@ function FeedPageInner() {
   );
 
   const handleTagChange = useCallback(
-    (tag: string | null) => updateParam("tag", tag),
+    (tag: string | null) => {
+      if (tag) trackFeedFiltered({ filter_type: "tag", filter_value: tag });
+      updateParam("tag", tag);
+    },
     [updateParam],
   );
 
   const handlePostTypeChange = useCallback(
-    (postType: string | null) => updateParam("post_type", postType),
+    (postType: string | null) => {
+      if (postType) trackFeedFiltered({ filter_type: "post_type", filter_value: postType });
+      updateParam("post_type", postType);
+    },
     [updateParam],
   );
 
@@ -268,21 +275,29 @@ function FeedPageInner() {
           role="feed"
           aria-label={tA11y("complaintsAriaLabel")}
         >
-          {posts.map((post) => (
-            <PostCard
+          {posts.map((post, index) => (
+            <div
               key={post.id}
-              source={mapSource(post.source)}
-              sourceName={mapSourceName(post)}
-              date={formatRelativeTime(post.external_created_at)}
-              title={post.title}
-              snippet={post.body ?? ""}
-              postType={post.post_type ?? undefined}
-              tags={post.tags.map((t) => ({ label: t.name, value: t.slug }))}
-              upvotes={post.score}
-              commentCount={post.num_comments}
-              originalUrl={post.external_url}
-              onTagClick={handleTagClick}
-            />
+              onClick={() => trackFeedPostClicked({
+                post_id: post.id,
+                platform: post.source,
+                post_position: index + 1,
+              })}
+            >
+              <PostCard
+                source={mapSource(post.source)}
+                sourceName={mapSourceName(post)}
+                date={formatRelativeTime(post.external_created_at)}
+                title={post.title}
+                snippet={post.body ?? ""}
+                postType={post.post_type ?? undefined}
+                tags={post.tags.map((t) => ({ label: t.name, value: t.slug }))}
+                upvotes={post.score}
+                commentCount={post.num_comments}
+                originalUrl={post.external_url}
+                onTagClick={handleTagClick}
+              />
+            </div>
           ))}
         </div>
       ) : (

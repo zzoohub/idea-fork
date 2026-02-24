@@ -12,7 +12,7 @@
 
 - **Storage**: PostgreSQL (Neon) as sole data store. No Redis, no search service.
 - **Consistency**: Strong consistency for all reads (single primary, no replicas in MVP).
-- **Data volume**: 10K posts/day ingested, ~100 briefs/week, < 10K DAU.
+- **Data volume**: ~4K posts/day ingested, ~100 briefs/week, < 10K DAU.
 - **Read/write ratio**: 100:1. Read-dominant with batch pipeline writes.
 - **Retention**: Posts soft-deleted after 12 months. Briefs retained indefinitely.
 - **Ingestion**: Pipeline batch writes (posts → tags → clusters → briefs). Upsert pattern for posts (Reddit posts may be re-fetched).
@@ -358,11 +358,11 @@ All post indexes are partial (`WHERE deleted_at IS NULL`) to exclude soft-delete
 
 ### Column Ordering
 
-All tables order columns largest-to-smallest (BIGINT/TIMESTAMPTZ → INTEGER → TEXT/JSONB/BOOLEAN) to minimize alignment padding waste. At 10K posts/day this is marginal, but costs nothing to implement correctly.
+All tables order columns largest-to-smallest (BIGINT/TIMESTAMPTZ → INTEGER → TEXT/JSONB/BOOLEAN) to minimize alignment padding waste. At ~4K posts/day this is marginal, but costs nothing to implement correctly.
 
 ### No Partitioning
 
-At 10K posts/day, the post table reaches ~3.65M rows/year. PostgreSQL handles this comfortably with proper indexes. Partitioning adds operational complexity without benefit at this scale.
+At ~4K posts/day, the post table reaches ~3.65M rows/year. PostgreSQL handles this comfortably with proper indexes. Partitioning adds operational complexity without benefit at this scale.
 
 **Trigger**: If post table exceeds 50M rows, consider range partitioning by `external_created_at` (monthly partitions). The soft delete + archival policy should prevent this for several years.
 

@@ -16,6 +16,7 @@ import { extractDemandSignals } from "@/src/shared/lib/extract-demand-signals";
 import { computeHeatLevel } from "@/src/shared/lib/compute-heat-level";
 import { formatRelativeTime } from "@/src/shared/lib/format-relative-time";
 import type { BriefListItem, ProductListItem, Post } from "@/src/shared/api";
+import { trackSearchPerformed, trackSearchResultClicked } from "@/src/shared/analytics";
 
 /* --------------------------------------------------------------------------
    Content type tabs
@@ -147,6 +148,15 @@ function SearchResultsInner() {
 
   const totalResults =
     filteredBriefs.length + filteredProducts.length + filteredPosts.length;
+
+  /* Track search_performed once when results are ready */
+  const searchTrackedRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!loading && query.trim() && searchTrackedRef.current !== query) {
+      searchTrackedRef.current = query;
+      trackSearchPerformed({ query, results_count: totalResults });
+    }
+  }, [loading, query, totalResults]);
 
   /* Tab switching */
   const handleTabChange = useCallback(
@@ -290,9 +300,9 @@ function SearchResultsInner() {
             onViewAll={handleViewAll}
           />
         ) : activeType === "briefs" ? (
-          <BriefsResults briefs={filteredBriefs} />
+          <BriefsResults briefs={filteredBriefs} query={query} />
         ) : activeType === "products" ? (
-          <ProductsResults products={filteredProducts} />
+          <ProductsResults products={filteredProducts} query={query} />
         ) : (
           <PostsResults posts={filteredPosts} query={query} />
         )}
@@ -329,8 +339,10 @@ function AllResults({
             {t("tabs.briefs")}
           </h2>
           <div ref={briefsGridRef} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {briefs.slice(0, PREVIEW_LIMIT).map((brief) => (
-              <BriefCardItem key={brief.id} brief={brief} />
+            {briefs.slice(0, PREVIEW_LIMIT).map((brief, idx) => (
+              <div key={brief.id} onClick={() => trackSearchResultClicked({ query, result_type: "brief", result_position: idx + 1 })}>
+                <BriefCardItem brief={brief} />
+              </div>
             ))}
           </div>
           {briefs.length > PREVIEW_LIMIT && (
@@ -351,8 +363,10 @@ function AllResults({
               {t("tabs.products")}
             </h2>
             <div ref={productsGridRef} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {products.slice(0, PREVIEW_LIMIT).map((product) => (
-                <ProductCardItem key={product.slug} product={product} />
+              {products.slice(0, PREVIEW_LIMIT).map((product, idx) => (
+                <div key={product.slug} onClick={() => trackSearchResultClicked({ query, result_type: "product", result_position: idx + 1 })}>
+                  <ProductCardItem product={product} />
+                </div>
               ))}
             </div>
             {products.length > PREVIEW_LIMIT && (
@@ -374,8 +388,10 @@ function AllResults({
               {t("tabs.posts")}
             </h2>
             <div ref={postsListRef} className="flex flex-col gap-5 max-w-3xl mx-auto">
-              {posts.slice(0, PREVIEW_LIMIT).map((post) => (
-                <PostCardItem key={post.id} post={post} query={query} />
+              {posts.slice(0, PREVIEW_LIMIT).map((post, idx) => (
+                <div key={post.id} onClick={() => trackSearchResultClicked({ query, result_type: "post", result_position: idx + 1 })}>
+                  <PostCardItem post={post} query={query} />
+                </div>
               ))}
             </div>
             {posts.length > PREVIEW_LIMIT && (
@@ -395,23 +411,27 @@ function AllResults({
 /* --------------------------------------------------------------------------
    Type-specific tab views
    -------------------------------------------------------------------------- */
-function BriefsResults({ briefs }: { briefs: BriefListItem[] }) {
+function BriefsResults({ briefs, query }: { briefs: BriefListItem[]; query: string }) {
   if (briefs.length === 0) return null;
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      {briefs.map((brief) => (
-        <BriefCardItem key={brief.id} brief={brief} />
+      {briefs.map((brief, idx) => (
+        <div key={brief.id} onClick={() => trackSearchResultClicked({ query, result_type: "brief", result_position: idx + 1 })}>
+          <BriefCardItem brief={brief} />
+        </div>
       ))}
     </div>
   );
 }
 
-function ProductsResults({ products }: { products: ProductListItem[] }) {
+function ProductsResults({ products, query }: { products: ProductListItem[]; query: string }) {
   if (products.length === 0) return null;
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      {products.map((product) => (
-        <ProductCardItem key={product.slug} product={product} />
+      {products.map((product, idx) => (
+        <div key={product.slug} onClick={() => trackSearchResultClicked({ query, result_type: "product", result_position: idx + 1 })}>
+          <ProductCardItem product={product} />
+        </div>
       ))}
     </div>
   );
@@ -421,8 +441,10 @@ function PostsResults({ posts, query }: { posts: Post[]; query: string }) {
   if (posts.length === 0) return null;
   return (
     <div className="flex flex-col gap-5 max-w-3xl mx-auto">
-      {posts.map((post) => (
-        <PostCardItem key={post.id} post={post} query={query} />
+      {posts.map((post, idx) => (
+        <div key={post.id} onClick={() => trackSearchResultClicked({ query, result_type: "post", result_position: idx + 1 })}>
+          <PostCardItem post={post} query={query} />
+        </div>
       ))}
     </div>
   );

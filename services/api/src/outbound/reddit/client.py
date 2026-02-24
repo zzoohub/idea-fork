@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import re
 from datetime import UTC, datetime
@@ -43,6 +44,7 @@ class RedditApiClient:
                 )
                 posts.extend(sub_posts)
                 logger.info("Fetched %d posts from r/%s", len(sub_posts), subreddit)
+                await asyncio.sleep(2)
 
             return posts
 
