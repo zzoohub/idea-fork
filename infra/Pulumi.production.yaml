@@ -16,3 +16,7 @@ config:
     secure: AAABADMK3jCXz1NSdykYsGh4MWL6HvqocGH0FROtfVeyvvxhce1zYbdXqAzR2poJdrrlzyWro8xiXjdrXyrvAXHOJFPYT7w=
   idea-fork:internalSecret:
     secure: AAABAGGz8mAoslPqN0n7M7ToXnczR1y/PJTMEtObkWWwKPYk25j5tmu64RUfwcwFQegnK7g2skc/iB8DID1KpdBZM5rUF91gW5HBkWWn1xmEIXBLqtn/Yy4pxHqHAhyo
+  idea-fork:producthuntApiToken:
+    secure: AAABAK7SMql1PK8qBrvipOVojCU9yjZaQxhCRfR/kghK2loMcA6/Yv8Z6tso4Tt/0YiXwdj0MMNQsADFRHMwk52Gdrabu1SN7wlp
+  idea-fork:sentryDsn:
+    secure: AAABAFNz9xO8j+M2xlAKtBH/qwhxa2MoSO0npmgE72IIS4mWDa8xZ2QpMwdlrsFuQPbMfNnWogKTLKx9KLTQ+a6GD9Qag2eRxV98OpzNFTrw1EpeqT9XZt09yoIYfjNu4CCX41w93Gj/F7T5/wVC6Rc4LbjXUNTnEknyiZhFfg==

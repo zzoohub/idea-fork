@@ -21,6 +21,10 @@ const api = new ApiService("api", {
   internalSecret: config.internalSecret,
   sentryDsn: config.sentryDsn,
   corsAllowedOrigins: config.corsAllowedOrigins,
+  producthuntApiToken: config.producthuntApiToken,
+  appstoreKeywords: config.appstoreKeywords,
+  pipelineSubreddits: config.pipelineSubreddits,
+  pipelineRssFeeds: config.pipelineRssFeeds,
 });
 
 const cron = new PipelineCron("pipeline", {

@@ -14,6 +14,10 @@ export interface ApiServiceArgs {
   internalSecret: pulumi.Input<string>;
   sentryDsn: pulumi.Input<string>;
   corsAllowedOrigins: pulumi.Input<string>;
+  producthuntApiToken: pulumi.Input<string>;
+  appstoreKeywords: pulumi.Input<string>;
+  pipelineSubreddits: pulumi.Input<string>;
+  pipelineRssFeeds: pulumi.Input<string>;
 }
 
 export class ApiService extends pulumi.ComponentResource {
@@ -118,8 +122,27 @@ export class ApiService extends pulumi.ComponentResource {
                 { name: "API_INTERNAL_SECRET", value: args.internalSecret },
                 { name: "SENTRY_DSN", value: args.sentryDsn },
                 { name: "SENTRY_ENVIRONMENT", value: "production" },
-                { name: "API_CORS_ALLOWED_ORIGINS", value: args.corsAllowedOrigins },
+                {
+                  name: "API_CORS_ALLOWED_ORIGINS",
+                  value: args.corsAllowedOrigins,
+                },
                 { name: "API_DEBUG", value: "false" },
+                {
+                  name: "PRODUCTHUNT_API_TOKEN",
+                  value: args.producthuntApiToken,
+                },
+                {
+                  name: "PIPELINE_APPSTORE_KEYWORDS",
+                  value: args.appstoreKeywords,
+                },
+                {
+                  name: "PIPELINE_SUBREDDITS",
+                  value: args.pipelineSubreddits,
+                },
+                {
+                  name: "PIPELINE_RSS_FEEDS",
+                  value: args.pipelineRssFeeds,
+                },
               ],
               startupProbe: {
                 httpGet: { path: "/health", port: 8080 },

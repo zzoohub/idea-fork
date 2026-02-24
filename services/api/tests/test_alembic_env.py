@@ -351,7 +351,7 @@ class TestModuleLevelDispatch:
         """env.target_metadata must reference Base.metadata after import."""
         mock_ctx = _make_mock_context(is_offline=True)
         mock_settings = MagicMock()
-        mock_settings.API_DATABASE_URL = "postgresql+asyncpg://localhost/db"
+        mock_settings.API_DATABASE_URL = "postgresql+asyncpg://localhost/db" ㄷ
 
         env_mod = _load_env_module(mock_ctx, mock_settings)
 
