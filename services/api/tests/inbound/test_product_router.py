@@ -132,7 +132,7 @@ async def test_list_products_pagination_sort_launched_at_null():
 
 
 @pytest.mark.asyncio
-async def test_list_products_pagination_sort_complaint_count():
+async def test_list_products_pagination_sort_signal_count():
     products = [make_product(id=i, slug=f"product-{i}") for i in range(6)]
     product_repo = AsyncMock()
     product_repo.list_products = AsyncMock(return_value=products)
@@ -140,7 +140,7 @@ async def test_list_products_pagination_sort_complaint_count():
     app = build_test_app(product_repo=product_repo)
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as client:
-        resp = await client.get("/v1/products", params={"limit": 5, "sort": "-complaint_count"})
+        resp = await client.get("/v1/products", params={"limit": 5, "sort": "-signal_count"})
 
     assert resp.status_code == 200
     body = resp.json()
@@ -396,13 +396,13 @@ def test_product_list_response_data_from_domain_empty_tags():
 
 
 def test_product_list_response_data_from_domain_all_fields():
-    product = make_product(id=5, slug="stripe", name="Stripe", complaint_count=20, trending_score=9.0)
+    product = make_product(id=5, slug="stripe", name="Stripe", signal_count=20, trending_score=9.0)
     response = ProductListResponseData.from_domain(product)
 
     assert response.id == 5
     assert response.slug == "stripe"
     assert response.name == "Stripe"
-    assert response.complaint_count == 20
+    assert response.signal_count == 20
     assert response.trending_score == 9.0
     assert response.source == "producthunt"
 

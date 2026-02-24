@@ -24,7 +24,7 @@ class Product:
     image_url: str | None
     category: str | None
     launched_at: datetime | None
-    complaint_count: int
+    signal_count: int
     trending_score: float
     tags: list[PostTag] = field(default_factory=list)
     sources: list[str] = field(default_factory=list)

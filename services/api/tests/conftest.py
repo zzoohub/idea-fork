@@ -178,7 +178,7 @@ def make_product(
     slug="notion",
     name="Notion",
     category="Productivity",
-    complaint_count=10,
+    signal_count=10,
     trending_score=8.5,
     tags=None,
     launched_at=None,
@@ -195,7 +195,7 @@ def make_product(
         image_url=None,
         category=category,
         launched_at=launched_at,
-        complaint_count=complaint_count,
+        signal_count=signal_count,
         trending_score=trending_score,
         tags=tags or [],
     )

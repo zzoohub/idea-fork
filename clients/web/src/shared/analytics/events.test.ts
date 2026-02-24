@@ -5,7 +5,7 @@ import {
   trackBriefSourceClicked,
   trackFeedPostClicked,
   trackProductViewed,
-  trackProductComplaintClicked,
+  trackProductSignalClicked,
   trackSearchPerformed,
   trackSearchResultClicked,
   trackFeedFiltered,
@@ -40,10 +40,10 @@ describe("analytics events", () => {
     expect(posthog.capture).toHaveBeenCalledWith("product_viewed", props);
   });
 
-  it("trackProductComplaintClicked captures product_complaint_clicked", () => {
+  it("trackProductSignalClicked captures product_signal_clicked", () => {
     const props = { product_id: 10, post_id: 99, platform: "appstore" };
-    trackProductComplaintClicked(props);
-    expect(posthog.capture).toHaveBeenCalledWith("product_complaint_clicked", props);
+    trackProductSignalClicked(props);
+    expect(posthog.capture).toHaveBeenCalledWith("product_signal_clicked", props);
   });
 
   it("trackSearchPerformed captures search_performed", () => {

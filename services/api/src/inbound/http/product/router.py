@@ -16,7 +16,7 @@ router = APIRouter(prefix="/products", tags=["products"])
 
 SORT_ATTR_MAP = {
     "-trending_score": "trending_score",
-    "-complaint_count": "complaint_count",
+    "-signal_count": "signal_count",
     "-launched_at": "launched_at",
 }
 

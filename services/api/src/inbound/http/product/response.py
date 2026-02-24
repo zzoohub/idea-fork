@@ -23,7 +23,7 @@ class ProductListResponseData(BaseModel):
     source: str
     sources: list[str]
     launched_at: datetime | None
-    complaint_count: int
+    signal_count: int
     trending_score: float
     tags: list[TagResponseData]
 
@@ -41,7 +41,7 @@ class ProductListResponseData(BaseModel):
             source=product.source,
             sources=product.sources if product.sources else [product.source],
             launched_at=product.launched_at,
-            complaint_count=product.complaint_count,
+            signal_count=product.signal_count,
             trending_score=product.trending_score,
             tags=[TagResponseData(slug=t.slug, name=t.name) for t in product.tags],
         )

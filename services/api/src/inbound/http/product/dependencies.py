@@ -7,7 +7,7 @@ from domain.product.models import ProductListParams
 
 class ProductSortField(str, Enum):
     TRENDING_SCORE_DESC = "-trending_score"
-    COMPLAINT_COUNT_DESC = "-complaint_count"
+    SIGNAL_COUNT_DESC = "-signal_count"
     LAUNCHED_AT_DESC = "-launched_at"
 
 

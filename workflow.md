@@ -74,33 +74,33 @@ Exception: manually test payment flows before launch if applicable.
 **You do this:** Work through in order. CI/CD is set up before first deploy
 so every subsequent push goes through the pipeline.
 
-### 1) Infra
-- [ ] Cloud Run services — API / Worker (GCP)
-- [ ] Secret Manager — API keys, DB credentials, third-party tokens
-- [ ] IAM service accounts
-- [ ] Domain + DNS + SSL (Cloudflare)
+### 1) Pulumi — define all infra as code
+- [ ] Stack init (staging / production)
+- [ ] State backend configured
+- [ ] Resources defined:
+  - Cloud Run services — API / Worker (GCP)
+  - Secret Manager — API keys, DB credentials, third-party tokens
+  - IAM service accounts
+  - Domain + DNS + SSL (Cloudflare)
+  - PostgreSQL (Neon)
+- [ ] `pulumi up` → provisions infra + DB in one shot
 
-### 2) Database
-- [ ] Provision PostgreSQL (Neon)
+### 2) Database — post-provision setup
 - [ ] Run migrations
 - [ ] Seed initial data (if needed)
 - [ ] Backup schedule configured
 
 ### 3) CI/CD
 - [ ] Dockerfile per service
-- [ ] GitHub Actions workflows per service
+- [ ] GitHub Actions workflows (build → push → deploy)
 - [ ] GitHub Secrets configured
 
-### 4) Pulumi
-- [ ] Stack init (staging / production)
-- [ ] State backend configured
-
-### 5) Mobile (if applicable)
+### 4) Mobile (if applicable)
 - [ ] EAS project init + build profiles
 - [ ] EAS Update (OTA) channel setup
 - [ ] App Store / Play Store credentials
 
-### 6) First deploy + verify
+### 5) First deploy + verify
 - [ ] Deploy to staging → smoke test
 - [ ] Deploy to production
 - [ ] PostHog events firing correctly

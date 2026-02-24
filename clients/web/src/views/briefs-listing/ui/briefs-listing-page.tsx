@@ -160,7 +160,7 @@ function BriefsListingInner() {
                 key={brief.id}
                 title={brief.title}
                 heatLevel={heatLevel}
-                complaintCount={parsed.postCount || brief.source_count}
+                signalCount={parsed.postCount || brief.source_count}
                 communityCount={parsed.subredditCount || 1}
                 freshness={freshness}
                 snippet={brief.summary}

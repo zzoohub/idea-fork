@@ -22,7 +22,7 @@ vi.mock("@/src/shared/i18n/navigation", () => ({
 const defaultProps = {
   title: "Users want faster checkout",
   heatLevel: "growing" as const,
-  complaintCount: 89,
+  signalCount: 89,
   communityCount: 5,
   freshness: "3d ago",
   snippet: "Many users complain about slow checkout.",
@@ -47,9 +47,9 @@ describe("BriefCard", () => {
       );
     });
 
-    it("renders complaint count", () => {
+    it("renders signal count", () => {
       renderWithIntl(<BriefCard {...defaultProps} />);
-      expect(screen.getByText("89 complaints")).toBeInTheDocument();
+      expect(screen.getByText("89 signals")).toBeInTheDocument();
     });
 
     it("renders community count", () => {
@@ -86,9 +86,9 @@ describe("BriefCard", () => {
       expect(screen.queryByText("checkout")).not.toBeInTheDocument();
     });
 
-    it("renders singular 'complaint' when count is 1", () => {
-      renderWithIntl(<BriefCard {...defaultProps} complaintCount={1} />);
-      expect(screen.getByText("1 complaint")).toBeInTheDocument();
+    it("renders singular 'signal' when count is 1", () => {
+      renderWithIntl(<BriefCard {...defaultProps} signalCount={1} />);
+      expect(screen.getByText("1 signal")).toBeInTheDocument();
     });
 
     it("renders singular 'community' when count is 1", () => {

@@ -273,7 +273,7 @@ function FeedPageInner() {
           ref={feedRef}
           className="flex flex-col gap-5"
           role="feed"
-          aria-label={tA11y("complaintsAriaLabel")}
+          aria-label={tA11y("signalsAriaLabel")}
         >
           {posts.map((post, index) => (
             <div

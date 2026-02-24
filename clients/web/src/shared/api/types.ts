@@ -81,7 +81,7 @@ export interface ProductListItem {
   source: string | null;
   sources: string[];
   launched_at: string | null;
-  complaint_count: number;
+  signal_count: number;
   trending_score: number;
   tags: Tag[];
 }

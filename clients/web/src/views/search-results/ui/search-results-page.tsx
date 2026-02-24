@@ -467,7 +467,7 @@ function BriefCardItem({ brief }: { brief: BriefListItem }) {
     <BriefCard
       title={brief.title}
       heatLevel={heatLevel}
-      complaintCount={parsed.postCount || brief.source_count}
+      signalCount={parsed.postCount || brief.source_count}
       communityCount={parsed.subredditCount || 1}
       freshness={freshness}
       snippet={brief.summary}
@@ -486,10 +486,10 @@ function ProductCardItem({ product }: { product: ProductListItem }) {
       productUrl={product.url ?? undefined}
       category={product.category ?? "Uncategorized"}
       heatLevel={computeHeatLevel({
-        postCount: product.complaint_count,
+        postCount: product.signal_count,
         newestPostAt: product.launched_at,
       })}
-      signalCount={product.complaint_count}
+      signalCount={product.signal_count}
       tagline={product.tagline ?? product.description ?? ""}
       source={product.source ?? undefined}
       tags={product.tags ?? []}

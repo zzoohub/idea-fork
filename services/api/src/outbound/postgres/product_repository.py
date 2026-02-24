@@ -15,13 +15,13 @@ from shared.pagination import cast_cursor_value, decode_cursor
 
 SORT_COLUMN_MAP = {
     "-trending_score": ProductRow.trending_score,
-    "-complaint_count": ProductRow.complaint_count,
+    "-signal_count": ProductRow.signal_count,
     "-launched_at": ProductRow.launched_at,
 }
 
 SORT_RAW_MAP = {
     "-trending_score": "trending_score",
-    "-complaint_count": "complaint_count",
+    "-signal_count": "signal_count",
     "-launched_at": "launched_at",
 }
 
@@ -65,7 +65,7 @@ class PostgresProductRepository:
             SELECT DISTINCT ON (lower(name))
                 id, name, slug, source, external_id, tagline, description,
                 url, image_url, category, launched_at,
-                complaint_count, trending_score, created_at
+                signal_count, trending_score, created_at
             FROM product
             {where_clause}
             ORDER BY lower(name), {sort_col_name} DESC{nulls_last}, id DESC
@@ -89,7 +89,7 @@ class PostgresProductRepository:
         wrapper_sql = f"""
             SELECT g.id, g.name, g.slug, g.source, g.external_id,
                    g.tagline, g.description, g.url, g.image_url,
-                   g.category, g.launched_at, g.complaint_count,
+                   g.category, g.launched_at, g.signal_count,
                    g.trending_score,
                    (SELECT array_agg(DISTINCT p2.source)
                     FROM product p2
@@ -134,7 +134,7 @@ class PostgresProductRepository:
                     image_url=row.image_url,
                     category=row.category,
                     launched_at=row.launched_at,
-                    complaint_count=row.complaint_count,
+                    signal_count=row.signal_count,
                     trending_score=float(row.trending_score),
                     tags=tags,
                     sources=list(row.sources) if row.sources else [row.source],
@@ -170,7 +170,7 @@ class PostgresProductRepository:
                 image_url=product.image_url,
                 category=product.category,
                 launched_at=product.launched_at,
-                complaint_count=product.complaint_count,
+                signal_count=product.signal_count,
                 trending_score=product.trending_score,
                 tags=product.tags,
                 sources=all_sources,

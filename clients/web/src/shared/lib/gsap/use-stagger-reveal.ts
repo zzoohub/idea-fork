@@ -27,7 +27,8 @@ export function useStaggerReveal<T extends HTMLElement = HTMLDivElement>({
     () => {
       if (reducedMotion || !containerRef.current) return;
 
-      const children = containerRef.current.querySelectorAll(selector);
+      const scoped = selector.startsWith(">") ? `:scope ${selector}` : selector;
+      const children = containerRef.current.querySelectorAll(scoped);
       if (children.length === 0) return;
 
       gsap.from(children, {

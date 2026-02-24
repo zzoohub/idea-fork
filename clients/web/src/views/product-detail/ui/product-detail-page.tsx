@@ -10,14 +10,14 @@ import { ErrorState } from "@/src/shared/ui/error-state";
 import { EmptyState } from "@/src/shared/ui/empty-state";
 import {
   ProductHeader,
-  ComplaintSummary,
+  SignalSummary,
 } from "@/src/entities/product/ui";
 import { isSafeUrl } from "@/src/shared/lib/sanitize-url";
 import { fetchProduct } from "@/src/entities/product/api";
 import type { ProductDetail, ProductPost } from "@/src/shared/api";
 import { formatRelativeTime } from "@/src/shared/lib/format-relative-time";
 import { useStaggerReveal, useScrollReveal } from "@/src/shared/lib/gsap";
-import { trackProductViewed, trackProductComplaintClicked } from "@/src/shared/analytics";
+import { trackProductViewed, trackProductSignalClicked } from "@/src/shared/analytics";
 
 const INITIAL_VISIBLE_COUNT = 3;
 
@@ -129,7 +129,7 @@ export function ProductDetailPage({ slug }: ProductDetailPageProps) {
   const [product, setProduct] = useState<ProductDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [showAllComplaints, setShowAllComplaints] = useState(false);
+  const [showAllSignals, setShowAllSignals] = useState(false);
   const [sortBy, setSortBy] = useState<"recent" | "popular" | "critical">("recent");
   const [activePostType, setActivePostType] = useState<string | null>(null);
   const [expandedIds, setExpandedIds] = useState<Set<number>>(new Set());
@@ -169,7 +169,7 @@ export function ProductDetailPage({ slug }: ProductDetailPageProps) {
   }, [product]);
 
   const headerRef = useStaggerReveal({ selector: "> *", stagger: 0.1 });
-  const complaintsRef = useScrollReveal({ selector: "> article" });
+  const signalsRef = useScrollReveal({ selector: "> article" });
   const relatedRef = useScrollReveal();
 
   if (loading) return <ProductDetailSkeleton />;
@@ -190,7 +190,7 @@ export function ProductDetailPage({ slug }: ProductDetailPageProps) {
     return new Date(b.external_created_at).getTime() - new Date(a.external_created_at).getTime();
   });
 
-  const visibleComplaints = showAllComplaints
+  const visibleSignals = showAllSignals
     ? sortedPosts
     : sortedPosts.slice(0, INITIAL_VISIBLE_COUNT);
 
@@ -198,7 +198,7 @@ export function ProductDetailPage({ slug }: ProductDetailPageProps) {
 
   const toggleExpanded = (id: number, post: ProductPost) => {
     if (!expandedIds.has(id)) {
-      trackProductComplaintClicked({
+      trackProductSignalClicked({
         product_id: product.id,
         post_id: id,
         platform: post.source,
@@ -252,11 +252,11 @@ export function ProductDetailPage({ slug }: ProductDetailPageProps) {
           websiteUrl={product.url ?? undefined}
         />
 
-        <ComplaintSummary
-          totalMentions={product.metrics?.total_mentions ?? product.complaint_count}
-          criticalComplaints={product.metrics?.negative_count ?? product.posts.filter((p) => p.sentiment === "negative").length}
+        <SignalSummary
+          totalMentions={product.metrics?.total_mentions ?? product.signal_count}
+          criticalSignals={product.metrics?.negative_count ?? product.posts.filter((p) => p.sentiment === "negative").length}
           frustrationRate={(() => {
-            const total = product.metrics?.total_mentions ?? product.complaint_count;
+            const total = product.metrics?.total_mentions ?? product.signal_count;
             const negative = product.metrics?.negative_count ?? product.posts.filter((p) => p.sentiment === "negative").length;
             return total > 0 ? Math.round((negative / total) * 100) : null;
           })()}
@@ -271,7 +271,7 @@ export function ProductDetailPage({ slug }: ProductDetailPageProps) {
             id="themes-heading"
             className="text-lg font-bold text-slate-900 dark:text-slate-50 mb-3"
           >
-            {t("complaintThemes")}
+            {t("signalThemes")}
           </h2>
           <div className="flex flex-wrap gap-2">
             {computedThemes.map((theme) => (
@@ -300,7 +300,7 @@ export function ProductDetailPage({ slug }: ProductDetailPageProps) {
             id="complaints-heading"
             className="text-xl font-bold text-slate-900 dark:text-slate-50"
           >
-            {t("userComplaints")}
+            {t("userSignals")}
             <span className="ml-2 text-base font-normal text-slate-500 dark:text-slate-400">
               ({sortedPosts.length})
             </span>
@@ -355,8 +355,8 @@ export function ProductDetailPage({ slug }: ProductDetailPageProps) {
         {/* Complaint cards */}
         {sortedPosts.length === 0 ? (
           <EmptyState
-            message={t("complaintsEmpty")}
-            suggestion={t("complaintsEmptySuggestion")}
+            message={t("signalsEmpty")}
+            suggestion={t("signalsEmptySuggestion")}
             action={activePostType ? {
               label: tCommon("clearFilter"),
               onClick: () => setActivePostType(null),
@@ -366,8 +366,8 @@ export function ProductDetailPage({ slug }: ProductDetailPageProps) {
             }}
           />
         ) : (
-          <div ref={complaintsRef} className="space-y-4">
-            {visibleComplaints.map((complaint) => {
+          <div ref={signalsRef} className="space-y-4">
+            {visibleSignals.map((complaint) => {
               const badge = complaint.sentiment
                 ? SENTIMENT_BADGE[complaint.sentiment]
                 : undefined;
@@ -468,15 +468,15 @@ export function ProductDetailPage({ slug }: ProductDetailPageProps) {
                 "transition-colors duration-150 cursor-pointer",
                 "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#137fec]",
               ].join(" ")}
-              onClick={() => setShowAllComplaints((prev) => !prev)}
+              onClick={() => setShowAllSignals((prev) => !prev)}
             >
               <Icon
-                name={showAllComplaints ? "chevron-up" : "chevron-down"}
+                name={showAllSignals ? "chevron-up" : "chevron-down"}
                 size={18}
               />
-              {showAllComplaints
-                ? tCommon("showFewerComplaints")
-                : tCommon("showAllComplaints", { count: sortedPosts.length })}
+              {showAllSignals
+                ? tCommon("showFewerSignals")
+                : tCommon("showAllSignals", { count: sortedPosts.length })}
             </button>
           </div>
         )}

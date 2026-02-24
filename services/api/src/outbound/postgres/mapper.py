@@ -82,7 +82,7 @@ def product_to_domain(row: ProductRow) -> Product:
         image_url=row.image_url,
         category=row.category,
         launched_at=row.launched_at,
-        complaint_count=row.complaint_count,
+        signal_count=row.signal_count,
         trending_score=float(row.trending_score),
         tags=[PostTag(slug=t.slug, name=t.name) for t in row.tags],
         sources=[row.source],

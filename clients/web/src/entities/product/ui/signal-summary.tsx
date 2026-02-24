@@ -2,18 +2,18 @@ import { useTranslations } from "next-intl";
 import { Icon } from "@/src/shared/ui/icon";
 import { Badge } from "@/src/shared/ui/badge";
 
-export interface ComplaintTheme {
+export interface SignalTheme {
   name: string;
   count: number;
 }
 
-interface ComplaintSummaryProps {
+interface SignalSummaryProps {
   totalMentions: number;
   mentionsTrend?: number;
-  criticalComplaints: number;
+  criticalSignals: number;
   criticalTrend?: number;
   frustrationRate: number | null;
-  themes: ComplaintTheme[];
+  themes: SignalTheme[];
   className?: string;
 }
 
@@ -33,16 +33,16 @@ function TrendBadge({ value }: { value: number }) {
   );
 }
 
-export function ComplaintSummary({
+export function SignalSummary({
   totalMentions,
   mentionsTrend,
-  criticalComplaints,
+  criticalSignals,
   criticalTrend,
   frustrationRate,
   themes,
   className,
-}: ComplaintSummaryProps) {
-  const t = useTranslations("complaintSummary");
+}: SignalSummaryProps) {
+  const t = useTranslations("signalSummary");
 
   // Find top theme for subtitle display
   const topTheme = themes.length > 0 ? themes[0] : null;
@@ -79,18 +79,18 @@ export function ComplaintSummary({
         </div>
       </div>
 
-      {/* Critical Complaints Card */}
+      {/* Critical Signals Card */}
       <div className="relative overflow-hidden p-5 rounded-2xl bg-white dark:bg-[#18212F] border border-slate-200 dark:border-[#283039]">
         <div className="absolute -right-2 -top-2 opacity-10" aria-hidden="true">
           <Icon name="triangle-alert" size={64} className="text-orange-500" />
         </div>
         <div className="relative">
           <p className="text-sm text-slate-500 dark:text-slate-400">
-            {t("criticalComplaints")}
+            {t("criticalSignals")}
           </p>
           <div className="mt-2 flex items-baseline gap-2">
             <span className="text-3xl font-bold text-slate-900 dark:text-slate-50 tabular-nums">
-              {criticalComplaints.toLocaleString()}
+              {criticalSignals.toLocaleString()}
             </span>
             {criticalTrend != null && <TrendBadge value={criticalTrend} />}
           </div>

@@ -2,7 +2,7 @@ import { useTranslations } from "next-intl";
 import { Icon } from "@/src/shared/ui/icon";
 
 export interface DemandSignalData {
-  complaintCount: number;
+  signalCount: number;
   timeRange: string | null;
   subreddits: string[];
   avgScore: number;
@@ -19,7 +19,7 @@ interface DemandSignalsProps {
 export function DemandSignals({ data, className }: DemandSignalsProps) {
   const t = useTranslations("demandSignals");
   const {
-    complaintCount,
+    signalCount,
     timeRange,
     subreddits,
     avgScore,
@@ -32,9 +32,9 @@ export function DemandSignals({ data, className }: DemandSignalsProps) {
   const visibleSubs = subreddits.slice(0, MAX_VISIBLE_SUBS);
   const remaining = subreddits.length - MAX_VISIBLE_SUBS;
 
-  const complaintLabel = timeRange
-    ? t("complaintsOverTime", { count: complaintCount, timeRange })
-    : t("complaints", { count: complaintCount });
+  const signalLabel = timeRange
+    ? t("signalsOverTime", { count: signalCount, timeRange })
+    : t("signals", { count: signalCount });
 
   const subredditLabel =
     visibleSubs.length > 0
@@ -45,7 +45,7 @@ export function DemandSignals({ data, className }: DemandSignalsProps) {
     <div
       className={["flex flex-col gap-3", className].filter(Boolean).join(" ")}
     >
-      <MetricLine icon="message-square-warning" text={complaintLabel} />
+      <MetricLine icon="message-square-warning" text={signalLabel} />
       {subredditLabel && (
         <MetricLine icon="globe" text={subredditLabel} />
       )}

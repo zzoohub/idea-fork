@@ -25,7 +25,7 @@ const CITATIONS = [
 ];
 
 const DEMAND_SIGNAL_DATA: DemandSignalData = {
-  complaintCount: 47,
+  signalCount: 47,
   timeRange: "6 weeks",
   subreddits: ["r/SaaS", "r/startups"],
   avgScore: 142,
@@ -97,7 +97,7 @@ describe("BriefBody", () => {
       renderWithIntl(
         <BriefBody content={CONTENT} citations={CITATIONS} />,
       );
-      expect(screen.getByText("47 complaints over 6 weeks")).toBeInTheDocument();
+      expect(screen.getByText("47 signals over 6 weeks")).toBeInTheDocument();
       expect(screen.getByText("r/SaaS, r/startups")).toBeInTheDocument();
     });
 

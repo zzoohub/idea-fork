@@ -4,7 +4,7 @@ export {
   trackBriefSourceClicked,
   trackFeedPostClicked,
   trackProductViewed,
-  trackProductComplaintClicked,
+  trackProductSignalClicked,
   trackSearchPerformed,
   trackSearchResultClicked,
   trackFeedFiltered,

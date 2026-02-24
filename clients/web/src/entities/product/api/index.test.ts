@@ -22,7 +22,7 @@ const FAKE_PRODUCT_LIST_ITEM: ProductListItem = {
   source: "reddit",
   sources: ["reddit"],
   launched_at: "2026-01-15T00:00:00Z",
-  complaint_count: 42,
+  signal_count: 42,
   trending_score: 0.9,
   tags: [{ id: 1, slug: "productivity", name: "Productivity" }],
 };

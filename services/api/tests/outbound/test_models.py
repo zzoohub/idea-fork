@@ -87,7 +87,7 @@ def test_product_row_tablename_and_columns():
         created_at=now,
         updated_at=now,
         launched_at=now,
-        complaint_count=20,
+        signal_count=20,
         trending_score=8.5,
         source="producthunt",
         external_id="notion-1",
@@ -109,7 +109,7 @@ def test_product_row_tablename_and_columns():
     assert row.url == "https://notion.so"
     assert row.image_url is None
     assert row.category == "Productivity"
-    assert row.complaint_count == 20
+    assert row.signal_count == 20
     assert row.launched_at == now
 
 

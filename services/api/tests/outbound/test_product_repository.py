@@ -23,7 +23,7 @@ def _make_product_row(
     image_url=None,
     category="Productivity",
     launched_at=None,
-    complaint_count=10,
+    signal_count=10,
     trending_score=Decimal("8.5000"),
     tags=None,
     sources=None,
@@ -40,7 +40,7 @@ def _make_product_row(
     row.image_url = image_url
     row.category = category
     row.launched_at = launched_at
-    row.complaint_count = complaint_count
+    row.signal_count = signal_count
     row.trending_score = trending_score
     row.tags = tags if tags is not None else []
     row.sources = sources if sources is not None else [source]
@@ -162,12 +162,12 @@ async def test_list_products_default_params():
 
 
 @pytest.mark.asyncio
-async def test_list_products_sort_complaint_count():
+async def test_list_products_sort_signal_count():
     rows = [_make_product_row(1)]
     mock_db = _make_mock_db(rows)
     repo = PostgresProductRepository(mock_db)
 
-    params = ProductListParams(sort="-complaint_count")
+    params = ProductListParams(sort="-signal_count")
     result = await repo.list_products(params)
     assert len(result) == 1
 

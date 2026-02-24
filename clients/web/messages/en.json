@@ -1,7 +1,7 @@
 {
   "metadata": {
     "title": "Idea Fork",
-    "description": "Discover product opportunities from real user complaints across Reddit, App Store, and more."
+    "description": "Discover product opportunities from real user signals across Reddit, App Store, and more."
   },
   "common": {
     "all": "All",
@@ -13,8 +13,8 @@
     "viewAll": "View all {count} {label}",
     "showMore": "Show {count} more",
     "showFewer": "Show fewer posts",
-    "showAllComplaints": "Show all {count} complaints",
-    "showFewerComplaints": "Show fewer complaints",
+    "showAllSignals": "Show all {count} signals",
+    "showFewerSignals": "Show fewer signals",
     "source": "Source {number}",
     "viewOriginal": "View Original",
     "uncategorized": "Uncategorized"
@@ -31,7 +31,7 @@
     "filterByPostType": "Filter by post type",
     "filterByContentType": "Filter by content type",
     "filterByCategory": "Filter by category",
-    "complaintsAriaLabel": "User complaints feed",
+    "signalsAriaLabel": "User signals feed",
     "briefsAriaLabel": "AI-generated briefs",
     "loadingPosts": "Loading posts",
     "loadingBriefs": "Loading briefs",
@@ -42,7 +42,7 @@
     "notHelpful": "Not helpful",
     "sortBy": "Sort by",
     "breadcrumb": "Breadcrumb",
-    "complaintStatistics": "Complaint statistics",
+    "signalStatistics": "Signal statistics",
     "switchToKorean": "Switch to Korean",
     "switchToEnglish": "Switch to English",
     "searchDialog": "Search"
@@ -53,7 +53,7 @@
     "products": "Products"
   },
   "feed": {
-    "heading": "Complaint Feed",
+    "heading": "Signal Feed",
     "postTypes": {
       "all": "All",
       "need": "Need",
@@ -88,12 +88,13 @@
     },
     "empty": {
       "message": "No briefs available yet.",
-      "suggestion": "Check back soon as new briefs are generated from incoming complaints."
+      "suggestion": "Check back soon as new briefs are generated from incoming signals."
     }
   },
   "briefDetail": {
     "breadcrumbBriefs": "Briefs",
     "createProject": "Create Project",
+    "comingSoon": "This feature is coming soon!",
     "keySourcePosts": "Key Source Posts",
     "opportunity": "Opportunity",
     "viewAllBriefs": "View all briefs",
@@ -134,22 +135,22 @@
   },
   "productDetail": {
     "breadcrumbProducts": "Products",
-    "userComplaints": "User Complaints",
+    "userSignals": "User Signals",
     "sortRecent": "Most Recent",
     "sortPopular": "Most Popular",
     "sortCritical": "Most Critical",
     "sourceIn": "in {source}",
-    "complaintsEmpty": "No complaints found.",
-    "complaintsEmptySuggestion": "Try removing a filter or check back later.",
+    "signalsEmpty": "No signals found.",
+    "signalsEmptySuggestion": "Try removing a filter or check back later.",
     "browseProducts": "Browse products",
-    "complaintThemes": "Complaint Themes",
+    "signalThemes": "Signal Themes",
     "errors": {
       "loadFailed": "Failed to load product.",
       "notFound": "Product not found."
     },
     "relatedBriefs": "Related Briefs",
     "relatedBriefsEmpty": "No related briefs yet.",
-    "relatedBriefsSuggestion": "Briefs are generated as more complaints are analyzed.",
+    "relatedBriefsSuggestion": "Briefs are generated as more signals are analyzed.",
     "viewAllBriefs": "Browse all briefs",
     "readBrief": "Read Brief",
     "sources": "{count, plural, one {# source} other {# sources}}",
@@ -205,8 +206,8 @@
     "today": "Today"
   },
   "demandSignals": {
-    "complaintsOverTime": "{count} complaints over {timeRange}",
-    "complaints": "{count} complaints",
+    "signalsOverTime": "{count} signals over {timeRange}",
+    "signals": "{count} signals",
     "upvotesAndComments": "avg {avgScore} upvotes \u00b7 {avgComments} comments per post",
     "ratedValuable": "{percent}% of users rated this valuable",
     "mostRecent": "Most recent: {time}",
@@ -218,10 +219,10 @@
     "steady": "Steady",
     "new": "New"
   },
-  "complaintSummary": {
+  "signalSummary": {
     "totalMentions": "Total Mentions",
     "acrossAllPlatforms": "Across all platforms",
-    "criticalComplaints": "Critical Complaints",
+    "criticalSignals": "Critical Signals",
     "topIssue": "Top issue: {name}",
     "requiresAttention": "Requires immediate attention",
     "frustrationRate": "Frustration Rate",

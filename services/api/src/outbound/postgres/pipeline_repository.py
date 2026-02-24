@@ -375,7 +375,7 @@ class PostgresPipelineRepository:
             result = await session.execute(
                 text("""
                     UPDATE product SET
-                        complaint_count = sub.cnt,
+                        signal_count = sub.cnt,
                         trending_score = sub.cnt * (
                             1.0 / (EXTRACT(EPOCH FROM now() - COALESCE(product.created_at, now())) / 86400 + 1)
                         ),

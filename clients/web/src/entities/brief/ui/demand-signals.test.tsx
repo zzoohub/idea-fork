@@ -4,7 +4,7 @@ import { renderWithIntl } from "@/src/shared/test/with-intl";
 import { DemandSignals, type DemandSignalData } from "./demand-signals";
 
 const fullData: DemandSignalData = {
-  complaintCount: 47,
+  signalCount: 47,
   timeRange: "6 weeks",
   subreddits: ["r/SaaS", "r/startups", "r/webdev", "r/entrepreneur", "r/indiehackers"],
   avgScore: 142,
@@ -14,19 +14,19 @@ const fullData: DemandSignalData = {
 };
 
 describe("DemandSignals", () => {
-  describe("complaint line", () => {
-    it("renders complaint count with time range", () => {
+  describe("signal line", () => {
+    it("renders signal count with time range", () => {
       renderWithIntl(<DemandSignals data={fullData} />);
       expect(
-        screen.getByText("47 complaints over 6 weeks"),
+        screen.getByText("47 signals over 6 weeks"),
       ).toBeInTheDocument();
     });
 
-    it("renders complaint count without time range when null", () => {
+    it("renders signal count without time range when null", () => {
       renderWithIntl(
         <DemandSignals data={{ ...fullData, timeRange: null }} />,
       );
-      expect(screen.getByText("47 complaints")).toBeInTheDocument();
+      expect(screen.getByText("47 signals")).toBeInTheDocument();
     });
   });
 

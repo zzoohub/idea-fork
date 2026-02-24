@@ -16,7 +16,7 @@ interface SourcePlatform {
 interface BriefCardProps {
   title: string;
   heatLevel: HeatLevel;
-  complaintCount: number;
+  signalCount: number;
   communityCount: number;
   freshness: string | null;
   snippet: string;
@@ -48,7 +48,7 @@ function PlatformStack({
 export function BriefCard({
   title,
   heatLevel,
-  complaintCount,
+  signalCount,
   communityCount,
   freshness,
   snippet,
@@ -100,7 +100,7 @@ export function BriefCard({
                 <PlatformStack platforms={sourcePlatforms} />
               )}
               <span className="text-xs text-slate-500 dark:text-[#7a8a9a] tabular-nums">
-                {t("complaints", { count: complaintCount })}
+                {t("complaints", { count: signalCount })}
               </span>
               <span className="text-xs text-slate-400 dark:text-[#5e6e7e]" aria-hidden="true">&middot;</span>
               <span className="text-xs text-slate-500 dark:text-[#7a8a9a]">

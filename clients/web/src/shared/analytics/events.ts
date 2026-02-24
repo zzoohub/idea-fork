@@ -44,12 +44,12 @@ export function trackProductViewed(props: {
   posthog.capture("product_viewed", props);
 }
 
-export function trackProductComplaintClicked(props: {
+export function trackProductSignalClicked(props: {
   product_id: number;
   post_id: number;
   platform: string;
 }) {
-  posthog.capture("product_complaint_clicked", props);
+  posthog.capture("product_signal_clicked", props);
 }
 
 export function trackSearchPerformed(props: {

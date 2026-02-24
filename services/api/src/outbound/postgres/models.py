@@ -82,7 +82,7 @@ class ProductRow(Base):
     created_at: Mapped[datetime] = mapped_column(nullable=False)
     updated_at: Mapped[datetime] = mapped_column(nullable=False)
     launched_at: Mapped[datetime | None] = mapped_column(default=None)
-    complaint_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    signal_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     trending_score: Mapped[Decimal] = mapped_column(
         Numeric(10, 4), nullable=False, default=0
     )

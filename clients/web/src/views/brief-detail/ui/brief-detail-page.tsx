@@ -97,7 +97,7 @@ export function BriefDetailPage({ slug }: BriefDetailPageProps) {
     : null;
 
   const demandSignalData: DemandSignalData = {
-    complaintCount: parsed.postCount || brief.source_count,
+    signalCount: parsed.postCount || brief.source_count,
     timeRange,
     subreddits,
     avgScore: parsed.avgScore,
@@ -172,6 +172,7 @@ export function BriefDetailPage({ slug }: BriefDetailPageProps) {
           <div className="flex items-center gap-3 mt-5">
             <button
               type="button"
+              onClick={() => window.alert(t("comingSoon"))}
               className={[
                 "inline-flex items-center gap-2",
                 "px-4 py-2.5 rounded-lg",

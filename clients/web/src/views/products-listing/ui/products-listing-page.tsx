@@ -16,7 +16,7 @@ import type { ProductListItem } from "@/src/shared/api";
    Sort options
    -------------------------------------------------------------------------- */
 const SORT_OPTIONS_KEYS = [
-  { value: "-complaint_count", labelKey: "mostSignals" },
+  { value: "-signal_count", labelKey: "mostSignals" },
   { value: "-trending_score", labelKey: "trending" },
   { value: "-launched_at", labelKey: "newest" },
 ] as const;
@@ -38,7 +38,7 @@ export function ProductsListingPage() {
   const t = useTranslations("products");
   const tCommon = useTranslations("common");
 
-  const [sortValue, setSortValue] = useState("-complaint_count");
+  const [sortValue, setSortValue] = useState("-signal_count");
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [activePeriod, setActivePeriod] = useState("");
 
@@ -185,10 +185,10 @@ export function ProductsListingPage() {
                 productUrl={product.url ?? undefined}
                 category={product.category ?? tCommon("uncategorized")}
                 heatLevel={computeHeatLevel({
-                  postCount: product.complaint_count,
+                  postCount: product.signal_count,
                   newestPostAt: product.launched_at,
                 })}
-                signalCount={product.complaint_count}
+                signalCount={product.signal_count}
                 tagline={product.tagline ?? product.description ?? ""}
                 source={product.source ?? undefined}
                 sources={product.sources}

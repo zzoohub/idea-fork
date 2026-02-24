@@ -54,7 +54,7 @@ Only events that inform kill/keep/scale decisions. Nothing else.
 | Event | Trigger | Properties |
 |-------|---------|------------|
 | `product_viewed` | User opens a product detail page | `product_id`, `product_name`, `locale` |
-| `product_complaint_clicked` | User clicks a complaint on a product page | `product_id`, `post_id`, `platform` |
+| `product_signal_clicked` | User clicks a signal on a product page | `product_id`, `post_id`, `platform` |
 
 **Why:** Near-zero engagement = deprioritize this section. One view + one click event is enough.
 
@@ -100,7 +100,7 @@ Ship in this order. Each batch is independently useful.
 | Batch | Events | Why first |
 |-------|--------|-----------|
 | 1 | `brief_viewed`, `brief_source_clicked` | Core value measurement |
-| 2 | `feed_post_clicked`, `product_viewed`, `product_complaint_clicked` | Section engagement |
+| 2 | `feed_post_clicked`, `product_viewed`, `product_signal_clicked` | Section engagement |
 | 3 | `search_performed`, `search_result_clicked`, `feed_filtered` | Intent signals |
 
 ---

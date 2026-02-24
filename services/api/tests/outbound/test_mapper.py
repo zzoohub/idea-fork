@@ -66,7 +66,7 @@ def _make_product_row(
     url="https://notion.so",
     image_url=None,
     category="Productivity",
-    complaint_count=10,
+    signal_count=10,
     trending_score=Decimal("8.5000"),
     tags=None,
 ):
@@ -78,7 +78,7 @@ def _make_product_row(
     row.url = url
     row.image_url = image_url
     row.category = category
-    row.complaint_count = complaint_count
+    row.signal_count = signal_count
     row.trending_score = trending_score
     row.tags = tags if tags is not None else []
     return row
@@ -261,7 +261,7 @@ def test_product_to_domain_maps_fields():
         url="https://notion.so",
         image_url="https://notion.so/icon.png",
         category="Productivity",
-        complaint_count=50,
+        signal_count=50,
         trending_score=Decimal("9.1234"),
     )
     product = product_to_domain(product_row)
@@ -274,7 +274,7 @@ def test_product_to_domain_maps_fields():
     assert product.url == "https://notion.so"
     assert product.image_url == "https://notion.so/icon.png"
     assert product.category == "Productivity"
-    assert product.complaint_count == 50
+    assert product.signal_count == 50
     assert isinstance(product.trending_score, float)
     assert abs(product.trending_score - 9.1234) < 0.0001
 
