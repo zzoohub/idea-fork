@@ -34,8 +34,7 @@ All commands in `justfile`. Run `just --list` to see all recipes.
 1. All changes must use skills, including after plan mode.
 2. After implementation, check if sub-agents are needed and run in parallel:
    - **z-security-reviewer**: logic change only (API, auth, data, infra)
-   - **z-tester**: testable code change (new/modified functions, branches)
-   - **z-verify-app**: any app-affecting change (typecheck → test → browser)
+   - **z-verifier**: testable code change (run tests, E2E, browser verify)   
    > Skip all for docs/copy-only changes. Skip browser test if `/chrome` unavailable.
 3. Marketing content must reference `docs/product-brief.md` for consistent messaging.
 4. All user-facing events must be defined in `biz/analytics/tracking-plan.md` before implementation.
