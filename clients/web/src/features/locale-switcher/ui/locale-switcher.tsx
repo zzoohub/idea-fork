@@ -7,22 +7,13 @@ import { useRouter, usePathname } from "@/src/shared/i18n/navigation";
 import { routing } from "@/src/shared/i18n/routing";
 import { Icon } from "@/src/shared/ui";
 
-const LOCALE_LABELS: Record<string, string> = {
-  en: "English",
-  es: "Espanol",
-  "pt-BR": "Portugues",
-  id: "Bahasa",
-  ja: "日本語",
-  ko: "한국어",
-};
-
-const LOCALE_SHORT: Record<string, string> = {
-  en: "EN",
-  es: "ES",
-  "pt-BR": "PT",
-  id: "ID",
-  ja: "JA",
-  ko: "KO",
+const LOCALE_META: Record<string, { label: string; flag: string }> = {
+  en: { label: "English", flag: "\u{1F1FA}\u{1F1F8}" },
+  es: { label: "Espanol", flag: "\u{1F1EA}\u{1F1F8}" },
+  "pt-BR": { label: "Portugues", flag: "\u{1F1E7}\u{1F1F7}" },
+  id: { label: "Bahasa", flag: "\u{1F1EE}\u{1F1E9}" },
+  ja: { label: "日本語", flag: "\u{1F1EF}\u{1F1F5}" },
+  ko: { label: "한국어", flag: "\u{1F1F0}\u{1F1F7}" },
 };
 
 export function LocaleSwitcher() {
@@ -92,8 +83,8 @@ export function LocaleSwitcher() {
           "transition-colors duration-150 cursor-pointer",
         ].join(" ")}
       >
-        <Icon name="globe" size={16} />
-        <span>{LOCALE_SHORT[locale] ?? locale.toUpperCase()}</span>
+        <span className="text-base leading-none" aria-hidden="true">{LOCALE_META[locale]?.flag}</span>
+        <span>{LOCALE_META[locale]?.label ?? locale}</span>
         <Icon name="chevron-down" size={14} className={open ? "rotate-180 transition-transform" : "transition-transform"} />
       </button>
 
@@ -126,10 +117,10 @@ export function LocaleSwitcher() {
                   "cursor-pointer",
                 ].join(" ")}
               >
-                <span className="w-7 text-slate-400 dark:text-slate-500 font-mono text-[11px]">
-                  {LOCALE_SHORT[loc]}
+                <span className="text-base leading-none" aria-hidden="true">
+                  {LOCALE_META[loc]?.flag}
                 </span>
-                <span>{LOCALE_LABELS[loc] ?? loc}</span>
+                <span>{LOCALE_META[loc]?.label ?? loc}</span>
                 {loc === locale && (
                   <Icon name="check" size={14} className="ml-auto text-primary" />
                 )}
