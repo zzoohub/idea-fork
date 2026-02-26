@@ -43,8 +43,7 @@
     "sortBy": "Sort by",
     "breadcrumb": "Breadcrumb",
     "signalStatistics": "Signal statistics",
-    "switchToKorean": "Switch to Korean",
-    "switchToEnglish": "Switch to English",
+    "switchLanguage": "Switch language",
     "searchDialog": "Search"
   },
   "navigation": {
@@ -189,7 +188,7 @@
   },
   "productCard": {
     "exploreGaps": "Explore Gaps",
-    "signals": "{count} signals"
+    "signals": "{count, plural, one {# signal} other {# signals}}"
   },
   "postCard": {
     "viewOriginal": "View Original",
@@ -207,7 +206,7 @@
   },
   "demandSignals": {
     "signalsOverTime": "{count} signals over {timeRange}",
-    "signals": "{count} signals",
+    "signals": "{count, plural, one {# signal} other {# signals}}",
     "upvotesAndComments": "avg {avgScore} upvotes \u00b7 {avgComments} comments per post",
     "ratedValuable": "{percent}% of users rated this valuable",
     "mostRecent": "Most recent: {time}",

@@ -43,8 +43,7 @@
     "sortBy": "정렬 기준",
     "breadcrumb": "경로",
     "signalStatistics": "시그널 통계",
-    "switchToKorean": "한국어로 전환",
-    "switchToEnglish": "영어로 전환",
+    "switchLanguage": "언어 전환",
     "searchDialog": "검색"
   },
   "navigation": {
@@ -189,7 +188,7 @@
   },
   "productCard": {
     "exploreGaps": "격차 탐색",
-    "signals": "{count}개 시그널"
+    "signals": "{count, plural, other {#개 시그널}}"
   },
   "postCard": {
     "viewOriginal": "원문 보기",
@@ -207,7 +206,7 @@
   },
   "demandSignals": {
     "signalsOverTime": "{timeRange} 동안 {count}건의 시그널",
-    "signals": "{count}건의 시그널",
+    "signals": "{count, plural, other {#건의 시그널}}",
     "upvotesAndComments": "평균 {avgScore} 추천 · 게시글당 {avgComments}개 댓글",
     "ratedValuable": "{percent}%의 유저가 유용하다고 평가",
     "mostRecent": "가장 최근: {time}",

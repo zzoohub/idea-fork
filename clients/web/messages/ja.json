@@ -1,0 +1,247 @@
+{
+  "metadata": {
+    "title": "Idea Fork",
+    "description": "Reddit、App Storeなどから収集したリアルなユーザーシグナルで、プロダクト機会を発見しましょう。"
+  },
+  "common": {
+    "all": "すべて",
+    "tryAgain": "再試行",
+    "clearFilter": "フィルターを解除",
+    "clearFilters": "フィルターを解除",
+    "clearSearch": "検索をクリア",
+    "active": "{time}にアクティブ",
+    "viewAll": "すべての{count}件の{label}を見る",
+    "showMore": "さらに{count}件表示",
+    "showFewer": "折りたたむ",
+    "showAllSignals": "すべての{count}件のシグナルを表示",
+    "showFewerSignals": "シグナルを折りたたむ",
+    "source": "ソース{number}",
+    "viewOriginal": "元の投稿を見る",
+    "uncategorized": "未分類"
+  },
+  "accessibility": {
+    "skipToContent": "コンテンツへスキップ",
+    "homeLink": "idea-fork ホーム",
+    "mainNavigation": "メインナビゲーション",
+    "openSearch": "検索を開く",
+    "closeSearch": "検索を閉じる",
+    "switchToLightMode": "ライトモードに切り替え",
+    "switchToDarkMode": "ダークモードに切り替え",
+    "searchBriefsAndProducts": "ブリーフとプロダクトを検索",
+    "filterByPostType": "投稿タイプでフィルター",
+    "filterByContentType": "コンテンツタイプでフィルター",
+    "filterByCategory": "カテゴリーでフィルター",
+    "signalsAriaLabel": "ユーザーシグナルフィード",
+    "briefsAriaLabel": "AI生成ブリーフ",
+    "loadingPosts": "投稿を読み込み中",
+    "loadingBriefs": "ブリーフを読み込み中",
+    "loadingSearchResults": "検索結果を読み込み中",
+    "rateContent": "このコンテンツを評価",
+    "rateThisBrief": "このブリーフを評価",
+    "helpful": "役に立った",
+    "notHelpful": "役に立たなかった",
+    "sortBy": "並び替え",
+    "breadcrumb": "パンくずリスト",
+    "signalStatistics": "シグナル統計",
+    "switchLanguage": "言語を切り替え",
+    "searchDialog": "検索"
+  },
+  "navigation": {
+    "feed": "フィード",
+    "briefs": "AIブリーフ",
+    "products": "プロダクト"
+  },
+  "feed": {
+    "heading": "シグナルフィード",
+    "postTypes": {
+      "all": "すべて",
+      "need": "ニーズ",
+      "complaint": "不満",
+      "featureRequest": "機能要望",
+      "alternative": "代替案",
+      "comparison": "比較",
+      "question": "質問",
+      "review": "レビュー",
+      "showcase": "ショーケース",
+      "discussion": "ディスカッション",
+      "other": "その他"
+    },
+    "errors": {
+      "loadFailed": "投稿の読み込みに失敗しました。"
+    },
+    "empty": {
+      "message": "フィルターに一致する投稿がありません。",
+      "suggestion": "フィルターを解除するか、別のキーワードで検索してみてください。"
+    }
+  },
+  "briefs": {
+    "heading": "AIブリーフ",
+    "description": "リアルなユーザーの不満からAIが導き出したプロダクト機会。",
+    "sortOptions": {
+      "trending": "トレンド",
+      "newest": "新着順",
+      "sources": "ソース順"
+    },
+    "errors": {
+      "loadFailed": "ブリーフの読み込みに失敗しました。"
+    },
+    "empty": {
+      "message": "まだブリーフがありません。",
+      "suggestion": "新しいシグナルが分析されるとブリーフが生成されます。しばらくしてからご確認ください。"
+    }
+  },
+  "briefDetail": {
+    "breadcrumbBriefs": "ブリーフ",
+    "createProject": "プロジェクトを作成",
+    "comingSoon": "この機能は近日公開予定です！",
+    "keySourcePosts": "主要ソース投稿",
+    "opportunity": "機会",
+    "viewAllBriefs": "すべてのブリーフを見る",
+    "errors": {
+      "loadFailed": "ブリーフの読み込みに失敗しました。",
+      "notFound": "ブリーフが見つかりません。"
+    }
+  },
+  "products": {
+    "heading": "プロダクト",
+    "description": "注目のプロダクトとユーザーシグナルを把握し、次に作るべきサービスのヒントを見つけましょう。",
+    "sortOptions": {
+      "mostSignals": "シグナル数順",
+      "trending": "トレンド",
+      "newest": "新着順"
+    },
+    "periods": {
+      "all": "全期間",
+      "7d": "今週",
+      "30d": "今月",
+      "90d": "3か月"
+    },
+    "categories": {
+      "saas": "SaaS",
+      "designTools": "デザインツール",
+      "projectManagement": "プロジェクト管理",
+      "fintech": "フィンテック",
+      "marketplace": "マーケットプレイス",
+      "entertainment": "エンタメ"
+    },
+    "errors": {
+      "loadFailed": "プロダクトの読み込みに失敗しました。"
+    },
+    "empty": {
+      "message": "このフィルターに一致するプロダクトがありません。",
+      "suggestion": "別のカテゴリーを選択するか、フィルターを解除してください。"
+    }
+  },
+  "productDetail": {
+    "breadcrumbProducts": "プロダクト",
+    "userSignals": "ユーザーシグナル",
+    "sortRecent": "新着順",
+    "sortPopular": "人気順",
+    "sortCritical": "深刻度順",
+    "sourceIn": "{source}にて",
+    "signalsEmpty": "シグナルが見つかりません。",
+    "signalsEmptySuggestion": "フィルターを解除するか、後でもう一度ご確認ください。",
+    "browseProducts": "プロダクトを見る",
+    "signalThemes": "シグナルテーマ",
+    "errors": {
+      "loadFailed": "プロダクトの読み込みに失敗しました。",
+      "notFound": "プロダクトが見つかりません。"
+    },
+    "relatedBriefs": "関連ブリーフ",
+    "relatedBriefsEmpty": "関連ブリーフはまだありません。",
+    "relatedBriefsSuggestion": "より多くのシグナルが分析されるとブリーフが生成されます。",
+    "viewAllBriefs": "すべてのブリーフを見る",
+    "readBrief": "ブリーフを読む",
+    "sources": "{count, plural, other {#件のソース}}",
+    "sentiment": {
+      "frustrated": "不満",
+      "featureRequest": "機能要望",
+      "question": "質問",
+      "bugReport": "バグ報告"
+    }
+  },
+  "search": {
+    "heading": "検索結果",
+    "placeholder": "ブリーフ、プロダクトを検索...",
+    "helpText": "ブリーフ、プロダクト、投稿を検索",
+    "resultsFor": "「{query}」の検索結果",
+    "resultCount": "{count, plural, other {#件の結果}}",
+    "tabs": {
+      "all": "すべて",
+      "briefs": "ブリーフ",
+      "products": "プロダクト",
+      "posts": "投稿"
+    },
+    "errors": {
+      "searchFailed": "検索に失敗しました。もう一度お試しください。"
+    },
+    "empty": {
+      "message": "「{query}」の結果がありません",
+      "suggestion": "別のキーワードを試すか、スペルを確認してください。",
+      "browseBriefs": "ブリーフを見る"
+    }
+  },
+  "briefCard": {
+    "readBrief": "ブリーフを読む",
+    "complaints": "{count, plural, other {#件のシグナル}}",
+    "communities": "{count, plural, other {#つのコミュニティ}}"
+  },
+  "productCard": {
+    "exploreGaps": "ギャップを探る",
+    "signals": "{count, plural, other {#件のシグナル}}"
+  },
+  "postCard": {
+    "viewOriginal": "元の投稿を見る",
+    "relatedBrief": "関連ブリーフ"
+  },
+  "briefBody": {
+    "problemStatement": "課題定義",
+    "demandSignals": "需要シグナル",
+    "suggestedDirections": "提案されたソリューション方向",
+    "platformBreakdown": "プラットフォーム内訳",
+    "volumeTrend": "ボリュームトレンド",
+    "volumeTrendAriaLabel": "30日間の活動増加トレンドを示すボリュームトレンド",
+    "thirtyDaysAgo": "30日前",
+    "today": "今日"
+  },
+  "demandSignals": {
+    "signalsOverTime": "{timeRange}で{count}件のシグナル",
+    "signals": "{count, plural, other {#件のシグナル}}",
+    "upvotesAndComments": "平均 {avgScore}アップボート・投稿あたり{avgComments}件のコメント",
+    "ratedValuable": "{percent}%のユーザーが有用と評価",
+    "mostRecent": "最新: {time}",
+    "more": "+ {count}件"
+  },
+  "heatBadge": {
+    "hot": "注目",
+    "growing": "成長中",
+    "steady": "安定",
+    "new": "新規"
+  },
+  "signalSummary": {
+    "totalMentions": "総言及数",
+    "acrossAllPlatforms": "全プラットフォーム合計",
+    "criticalSignals": "重大なシグナル",
+    "topIssue": "主要な問題: {name}",
+    "requiresAttention": "早急な対応が必要",
+    "frustrationRate": "不満率",
+    "frustrationAriaLabel": "不満率: {rate}%",
+    "negativeOfTotal": "言及の{rate}%がネガティブ",
+    "noData": "N/A"
+  },
+  "productHeader": {
+    "share": "共有",
+    "copied": "コピーしました！",
+    "launchedAt": "{time}にリリース"
+  },
+  "briefRating": {
+    "wasUseful": "このブリーフは役に立ちましたか？",
+    "thanks": "フィードバックありがとうございます。",
+    "whatMissing": "何が足りませんでしたか？（任意）",
+    "tellUsMore": "詳しく教えてください...",
+    "send": "送信"
+  },
+  "errorState": {
+    "default": "問題が発生しました。"
+  }
+}

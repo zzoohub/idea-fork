@@ -10,7 +10,7 @@ import { PostHogProvider } from "@/src/shared/analytics";
 
 const inter = Inter({
   variable: "--font-inter",
-  subsets: ["latin"],
+  subsets: ["latin", "latin-ext"],
 });
 
 export function generateStaticParams() {

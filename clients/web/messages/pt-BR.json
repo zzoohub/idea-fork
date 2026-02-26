@@ -1,0 +1,247 @@
+{
+  "metadata": {
+    "title": "Idea Fork",
+    "description": "Descubra oportunidades de produto a partir de sinais reais de usuarios no Reddit, App Store e mais."
+  },
+  "common": {
+    "all": "Todos",
+    "tryAgain": "Tentar novamente",
+    "clearFilter": "Limpar filtro",
+    "clearFilters": "Limpar filtros",
+    "clearSearch": "Limpar busca",
+    "active": "Ativo {time}",
+    "viewAll": "Ver todos {count} {label}",
+    "showMore": "Mostrar mais {count}",
+    "showFewer": "Mostrar menos posts",
+    "showAllSignals": "Mostrar todos os {count} sinais",
+    "showFewerSignals": "Mostrar menos sinais",
+    "source": "Fonte {number}",
+    "viewOriginal": "Ver original",
+    "uncategorized": "Sem categoria"
+  },
+  "accessibility": {
+    "skipToContent": "Pular para o conteudo",
+    "homeLink": "Inicio idea-fork",
+    "mainNavigation": "Navegacao principal",
+    "openSearch": "Abrir busca",
+    "closeSearch": "Fechar busca",
+    "switchToLightMode": "Mudar para modo claro",
+    "switchToDarkMode": "Mudar para modo escuro",
+    "searchBriefsAndProducts": "Buscar briefs e produtos",
+    "filterByPostType": "Filtrar por tipo de post",
+    "filterByContentType": "Filtrar por tipo de conteudo",
+    "filterByCategory": "Filtrar por categoria",
+    "signalsAriaLabel": "Feed de sinais de usuarios",
+    "briefsAriaLabel": "Briefs gerados por IA",
+    "loadingPosts": "Carregando posts",
+    "loadingBriefs": "Carregando briefs",
+    "loadingSearchResults": "Carregando resultados da busca",
+    "rateContent": "Avaliar este conteudo",
+    "rateThisBrief": "Avaliar este brief",
+    "helpful": "Util",
+    "notHelpful": "Nao util",
+    "sortBy": "Ordenar por",
+    "breadcrumb": "Caminho de navegacao",
+    "signalStatistics": "Estatisticas de sinais",
+    "switchLanguage": "Trocar idioma",
+    "searchDialog": "Buscar"
+  },
+  "navigation": {
+    "feed": "Feed",
+    "briefs": "Briefs IA",
+    "products": "Produtos"
+  },
+  "feed": {
+    "heading": "Feed de Sinais",
+    "postTypes": {
+      "all": "Todos",
+      "need": "Necessidade",
+      "complaint": "Reclamacao",
+      "featureRequest": "Pedido de funcionalidade",
+      "alternative": "Alternativa",
+      "comparison": "Comparacao",
+      "question": "Pergunta",
+      "review": "Avaliacao",
+      "showcase": "Vitrine",
+      "discussion": "Discussao",
+      "other": "Outro"
+    },
+    "errors": {
+      "loadFailed": "Falha ao carregar posts."
+    },
+    "empty": {
+      "message": "Nenhum post corresponde aos seus filtros.",
+      "suggestion": "Tente remover um filtro ou buscar algo diferente."
+    }
+  },
+  "briefs": {
+    "heading": "Briefs IA",
+    "description": "Oportunidades de produto geradas por IA a partir de problemas reais de usuarios.",
+    "sortOptions": {
+      "trending": "Em alta",
+      "newest": "Mais recentes",
+      "sources": "Fontes"
+    },
+    "errors": {
+      "loadFailed": "Falha ao carregar briefs."
+    },
+    "empty": {
+      "message": "Nenhum brief disponivel ainda.",
+      "suggestion": "Volte em breve, novos briefs sao gerados conforme novos sinais chegam."
+    }
+  },
+  "briefDetail": {
+    "breadcrumbBriefs": "Briefs",
+    "createProject": "Criar projeto",
+    "comingSoon": "Esta funcionalidade estara disponivel em breve!",
+    "keySourcePosts": "Posts fonte principais",
+    "opportunity": "Oportunidade",
+    "viewAllBriefs": "Ver todos os briefs",
+    "errors": {
+      "loadFailed": "Falha ao carregar brief.",
+      "notFound": "Brief nao encontrado."
+    }
+  },
+  "products": {
+    "heading": "Produtos",
+    "description": "Identifique produtos em ascensao e sinais de usuarios, e encontre pistas para seu proximo projeto.",
+    "sortOptions": {
+      "mostSignals": "Mais sinais",
+      "trending": "Em alta",
+      "newest": "Mais recentes"
+    },
+    "periods": {
+      "all": "Todo o periodo",
+      "7d": "Esta semana",
+      "30d": "Este mes",
+      "90d": "3 meses"
+    },
+    "categories": {
+      "saas": "SaaS",
+      "designTools": "Ferramentas de design",
+      "projectManagement": "Gestao de projetos",
+      "fintech": "Fintech",
+      "marketplace": "Marketplace",
+      "entertainment": "Entretenimento"
+    },
+    "errors": {
+      "loadFailed": "Falha ao carregar produtos."
+    },
+    "empty": {
+      "message": "Nenhum produto corresponde a este filtro.",
+      "suggestion": "Tente selecionar outra categoria ou limpe o filtro."
+    }
+  },
+  "productDetail": {
+    "breadcrumbProducts": "Produtos",
+    "userSignals": "Sinais de usuarios",
+    "sortRecent": "Mais recentes",
+    "sortPopular": "Mais populares",
+    "sortCritical": "Mais criticos",
+    "sourceIn": "em {source}",
+    "signalsEmpty": "Nenhum sinal encontrado.",
+    "signalsEmptySuggestion": "Tente remover um filtro ou volte mais tarde.",
+    "browseProducts": "Explorar produtos",
+    "signalThemes": "Temas de sinais",
+    "errors": {
+      "loadFailed": "Falha ao carregar produto.",
+      "notFound": "Produto nao encontrado."
+    },
+    "relatedBriefs": "Briefs relacionados",
+    "relatedBriefsEmpty": "Nenhum brief relacionado ainda.",
+    "relatedBriefsSuggestion": "Briefs sao gerados conforme mais sinais sao analisados.",
+    "viewAllBriefs": "Ver todos os briefs",
+    "readBrief": "Ler brief",
+    "sources": "{count, plural, one {# fonte} other {# fontes}}",
+    "sentiment": {
+      "frustrated": "Frustrado",
+      "featureRequest": "Pedido de funcionalidade",
+      "question": "Pergunta",
+      "bugReport": "Relato de bug"
+    }
+  },
+  "search": {
+    "heading": "Resultados da busca",
+    "placeholder": "Buscar briefs, produtos...",
+    "helpText": "Buscar briefs, produtos e posts",
+    "resultsFor": "Resultados para \"{query}\"",
+    "resultCount": "{count, plural, one {# resultado} other {# resultados}}",
+    "tabs": {
+      "all": "Todos",
+      "briefs": "Briefs",
+      "products": "Produtos",
+      "posts": "Posts"
+    },
+    "errors": {
+      "searchFailed": "A busca falhou. Tente novamente."
+    },
+    "empty": {
+      "message": "Sem resultados para \"{query}\"",
+      "suggestion": "Tente palavras-chave diferentes ou verifique a ortografia.",
+      "browseBriefs": "Explorar briefs"
+    }
+  },
+  "briefCard": {
+    "readBrief": "Ler brief",
+    "complaints": "{count, plural, one {# sinal} other {# sinais}}",
+    "communities": "em {count, plural, one {# comunidade} other {# comunidades}}"
+  },
+  "productCard": {
+    "exploreGaps": "Explorar lacunas",
+    "signals": "{count, plural, one {# sinal} other {# sinais}}"
+  },
+  "postCard": {
+    "viewOriginal": "Ver original",
+    "relatedBrief": "Brief relacionado"
+  },
+  "briefBody": {
+    "problemStatement": "Definicao do problema",
+    "demandSignals": "Sinais de demanda",
+    "suggestedDirections": "Direcoes de solucao sugeridas",
+    "platformBreakdown": "Distribuicao por plataforma",
+    "volumeTrend": "Tendencia de volume",
+    "volumeTrendAriaLabel": "Tendencia de volume mostrando atividade crescente em 30 dias",
+    "thirtyDaysAgo": "30 dias atras",
+    "today": "Hoje"
+  },
+  "demandSignals": {
+    "signalsOverTime": "{count} sinais em {timeRange}",
+    "signals": "{count, plural, one {# sinal} other {# sinais}}",
+    "upvotesAndComments": "media {avgScore} votos \u00b7 {avgComments} comentarios por post",
+    "ratedValuable": "{percent}% dos usuarios avaliaram como valioso",
+    "mostRecent": "Mais recente: {time}",
+    "more": "+ {count} mais"
+  },
+  "heatBadge": {
+    "hot": "Popular",
+    "growing": "Crescendo",
+    "steady": "Estavel",
+    "new": "Novo"
+  },
+  "signalSummary": {
+    "totalMentions": "Total de mencoes",
+    "acrossAllPlatforms": "Em todas as plataformas",
+    "criticalSignals": "Sinais criticos",
+    "topIssue": "Principal problema: {name}",
+    "requiresAttention": "Requer atencao imediata",
+    "frustrationRate": "Taxa de frustracao",
+    "frustrationAriaLabel": "Taxa de frustracao: {rate}%",
+    "negativeOfTotal": "{rate}% das mencoes sao negativas",
+    "noData": "N/D"
+  },
+  "productHeader": {
+    "share": "Compartilhar",
+    "copied": "Copiado!",
+    "launchedAt": "Lancado {time}"
+  },
+  "briefRating": {
+    "wasUseful": "Este brief foi util?",
+    "thanks": "Obrigado pelo seu feedback.",
+    "whatMissing": "O que faltou? (opcional)",
+    "tellUsMore": "Conte-nos mais...",
+    "send": "Enviar"
+  },
+  "errorState": {
+    "default": "Algo deu errado."
+  }
+}

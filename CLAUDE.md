@@ -75,7 +75,7 @@ All commands in `justfile`. Run `just --list` to see all recipes.
 - Default: **z-nextjs** (implementation) → **vercel-react-best-practices** (review)
 
 ### Web Conventions
-- **i18n**: `next-intl`. Locales: `en` (default), `ko`. Messages in `clients/web/messages/`.
+- **i18n**: `next-intl`. Locales: `en` (default), `es`, `pt-BR`, `id`, `ja`, `ko`. Messages in `clients/web/messages/`.
 - **Dark mode**: light + dark themes. Dark on by default (`<html class="dark">`).
 - **Path alias**: `@/*` maps to project root.
 - **Testing**: Vitest + React Testing Library + jsdom. Tests co-located as `*.test.tsx`. Coverage: 100% (excludes `src/app/`, `src/views/`, `src/widgets/`, barrel `index.ts`, `src/shared/i18n/`, `src/shared/api/types.ts`).

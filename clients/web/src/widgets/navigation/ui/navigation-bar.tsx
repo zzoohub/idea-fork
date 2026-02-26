@@ -2,10 +2,11 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useSearchParams } from "next/navigation";
-import { useLocale, useTranslations } from "next-intl";
+import { useTranslations } from "next-intl";
 import { Link, usePathname, useRouter } from "@/src/shared/i18n/navigation";
 import { Icon } from "@/src/shared/ui";
 import { SearchOverlay } from "@/src/features/search/ui/search-overlay";
+import { LocaleSwitcher } from "@/src/features/locale-switcher";
 import { gsap, useGSAP, useReducedMotion } from "@/src/shared/lib/gsap";
 
 /* --------------------------------------------------------------------------
@@ -57,7 +58,6 @@ export function NavigationBar() {
   const searchParams = useSearchParams();
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchValue, setSearchValue] = useState("");
-  const locale = useLocale();
   const { isDark, toggle: toggleDark } = useDarkMode();
   const tNav = useTranslations("navigation");
   const tA11y = useTranslations("accessibility");
@@ -229,22 +229,8 @@ export function NavigationBar() {
             <Icon name="search" size={22} />
           </button>
 
-          {/* Language toggle */}
-          <button
-            type="button"
-            onClick={() => router.replace(pathname, { locale: locale === "en" ? "ko" : "en" })}
-            className={[
-              "flex items-center justify-center",
-              "size-10 rounded-lg",
-              "text-[13px] font-semibold",
-              "text-slate-500 dark:text-slate-400",
-              "hover:bg-slate-100 dark:hover:bg-surface-dark",
-              "transition-colors duration-150 cursor-pointer",
-            ].join(" ")}
-            aria-label={locale === "en" ? tA11y("switchToKorean") : tA11y("switchToEnglish")}
-          >
-            {locale === "en" ? "한" : "EN"}
-          </button>
+          {/* Language switcher */}
+          <LocaleSwitcher />
 
           {/* Dark mode toggle */}
           <button

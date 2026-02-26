@@ -1,0 +1,247 @@
+{
+  "metadata": {
+    "title": "Idea Fork",
+    "description": "Temukan peluang produk dari sinyal pengguna nyata di Reddit, App Store, dan lainnya."
+  },
+  "common": {
+    "all": "Semua",
+    "tryAgain": "Coba lagi",
+    "clearFilter": "Hapus filter",
+    "clearFilters": "Hapus semua filter",
+    "clearSearch": "Hapus pencarian",
+    "active": "Aktif {time}",
+    "viewAll": "Lihat semua {count} {label}",
+    "showMore": "Tampilkan {count} lagi",
+    "showFewer": "Tampilkan lebih sedikit",
+    "showAllSignals": "Tampilkan semua {count} sinyal",
+    "showFewerSignals": "Tampilkan lebih sedikit sinyal",
+    "source": "Sumber {number}",
+    "viewOriginal": "Lihat asli",
+    "uncategorized": "Tanpa kategori"
+  },
+  "accessibility": {
+    "skipToContent": "Langsung ke konten",
+    "homeLink": "Beranda idea-fork",
+    "mainNavigation": "Navigasi utama",
+    "openSearch": "Buka pencarian",
+    "closeSearch": "Tutup pencarian",
+    "switchToLightMode": "Beralih ke mode terang",
+    "switchToDarkMode": "Beralih ke mode gelap",
+    "searchBriefsAndProducts": "Cari brief dan produk",
+    "filterByPostType": "Filter berdasarkan jenis posting",
+    "filterByContentType": "Filter berdasarkan jenis konten",
+    "filterByCategory": "Filter berdasarkan kategori",
+    "signalsAriaLabel": "Feed sinyal pengguna",
+    "briefsAriaLabel": "Brief yang dihasilkan AI",
+    "loadingPosts": "Memuat posting",
+    "loadingBriefs": "Memuat brief",
+    "loadingSearchResults": "Memuat hasil pencarian",
+    "rateContent": "Nilai konten ini",
+    "rateThisBrief": "Nilai brief ini",
+    "helpful": "Membantu",
+    "notHelpful": "Tidak membantu",
+    "sortBy": "Urutkan berdasarkan",
+    "breadcrumb": "Navigasi jalur",
+    "signalStatistics": "Statistik sinyal",
+    "switchLanguage": "Ganti bahasa",
+    "searchDialog": "Cari"
+  },
+  "navigation": {
+    "feed": "Feed",
+    "briefs": "Brief AI",
+    "products": "Produk"
+  },
+  "feed": {
+    "heading": "Feed Sinyal",
+    "postTypes": {
+      "all": "Semua",
+      "need": "Kebutuhan",
+      "complaint": "Keluhan",
+      "featureRequest": "Permintaan fitur",
+      "alternative": "Alternatif",
+      "comparison": "Perbandingan",
+      "question": "Pertanyaan",
+      "review": "Ulasan",
+      "showcase": "Showcase",
+      "discussion": "Diskusi",
+      "other": "Lainnya"
+    },
+    "errors": {
+      "loadFailed": "Gagal memuat posting."
+    },
+    "empty": {
+      "message": "Tidak ada posting yang cocok dengan filter Anda.",
+      "suggestion": "Coba hapus filter atau cari yang lain."
+    }
+  },
+  "briefs": {
+    "heading": "Brief AI",
+    "description": "Peluang produk yang dihasilkan AI dari masalah nyata pengguna.",
+    "sortOptions": {
+      "trending": "Trending",
+      "newest": "Terbaru",
+      "sources": "Sumber"
+    },
+    "errors": {
+      "loadFailed": "Gagal memuat brief."
+    },
+    "empty": {
+      "message": "Belum ada brief tersedia.",
+      "suggestion": "Kembali lagi nanti, brief baru dibuat saat sinyal baru masuk."
+    }
+  },
+  "briefDetail": {
+    "breadcrumbBriefs": "Brief",
+    "createProject": "Buat proyek",
+    "comingSoon": "Fitur ini segera hadir!",
+    "keySourcePosts": "Posting sumber utama",
+    "opportunity": "Peluang",
+    "viewAllBriefs": "Lihat semua brief",
+    "errors": {
+      "loadFailed": "Gagal memuat brief.",
+      "notFound": "Brief tidak ditemukan."
+    }
+  },
+  "products": {
+    "heading": "Produk",
+    "description": "Temukan produk yang sedang naik dan sinyal pengguna, serta petunjuk untuk proyek berikutnya.",
+    "sortOptions": {
+      "mostSignals": "Sinyal terbanyak",
+      "trending": "Trending",
+      "newest": "Terbaru"
+    },
+    "periods": {
+      "all": "Semua waktu",
+      "7d": "Minggu ini",
+      "30d": "Bulan ini",
+      "90d": "3 bulan"
+    },
+    "categories": {
+      "saas": "SaaS",
+      "designTools": "Alat desain",
+      "projectManagement": "Manajemen proyek",
+      "fintech": "Fintech",
+      "marketplace": "Marketplace",
+      "entertainment": "Hiburan"
+    },
+    "errors": {
+      "loadFailed": "Gagal memuat produk."
+    },
+    "empty": {
+      "message": "Tidak ada produk yang cocok dengan filter ini.",
+      "suggestion": "Coba pilih kategori lain atau hapus filter."
+    }
+  },
+  "productDetail": {
+    "breadcrumbProducts": "Produk",
+    "userSignals": "Sinyal Pengguna",
+    "sortRecent": "Terbaru",
+    "sortPopular": "Terpopuler",
+    "sortCritical": "Paling kritis",
+    "sourceIn": "di {source}",
+    "signalsEmpty": "Tidak ada sinyal ditemukan.",
+    "signalsEmptySuggestion": "Coba hapus filter atau kembali lagi nanti.",
+    "browseProducts": "Jelajahi produk",
+    "signalThemes": "Tema Sinyal",
+    "errors": {
+      "loadFailed": "Gagal memuat produk.",
+      "notFound": "Produk tidak ditemukan."
+    },
+    "relatedBriefs": "Brief Terkait",
+    "relatedBriefsEmpty": "Belum ada brief terkait.",
+    "relatedBriefsSuggestion": "Brief dibuat saat lebih banyak sinyal dianalisis.",
+    "viewAllBriefs": "Lihat semua brief",
+    "readBrief": "Baca brief",
+    "sources": "{count, plural, one {# sumber} other {# sumber}}",
+    "sentiment": {
+      "frustrated": "Frustrasi",
+      "featureRequest": "Permintaan fitur",
+      "question": "Pertanyaan",
+      "bugReport": "Laporan bug"
+    }
+  },
+  "search": {
+    "heading": "Hasil Pencarian",
+    "placeholder": "Cari brief, produk...",
+    "helpText": "Cari brief, produk, dan posting",
+    "resultsFor": "Hasil untuk \"{query}\"",
+    "resultCount": "{count, plural, one {# hasil} other {# hasil}}",
+    "tabs": {
+      "all": "Semua",
+      "briefs": "Brief",
+      "products": "Produk",
+      "posts": "Posting"
+    },
+    "errors": {
+      "searchFailed": "Pencarian gagal. Silakan coba lagi."
+    },
+    "empty": {
+      "message": "Tidak ada hasil untuk \"{query}\"",
+      "suggestion": "Coba kata kunci lain atau periksa ejaan Anda.",
+      "browseBriefs": "Jelajahi brief"
+    }
+  },
+  "briefCard": {
+    "readBrief": "Baca brief",
+    "complaints": "{count, plural, one {# sinyal} other {# sinyal}}",
+    "communities": "di {count, plural, one {# komunitas} other {# komunitas}}"
+  },
+  "productCard": {
+    "exploreGaps": "Jelajahi celah",
+    "signals": "{count, plural, one {# sinyal} other {# sinyal}}"
+  },
+  "postCard": {
+    "viewOriginal": "Lihat asli",
+    "relatedBrief": "Brief terkait"
+  },
+  "briefBody": {
+    "problemStatement": "Pernyataan Masalah",
+    "demandSignals": "Sinyal Permintaan",
+    "suggestedDirections": "Arah Solusi yang Disarankan",
+    "platformBreakdown": "Rincian Platform",
+    "volumeTrend": "Tren Volume",
+    "volumeTrendAriaLabel": "Tren volume menunjukkan peningkatan aktivitas selama 30 hari",
+    "thirtyDaysAgo": "30 hari lalu",
+    "today": "Hari ini"
+  },
+  "demandSignals": {
+    "signalsOverTime": "{count} sinyal dalam {timeRange}",
+    "signals": "{count, plural, one {# sinyal} other {# sinyal}}",
+    "upvotesAndComments": "rata-rata {avgScore} upvote \u00b7 {avgComments} komentar per posting",
+    "ratedValuable": "{percent}% pengguna menilai ini bermanfaat",
+    "mostRecent": "Terbaru: {time}",
+    "more": "+ {count} lagi"
+  },
+  "heatBadge": {
+    "hot": "Populer",
+    "growing": "Berkembang",
+    "steady": "Stabil",
+    "new": "Baru"
+  },
+  "signalSummary": {
+    "totalMentions": "Total Sebutan",
+    "acrossAllPlatforms": "Di semua platform",
+    "criticalSignals": "Sinyal Kritis",
+    "topIssue": "Masalah utama: {name}",
+    "requiresAttention": "Memerlukan perhatian segera",
+    "frustrationRate": "Tingkat Frustrasi",
+    "frustrationAriaLabel": "Tingkat frustrasi: {rate}%",
+    "negativeOfTotal": "{rate}% sebutan bersifat negatif",
+    "noData": "N/A"
+  },
+  "productHeader": {
+    "share": "Bagikan",
+    "copied": "Disalin!",
+    "launchedAt": "Diluncurkan {time}"
+  },
+  "briefRating": {
+    "wasUseful": "Apakah brief ini berguna?",
+    "thanks": "Terima kasih atas masukan Anda.",
+    "whatMissing": "Apa yang kurang? (opsional)",
+    "tellUsMore": "Ceritakan lebih lanjut...",
+    "send": "Kirim"
+  },
+  "errorState": {
+    "default": "Terjadi kesalahan."
+  }
+}
