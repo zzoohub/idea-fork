@@ -452,3 +452,102 @@ async def test_pipeline_status_returns_running_false():
     assert resp.status_code == 200
     body = resp.json()
     assert body == {"data": {"is_running": False}}
+
+
+# ---------------------------------------------------------------------------
+# GET /internal/pipeline/pending
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_pipeline_pending_returns_counts():
+    mock_service = AsyncMock()
+    mock_service.get_pending_counts = AsyncMock(
+        return_value={"pending_tag": 10, "pending_cluster": 5, "pending_brief": 2}
+    )
+    app = _build_pipeline_app(mock_service)
+
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        resp = await client.get("/internal/pipeline/pending")
+
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body == {"data": {"pending_tag": 10, "pending_cluster": 5, "pending_brief": 2}}
+    mock_service.get_pending_counts.assert_awaited_once()
+
+
+@pytest.mark.asyncio
+async def test_pipeline_pending_returns_zeros():
+    mock_service = AsyncMock()
+    mock_service.get_pending_counts = AsyncMock(
+        return_value={"pending_tag": 0, "pending_cluster": 0, "pending_brief": 0}
+    )
+    app = _build_pipeline_app(mock_service)
+
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        resp = await client.get("/internal/pipeline/pending")
+
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["data"]["pending_tag"] == 0
+    assert body["data"]["pending_cluster"] == 0
+    assert body["data"]["pending_brief"] == 0
+
+
+# ---------------------------------------------------------------------------
+# POST /internal/pipeline/run?skip_fetch=true
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_run_pipeline_with_skip_fetch_passes_param():
+    """skip_fetch=true query param should be passed to svc.run(skip_fetch=True)."""
+    result = _make_pipeline_result()
+    mock_service = AsyncMock()
+    mock_service.run = AsyncMock(return_value=result)
+
+    app = _build_pipeline_app(mock_service)
+
+    with patch(
+        "inbound.http.pipeline.router.get_settings"
+    ) as mock_get_settings:
+        settings = _mock_settings(secret="my-secret")
+        mock_get_settings.return_value = settings
+
+        transport = ASGITransport(app=app)
+        async with AsyncClient(transport=transport, base_url="http://test") as client:
+            resp = await client.post(
+                "/internal/pipeline/run?skip_fetch=true",
+                headers={"x-internal-secret": "my-secret"},
+            )
+
+    assert resp.status_code == 200
+    mock_service.run.assert_awaited_once_with(skip_fetch=True)
+
+
+@pytest.mark.asyncio
+async def test_run_pipeline_without_skip_fetch_defaults_false():
+    """Without skip_fetch param, svc.run should be called with skip_fetch=False."""
+    result = _make_pipeline_result()
+    mock_service = AsyncMock()
+    mock_service.run = AsyncMock(return_value=result)
+
+    app = _build_pipeline_app(mock_service)
+
+    with patch(
+        "inbound.http.pipeline.router.get_settings"
+    ) as mock_get_settings:
+        settings = _mock_settings(secret="my-secret")
+        mock_get_settings.return_value = settings
+
+        transport = ASGITransport(app=app)
+        async with AsyncClient(transport=transport, base_url="http://test") as client:
+            resp = await client.post(
+                "/internal/pipeline/run",
+                headers={"x-internal-secret": "my-secret"},
+            )
+
+    assert resp.status_code == 200
+    mock_service.run.assert_awaited_once_with(skip_fetch=False)

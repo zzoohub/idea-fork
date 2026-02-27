@@ -24,10 +24,18 @@ async def pipeline_status(request: Request):
     return JSONResponse(content={"data": {"is_running": running}})
 
 
+@router.get("/pending")
+async def pipeline_pending(request: Request):
+    svc = _get_service(request)
+    counts = await svc.get_pending_counts()
+    return JSONResponse(content={"data": counts})
+
+
 @router.post("/run")
 async def run_pipeline(
     request: Request,
     x_internal_secret: str | None = Header(None),
+    skip_fetch: bool = False,
 ):
     settings = get_settings()
 
@@ -46,7 +54,7 @@ async def run_pipeline(
         )
 
     svc = _get_service(request)
-    result = await svc.run()
+    result = await svc.run(skip_fetch=skip_fetch)
 
     status_code = 200 if not result.has_errors else 207
     logger.info(

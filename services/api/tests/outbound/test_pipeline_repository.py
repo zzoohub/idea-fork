@@ -1005,6 +1005,80 @@ async def test_find_related_products_escapes_like_metacharacters():
     assert len(captured_stmt) == 1
 
 
+# ---------------------------------------------------------------------------
+# get_pending_counts
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_get_pending_counts_returns_all_three_counts():
+    db, session = _make_db()
+    db.session.return_value = session
+
+    # Three sequential execute calls: pending_tag, pending_cluster, pending_brief
+    tag_result = MagicMock()
+    tag_result.scalar.return_value = 10
+
+    cluster_result = MagicMock()
+    cluster_result.scalar.return_value = 5
+
+    brief_result = MagicMock()
+    brief_result.scalar.return_value = 2
+
+    session.execute = AsyncMock(side_effect=[tag_result, cluster_result, brief_result])
+
+    repo = PostgresPipelineRepository(db)
+    counts = await repo.get_pending_counts()
+
+    assert counts == {"pending_tag": 10, "pending_cluster": 5, "pending_brief": 2}
+    assert session.execute.call_count == 3
+
+
+@pytest.mark.asyncio
+async def test_get_pending_counts_returns_zeros_when_none():
+    db, session = _make_db()
+    db.session.return_value = session
+
+    tag_result = MagicMock()
+    tag_result.scalar.return_value = 0
+
+    cluster_result = MagicMock()
+    cluster_result.scalar.return_value = 0
+
+    brief_result = MagicMock()
+    brief_result.scalar.return_value = 0
+
+    session.execute = AsyncMock(side_effect=[tag_result, cluster_result, brief_result])
+
+    repo = PostgresPipelineRepository(db)
+    counts = await repo.get_pending_counts()
+
+    assert counts == {"pending_tag": 0, "pending_cluster": 0, "pending_brief": 0}
+
+
+@pytest.mark.asyncio
+async def test_get_pending_counts_handles_null_scalars():
+    """When scalar() returns None (no rows), counts should default to 0."""
+    db, session = _make_db()
+    db.session.return_value = session
+
+    tag_result = MagicMock()
+    tag_result.scalar.return_value = None
+
+    cluster_result = MagicMock()
+    cluster_result.scalar.return_value = None
+
+    brief_result = MagicMock()
+    brief_result.scalar.return_value = None
+
+    session.execute = AsyncMock(side_effect=[tag_result, cluster_result, brief_result])
+
+    repo = PostgresPipelineRepository(db)
+    counts = await repo.get_pending_counts()
+
+    assert counts == {"pending_tag": 0, "pending_cluster": 0, "pending_brief": 0}
+
+
 @pytest.mark.asyncio
 async def test_find_related_products_multiple_results():
     db, session = _make_db()

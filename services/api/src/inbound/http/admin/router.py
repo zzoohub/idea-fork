@@ -25,7 +25,11 @@ button{width:100%;padding:10px;border:none;border-radius:6px;font-size:14px;
   font-weight:500;cursor:pointer;transition:background .15s}
 button.run{background:#2563eb;color:#fff}
 button.run:hover:not(:disabled){background:#1d4ed8}
+button.retry{background:#b45309;color:#fff;margin-top:8px}
+button.retry:hover:not(:disabled){background:#92400e}
 button:disabled{opacity:.5;cursor:not-allowed}
+.btn-row{display:flex;gap:8px}
+.btn-row button{flex:1}
 #result{margin-top:24px;display:none}
 #result.show{display:block}
 .card{padding:16px;border-radius:8px;border:1px solid #262626;background:#171717}
@@ -52,19 +56,36 @@ button:disabled{opacity:.5;cursor:not-allowed}
 <div class="wrap">
   <h1>Pipeline Admin</h1>
   <div id="status-bar" class="status-bar idle">Checking status\u2026</div>
+  <div id="pending-card" class="card" style="margin-bottom:16px">
+    <div style="font-size:13px;font-weight:600;color:#a3a3a3;margin-bottom:8px">Pending Items</div>
+    <div class="stat"><span class="label">Tagging</span>
+    <span class="value" id="p-tag">-</span></div>
+    <div class="stat"><span class="label">Clustering</span>
+    <span class="value" id="p-cluster">-</span></div>
+    <div class="stat"><span class="label">Brief generation</span>
+    <span class="value" id="p-brief">-</span></div>
+  </div>
   <div class="row">
     <label for="secret">Internal Secret</label>
     <input id="secret" type="password" placeholder="API_INTERNAL_SECRET" autocomplete="off">
   </div>
-  <button class="run" id="btn">Run Pipeline</button>
+  <div class="btn-row">
+    <button class="run" id="btn">Run Pipeline</button>
+    <button class="run retry" id="btn-retry" disabled>Retry Failed</button>
+  </div>
   <div id="result"></div>
 </div>
 <script>
 (function() {
   var secretInput = document.getElementById('secret');
   var btn = document.getElementById('btn');
+  var btnRetry = document.getElementById('btn-retry');
   var resultBox = document.getElementById('result');
+  var pTag = document.getElementById('p-tag');
+  var pCluster = document.getElementById('p-cluster');
+  var pBrief = document.getElementById('p-brief');
   var KEY = '_pipeline_secret';
+  var totalPending = 0;
   secretInput.value = localStorage.getItem(KEY) || '';
 
   function clearChildren(el) {
@@ -129,27 +150,50 @@ button:disabled{opacity:.5;cursor:not-allowed}
     }
   }
 
+  async function checkPending() {
+    try {
+      var res = await fetch('/internal/pipeline/pending');
+      var json = await res.json();
+      var d = json.data || {};
+      pTag.textContent = d.pending_tag != null ? d.pending_tag : '-';
+      pCluster.textContent = d.pending_cluster != null ? d.pending_cluster : '-';
+      pBrief.textContent = d.pending_brief != null ? d.pending_brief : '-';
+      totalPending = (d.pending_tag || 0) + (d.pending_cluster || 0) + (d.pending_brief || 0);
+      btnRetry.disabled = totalPending === 0;
+    } catch (e) {
+      pTag.textContent = '-';
+      pCluster.textContent = '-';
+      pBrief.textContent = '-';
+      totalPending = 0;
+      btnRetry.disabled = true;
+    }
+  }
+
   function startPolling() {
     if (pollTimer) clearInterval(pollTimer);
-    pollTimer = setInterval(checkStatus, 5000);
+    pollTimer = setInterval(function() { checkStatus(); checkPending(); }, 5000);
   }
 
   checkStatus();
+  checkPending();
   startPolling();
 
-  btn.addEventListener('click', async function() {
+  async function runPipeline(skipFetch) {
     var secret = secretInput.value.trim();
     if (!secret) { secretInput.focus(); return; }
     localStorage.setItem(KEY, secret);
 
     btn.disabled = true;
-    clearChildren(btn);
-    btn.appendChild(el('span', {className: 'spinner'}));
-    btn.appendChild(document.createTextNode('Running\u2026'));
+    btnRetry.disabled = true;
+    var activeBtn = skipFetch ? btnRetry : btn;
+    clearChildren(activeBtn);
+    activeBtn.appendChild(el('span', {className: 'spinner'}));
+    activeBtn.appendChild(document.createTextNode('Running\u2026'));
     resultBox.className = '';
 
     try {
-      var res = await fetch('/internal/pipeline/run', {
+      var url = '/internal/pipeline/run' + (skipFetch ? '?skip_fetch=true' : '');
+      var res = await fetch(url, {
         method: 'POST',
         headers: { 'X-Internal-Secret': secret }
       });
@@ -199,9 +243,15 @@ button:disabled{opacity:.5;cursor:not-allowed}
     } finally {
       clearChildren(btn);
       btn.textContent = 'Run Pipeline';
+      clearChildren(btnRetry);
+      btnRetry.textContent = 'Retry Failed';
       checkStatus();
+      checkPending();
     }
-  });
+  }
+
+  btn.addEventListener('click', function() { runPipeline(false); });
+  btnRetry.addEventListener('click', function() { runPipeline(true); });
 })();
 </script>
 </body>

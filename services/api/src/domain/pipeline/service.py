@@ -73,7 +73,10 @@ class PipelineService:
     async def is_running(self) -> bool:
         return await self._repo.is_advisory_lock_held()
 
-    async def run(self) -> PipelineRunResult:
+    async def get_pending_counts(self) -> dict[str, int]:
+        return await self._repo.get_pending_counts()
+
+    async def run(self, *, skip_fetch: bool = False) -> PipelineRunResult:
         result = PipelineRunResult()
 
         locked = await self._repo.acquire_advisory_lock()
@@ -85,7 +88,8 @@ class PipelineService:
             return result
 
         try:
-            await self._stage_fetch(result)
+            if not skip_fetch:
+                await self._stage_fetch(result)
             await self._stage_tag(result)
             await self._stage_score_products(result)
             await self._stage_cluster(result)

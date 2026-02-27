@@ -1037,3 +1037,67 @@ async def test_is_running_returns_false_when_lock_not_held():
     svc = make_service(repo=repo)
 
     assert await svc.is_running() is False
+
+
+# ---------------------------------------------------------------------------
+# skip_fetch
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_run_skip_fetch_does_not_call_fetch_stage():
+    """When skip_fetch=True, _stage_fetch should be skipped entirely."""
+    repo = make_repo()
+    reddit = make_reddit()
+    svc = make_service(repo=repo, reddit=reddit)
+
+    result = await svc.run(skip_fetch=True)
+
+    reddit.fetch_posts.assert_not_called()
+    repo.upsert_posts.assert_not_called()
+    assert result.posts_fetched == 0
+    assert result.posts_upserted == 0
+    # Other stages should still run
+    repo.get_pending_posts.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_run_skip_fetch_false_calls_fetch_stage():
+    """When skip_fetch=False (default), fetch stage should run normally."""
+    reddit = make_reddit()
+    repo = make_repo()
+    svc = make_service(repo=repo, reddit=reddit)
+
+    await svc.run(skip_fetch=False)
+
+    reddit.fetch_posts.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_run_default_does_not_skip_fetch():
+    """Default run() should call the fetch stage."""
+    reddit = make_reddit()
+    repo = make_repo()
+    svc = make_service(repo=repo, reddit=reddit)
+
+    await svc.run()
+
+    reddit.fetch_posts.assert_called_once()
+
+
+# ---------------------------------------------------------------------------
+# get_pending_counts
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_get_pending_counts_delegates_to_repo():
+    repo = make_repo()
+    expected = {"pending_tag": 5, "pending_cluster": 3, "pending_brief": 1}
+    repo.get_pending_counts = AsyncMock(return_value=expected)
+    svc = make_service(repo=repo)
+
+    result = await svc.get_pending_counts()
+
+    assert result == expected
+    repo.get_pending_counts.assert_awaited_once()

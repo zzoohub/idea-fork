@@ -21,7 +21,10 @@ target_metadata = Base.metadata
 def _get_sync_url() -> str:
     """Convert async DB URL to sync for Alembic."""
     url = get_settings().API_DATABASE_URL
-    return url.replace("postgresql+asyncpg://", "postgresql://")
+    url = url.replace("postgresql+asyncpg://", "postgresql://")
+    # asyncpg uses ?ssl=require, psycopg2 uses ?sslmode=require
+    url = url.replace("ssl=require", "sslmode=require")
+    return url
 
 
 def run_migrations_offline() -> None:

@@ -432,6 +432,47 @@ class PostgresPipelineRepository:
             )
             return bool(result.scalar())
 
+    async def get_pending_counts(self) -> dict[str, int]:
+        async with self._db.session() as session:
+            # pending_tag: posts with tagging_status='pending' AND not deleted
+            tag_result = await session.execute(
+                select(func.count(PostRow.id)).where(
+                    PostRow.tagging_status == "pending",
+                    PostRow.deleted_at.is_(None),
+                )
+            )
+            pending_tag = tag_result.scalar() or 0
+
+            # pending_cluster: tagged actionable posts not yet in cluster_post
+            cluster_subq = select(ClusterPostRow.post_id)
+            cluster_result = await session.execute(
+                select(func.count(PostRow.id)).where(
+                    PostRow.tagging_status == "tagged",
+                    PostRow.deleted_at.is_(None),
+                    PostRow.post_type.in_(ACTIONABLE_POST_TYPES),
+                    PostRow.id.not_in(cluster_subq),
+                )
+            )
+            pending_cluster = cluster_result.scalar() or 0
+
+            # pending_brief: active clusters without a brief
+            brief_cluster_subq = select(BriefRow.cluster_id).where(
+                BriefRow.cluster_id.is_not(None)
+            )
+            brief_result = await session.execute(
+                select(func.count(ClusterRow.id)).where(
+                    ClusterRow.status == "active",
+                    ClusterRow.id.not_in(brief_cluster_subq),
+                )
+            )
+            pending_brief = brief_result.scalar() or 0
+
+            return {
+                "pending_tag": pending_tag,
+                "pending_cluster": pending_cluster,
+                "pending_brief": pending_brief,
+            }
+
     async def find_related_products(self, keyword: str) -> list[RawProduct]:
         async with self._db.session() as session:
             # Escape LIKE metacharacters to prevent wildcard injection
