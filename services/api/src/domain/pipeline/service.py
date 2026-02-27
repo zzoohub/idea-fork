@@ -10,6 +10,7 @@ from domain.pipeline.ports import (
     ProductHuntClient,
     RedditClient,
     RssClient,
+    SafetyFilteredError,
     TrendsClient,
 )
 
@@ -360,6 +361,12 @@ class PipelineService:
                             cluster_id,
                             draft.title,
                         )
+                    except SafetyFilteredError:
+                        logger.warning(
+                            "Cluster %d archived (safety-filtered by LLM)",
+                            cluster_id,
+                        )
+                        await self._repo.archive_cluster(cluster_id)
                     except Exception:
                         logger.exception(
                             "Brief generation failed for cluster %d",

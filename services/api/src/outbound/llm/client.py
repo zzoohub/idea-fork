@@ -4,12 +4,15 @@ import re
 from typing import Any
 
 from google import genai
-from tenacity import retry, stop_after_attempt, wait_exponential
+from tenacity import retry, retry_if_not_exception_type, stop_after_attempt, wait_exponential
 
 from domain.pipeline.models import BriefDraft, ClusteringResult, RawProduct, TaggingResult
+from domain.pipeline.ports import SafetyFilteredError
 from domain.post.models import VALID_POST_TYPES, Post
 
 logger = logging.getLogger(__name__)
+
+_SAFETY_FINISH_REASONS = {"SAFETY", "PROHIBITED_CONTENT", "BLOCKLIST", "SPII"}
 
 _VALID_SENTIMENTS = {
     "positive", "negative", "neutral", "mixed",
@@ -123,7 +126,14 @@ class GeminiLlmClient:
         )
 
         if not response.text:
-            raise ValueError("Gemini returned empty response (possibly safety-filtered)")
+            finish_reason = None
+            if response.candidates:
+                finish_reason = response.candidates[0].finish_reason
+            if finish_reason and str(finish_reason) in _SAFETY_FINISH_REASONS:
+                raise SafetyFilteredError(
+                    f"Gemini refused: finish_reason={finish_reason}"
+                )
+            raise ValueError("Gemini returned empty response")
 
         raw = _strip_code_fences(response.text)
         items = json.loads(raw)
@@ -272,7 +282,18 @@ class GeminiLlmClient:
                         summary="",
                         post_ids=post_ids,
                     )
-                data = json.loads(raw)
+                try:
+                    data = json.loads(raw)
+                except json.JSONDecodeError:
+                    logger.warning(
+                        "Gemini returned invalid JSON for cluster %s: %s",
+                        cluster_label, raw[:200],
+                    )
+                    return ClusteringResult(
+                        label=f"Cluster {cluster_label}",
+                        summary="",
+                        post_ids=post_ids,
+                    )
                 if isinstance(data, list):
                     data = data[0] if data else {}
 
@@ -302,6 +323,7 @@ class GeminiLlmClient:
     @retry(
         stop=stop_after_attempt(3),
         wait=wait_exponential(min=2, max=30),
+        retry=retry_if_not_exception_type(SafetyFilteredError),
     )
     async def synthesize_brief(
         self,
@@ -356,7 +378,14 @@ class GeminiLlmClient:
         )
 
         if not response.text:
-            raise ValueError("Gemini returned empty response (possibly safety-filtered)")
+            finish_reason = None
+            if response.candidates:
+                finish_reason = response.candidates[0].finish_reason
+            if finish_reason and str(finish_reason) in _SAFETY_FINISH_REASONS:
+                raise SafetyFilteredError(
+                    f"Gemini refused: finish_reason={finish_reason}"
+                )
+            raise ValueError("Gemini returned empty response")
 
         raw = _strip_code_fences(response.text)
         data = json.loads(raw)

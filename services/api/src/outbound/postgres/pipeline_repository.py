@@ -432,6 +432,15 @@ class PostgresPipelineRepository:
             )
             return bool(result.scalar())
 
+    async def archive_cluster(self, cluster_id: int) -> None:
+        async with self._db.session() as session:
+            await session.execute(
+                update(ClusterRow)
+                .where(ClusterRow.id == cluster_id)
+                .values(status="archived")
+            )
+            await session.commit()
+
     async def get_pending_counts(self) -> dict[str, int]:
         async with self._db.session() as session:
             # pending_tag: posts with tagging_status='pending' AND not deleted

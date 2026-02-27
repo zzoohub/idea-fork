@@ -12,6 +12,10 @@ from domain.pipeline.models import (
 from domain.post.models import Post
 
 
+class SafetyFilteredError(Exception):
+    """Raised when LLM refuses to generate content due to safety filters."""
+
+
 class RedditClient(Protocol):
     async def fetch_posts(
         self,
@@ -103,5 +107,7 @@ class PipelineRepository(Protocol):
     async def update_product_scores(self) -> int: ...
 
     async def get_pending_counts(self) -> dict[str, int]: ...
+
+    async def archive_cluster(self, cluster_id: int) -> None: ...
 
     async def is_advisory_lock_held(self) -> bool: ...
