@@ -11,15 +11,17 @@ _MIN_INTERVAL_SECS = 5.0
 class GoogleTrendsClient:
     def __init__(self) -> None:
         self._last_call: float = 0.0
+        self._lock = asyncio.Lock()
 
     async def get_interest(self, keywords: list[str]) -> dict[str, Any]:
         try:
-            # Rate-limit: wait if needed to respect Google's limits
-            elapsed = time.monotonic() - self._last_call
-            if elapsed < _MIN_INTERVAL_SECS:
-                await asyncio.sleep(_MIN_INTERVAL_SECS - elapsed)
-            self._last_call = time.monotonic()
-            return await asyncio.to_thread(self._fetch, keywords)
+            async with self._lock:
+                # Rate-limit: wait if needed to respect Google's limits
+                elapsed = time.monotonic() - self._last_call
+                if elapsed < _MIN_INTERVAL_SECS:
+                    await asyncio.sleep(_MIN_INTERVAL_SECS - elapsed)
+                self._last_call = time.monotonic()
+                return await asyncio.to_thread(self._fetch, keywords)
         except Exception:
             logger.warning("Google Trends fetch failed for %s (skipped)", keywords)
             return {}

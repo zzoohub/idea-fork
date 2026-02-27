@@ -2,7 +2,7 @@ import logging
 import re
 from datetime import UTC, datetime
 
-from sqlalchemy import func, select, text, update
+from sqlalchemy import case, func, select, text, update
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -108,12 +108,11 @@ class PostgresPipelineRepository:
             await session.commit()
             return result.rowcount
 
-    async def get_pending_posts(self, limit: int = 1000) -> list[Post]:
+    async def get_pending_posts(self) -> list[Post]:
         stmt = (
             select(PostRow)
             .where(PostRow.tagging_status == "pending", PostRow.deleted_at.is_(None))
             .order_by(PostRow.created_at.asc())
-            .limit(limit)
         )
         async with self._db.session() as session:
             result = await session.execute(stmt)
@@ -136,40 +135,64 @@ class PostgresPipelineRepository:
             return [post_to_domain(row) for row in result.scalars().all()]
 
     async def save_tagging_results(self, results: list[TaggingResult]) -> None:
+        if not results:
+            return
+
         async with self._db.session() as session:
-            for tr in results:
-                # Update post
-                await session.execute(
-                    update(PostRow)
-                    .where(PostRow.id == tr.post_id)
-                    .values(
-                        sentiment=tr.sentiment,
-                        post_type=tr.post_type,
-                        tagging_status="tagged",
-                    )
+            # Step 1: Batch UPDATE all posts in one statement
+            post_ids = [tr.post_id for tr in results]
+            sentiment_map = {tr.post_id: tr.sentiment for tr in results}
+            post_type_map = {tr.post_id: tr.post_type for tr in results}
+
+            await session.execute(
+                update(PostRow)
+                .where(PostRow.id.in_(post_ids))
+                .values(
+                    sentiment=case(sentiment_map, value=PostRow.id),
+                    post_type=case(post_type_map, value=PostRow.id),
+                    tagging_status="tagged",
                 )
+            )
 
-                # Upsert tags and link
-                for slug in tr.tag_slugs:
-                    tag_name = slug.replace("-", " ").title()
-                    tag_stmt = pg_insert(TagRow).values(
-                        name=tag_name, slug=slug
-                    )
-                    tag_stmt = tag_stmt.on_conflict_do_nothing(
-                        constraint="uq_tag_slug"
-                    )
-                    await session.execute(tag_stmt)
+            # Step 2: Batch INSERT all unique tags
+            all_slugs: set[str] = set()
+            for tr in results:
+                all_slugs.update(tr.tag_slugs)
 
-                    tag_row = await session.execute(
-                        select(TagRow).where(TagRow.slug == slug)
-                    )
-                    tag = tag_row.scalars().first()
-                    if tag:
-                        link_stmt = pg_insert(PostTagRow).values(
-                            post_id=tr.post_id, tag_id=tag.id
-                        )
-                        link_stmt = link_stmt.on_conflict_do_nothing()
-                        await session.execute(link_stmt)
+            if all_slugs:
+                tag_rows = [
+                    {"name": slug.replace("-", " ").title(), "slug": slug}
+                    for slug in all_slugs
+                ]
+                tag_stmt = pg_insert(TagRow).values(tag_rows)
+                tag_stmt = tag_stmt.on_conflict_do_nothing(constraint="uq_tag_slug")
+                await session.execute(tag_stmt)
+
+                # Step 3: Batch SELECT tag IDs
+                tag_result = await session.execute(
+                    select(TagRow.id, TagRow.slug).where(TagRow.slug.in_(all_slugs))
+                )
+                slug_to_id = {slug: tid for tid, slug in tag_result}
+
+                # Step 4: Batch INSERT post_tag links
+                link_rows = []
+                for tr in results:
+                    for slug in tr.tag_slugs:
+                        tag_id = slug_to_id.get(slug)
+                        if tag_id is None:
+                            logger.warning(
+                                "Tag slug %r not found after insert; "
+                                "skipping link for post %d",
+                                slug,
+                                tr.post_id,
+                            )
+                            continue
+                        link_rows.append({"post_id": tr.post_id, "tag_id": tag_id})
+
+                if link_rows:
+                    link_stmt = pg_insert(PostTagRow).values(link_rows)
+                    link_stmt = link_stmt.on_conflict_do_nothing()
+                    await session.execute(link_stmt)
 
             await session.commit()
 
@@ -200,6 +223,7 @@ class PostgresPipelineRepository:
                         label=cluster.label,
                         summary=cluster.summary,
                         status="active",
+                        trend_keywords=cluster.trend_keywords or None,
                     )
                     .returning(ClusterRow.id)
                 )
@@ -217,7 +241,7 @@ class PostgresPipelineRepository:
 
     async def get_clusters_without_briefs(
         self,
-    ) -> list[tuple[int, str, str, list[Post]]]:
+    ) -> list[tuple[int, str, str, list[str], list[Post]]]:
         brief_cluster_subq = select(BriefRow.cluster_id).where(
             BriefRow.cluster_id.is_not(None)
         )
@@ -230,7 +254,7 @@ class PostgresPipelineRepository:
             result = await session.execute(stmt)
             clusters = result.scalars().all()
 
-            output: list[tuple[int, str, str, list[Post]]] = []
+            output: list[tuple[int, str, str, list[str], list[Post]]] = []
             for c in clusters:
                 post_ids_result = await session.execute(
                     select(ClusterPostRow.post_id).where(
@@ -246,7 +270,8 @@ class PostgresPipelineRepository:
                     select(PostRow).where(PostRow.id.in_(post_ids))
                 )
                 posts = [post_to_domain(row) for row in posts_result.scalars().all()]
-                output.append((c.id, c.label, c.summary or "", posts))
+                trend_keywords = c.trend_keywords or []
+                output.append((c.id, c.label, c.summary or "", trend_keywords, posts))
 
             return output
 

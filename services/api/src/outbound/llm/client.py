@@ -234,38 +234,53 @@ class GeminiLlmClient:
                 post_ids=noise_ids,
             ))
 
-        # Label real clusters in parallel
+        # Semaphore to avoid Gemini 503 from too many concurrent requests
+        sem = asyncio.Semaphore(3)
+
+        # Label real clusters with bounded concurrency
         async def _label_one(cluster_label: int, post_ids: list[int]) -> ClusteringResult:
-            titles = [
-                post_map[pid].title for pid in post_ids if pid in post_map
-            ][:10]
-            prompt = (
-                "Given these post titles from one thematic cluster, generate a "
-                "JSON object with 'label' (short descriptive label) and 'summary' "
-                "(1 sentence). Titles:\n"
-                + "\n".join(f"- {t}" for t in titles)
-                + "\nReturn only valid JSON."
-            )
-
-            response = await self._client.aio.models.generate_content(
-                model=self._lite_model, contents=prompt,
-            )
-            if not response.text:
-                return ClusteringResult(
-                    label=f"Cluster {cluster_label}",
-                    summary="",
-                    post_ids=post_ids,
+            async with sem:
+                titles = [
+                    post_map[pid].title for pid in post_ids if pid in post_map
+                ][:10]
+                prompt = (
+                    "Given these post titles from one thematic cluster, generate a "
+                    "JSON object with:\n"
+                    "- 'label': short descriptive label\n"
+                    "- 'summary': 1 sentence summary\n"
+                    "- 'trend_keywords': 2-3 Google Trends search phrases "
+                    "(multi-word phrases like 'project management tool', "
+                    "NOT single words)\n\n"
+                    "Titles:\n"
+                    + "\n".join(f"- {t}" for t in titles)
+                    + "\nReturn only valid JSON."
                 )
-            raw = _strip_code_fences(response.text)
-            data = json.loads(raw)
-            if isinstance(data, list):
-                data = data[0] if data else {}
 
-            return ClusteringResult(
-                label=data.get("label", f"Cluster {cluster_label}"),
-                summary=data.get("summary", ""),
-                post_ids=post_ids,
-            )
+                response = await self._client.aio.models.generate_content(
+                    model=self._lite_model, contents=prompt,
+                )
+                if not response.text:
+                    return ClusteringResult(
+                        label=f"Cluster {cluster_label}",
+                        summary="",
+                        post_ids=post_ids,
+                    )
+                raw = _strip_code_fences(response.text)
+                data = json.loads(raw)
+                if isinstance(data, list):
+                    data = data[0] if data else {}
+
+                trend_keywords = [
+                    str(k)[:80] for k in data.get("trend_keywords", [])
+                    if isinstance(k, str) and len(k.strip()) > 0
+                ][:5]
+
+                return ClusteringResult(
+                    label=data.get("label", f"Cluster {cluster_label}"),
+                    summary=data.get("summary", ""),
+                    post_ids=post_ids,
+                    trend_keywords=trend_keywords,
+                )
 
         tasks = [
             _label_one(cl, pids)

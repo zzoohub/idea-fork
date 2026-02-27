@@ -586,7 +586,7 @@ async def test_stage_brief_no_clusters_skips():
 @pytest.mark.asyncio
 async def test_stage_brief_generates_brief_per_cluster():
     posts = [make_post(id=1), make_post(id=2)]
-    clusters_data = [(42, "SaaS Pain", "Cluster summary", posts)]
+    clusters_data = [(42, "SaaS Pain", "Cluster summary", ["saas pricing tool"], posts)]
 
     repo = make_repo()
     repo.get_clusters_without_briefs = AsyncMock(return_value=clusters_data)
@@ -613,8 +613,8 @@ async def test_stage_brief_multiple_clusters():
     posts_a = [make_post(id=1)]
     posts_b = [make_post(id=2)]
     clusters_data = [
-        (10, "Label A", "Summary A", posts_a),
-        (11, "Label B", "Summary B", posts_b),
+        (10, "Label A", "Summary A", ["label a keyword"], posts_a),
+        (11, "Label B", "Summary B", ["label b keyword"], posts_b),
     ]
 
     repo = make_repo()
@@ -638,8 +638,8 @@ async def test_stage_brief_single_cluster_error_records_and_continues():
     posts_a = [make_post(id=1)]
     posts_b = [make_post(id=2)]
     clusters_data = [
-        (10, "Label A", "Summary A", posts_a),
-        (11, "Label B", "Summary B", posts_b),
+        (10, "Label A", "Summary A", ["label a keyword"], posts_a),
+        (11, "Label B", "Summary B", ["label b keyword"], posts_b),
     ]
 
     repo = make_repo()
@@ -696,7 +696,7 @@ async def test_full_pipeline_run_happy_path():
     post = make_post(id=1)
     cluster_posts = [post]
     draft = make_brief_draft("Full Brief")
-    clusters_data = [(99, "Theme", "Theme summary", cluster_posts)]
+    clusters_data = [(99, "Theme", "Theme summary", ["theme keyword"], cluster_posts)]
     clustering_result = [make_clustering_result("Theme", [1])]
     tagging_result = [make_tagging_result(1)]
 
@@ -847,7 +847,7 @@ async def test_stage_fetch_producthunt_error_recorded_continues():
 async def test_stage_brief_trends_error_logs_and_continues():
     """When trends.get_interest raises, brief generation should still proceed."""
     posts = [make_post(id=1)]
-    clusters_data = [(10, "SaaS", "Summary", posts)]
+    clusters_data = [(10, "SaaS", "Summary", ["saas tool"], posts)]
     draft = make_brief_draft("SaaS Brief")
 
     repo = make_repo()
@@ -874,7 +874,7 @@ async def test_stage_brief_trends_error_logs_and_continues():
 async def test_stage_brief_related_products_error_logs_and_continues():
     """When find_related_products raises, brief generation should still proceed."""
     posts = [make_post(id=1)]
-    clusters_data = [(10, "SaaS", "Summary", posts)]
+    clusters_data = [(10, "SaaS", "Summary", ["saas tool"], posts)]
     draft = make_brief_draft("SaaS Brief")
 
     repo = make_repo()
@@ -905,7 +905,7 @@ async def test_stage_brief_keywords_fallback_to_label_when_all_words_are_stop_wo
     posts = [make_post(id=1)]
     # All words here are stop words from _TRENDS_STOP_WORDS or length <= 2:
     # "is", "in", "the", "or", "it", "on" are all in the stop-word set.
-    clusters_data = [(10, "is", "in the or it on", posts)]
+    clusters_data = [(10, "is", "in the or it on", [], posts)]
     draft = make_brief_draft("Fallback Brief")
 
     repo = make_repo()

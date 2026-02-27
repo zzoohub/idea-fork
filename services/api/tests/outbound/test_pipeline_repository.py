@@ -480,6 +480,7 @@ async def test_get_clusters_without_briefs_returns_clusters_with_posts():
     cluster_row.id = 1
     cluster_row.label = "Pricing"
     cluster_row.summary = "Pricing issues"
+    cluster_row.trend_keywords = ["pricing tool", "saas pricing"]
 
     # call 1: get clusters
     clusters_scalars = MagicMock()
@@ -517,9 +518,10 @@ async def test_get_clusters_without_briefs_returns_clusters_with_posts():
     output = await repo.get_clusters_without_briefs()
 
     assert len(output) == 1
-    cluster_id, label, summary, posts = output[0]
+    cluster_id, label, summary, trend_keywords, posts = output[0]
     assert cluster_id == 1
     assert label == "Pricing"
+    assert trend_keywords == ["pricing tool", "saas pricing"]
     assert len(posts) == 1
 
 

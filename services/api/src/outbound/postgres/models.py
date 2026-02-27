@@ -166,6 +166,7 @@ class ClusterRow(Base):
     label: Mapped[str] = mapped_column(Text, nullable=False)
     summary: Mapped[str | None] = mapped_column(Text, default=None)
     status: Mapped[str] = mapped_column(Text, nullable=False, default="active")
+    trend_keywords: Mapped[list | None] = mapped_column(JSONB, default=None)
 
 
 class ClusterPostRow(Base):

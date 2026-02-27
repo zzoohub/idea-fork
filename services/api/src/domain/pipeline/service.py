@@ -325,17 +325,16 @@ class PipelineService:
 
             sem = asyncio.Semaphore(_BRIEF_CONCURRENCY)
 
-            async def _gen_brief(cluster_id, label, summary, posts):
+            async def _gen_brief(cluster_id, label, summary, trend_keywords, posts):
                 async with sem:
                     try:
-                        words = (label + " " + summary).split()
-                        keywords = [
-                            w[:80] for w in words
-                            if len(w) > 2
-                            and w.lower().strip("'\",.!?") not in _TRENDS_STOP_WORDS
-                        ][:5]
-                        if not keywords:
-                            keywords = [label[:80]]
+                        keywords = trend_keywords[:5] if trend_keywords else [label[:80]]
+
+                        logger.info(
+                            "Trends keywords for cluster %d: %s",
+                            cluster_id,
+                            keywords,
+                        )
 
                         # Fetch trends + related products in parallel
                         trends_result, products_result = await asyncio.gather(
@@ -368,8 +367,8 @@ class PipelineService:
 
             await asyncio.gather(
                 *[
-                    _gen_brief(cid, label, summary, posts)
-                    for cid, label, summary, posts in clusters
+                    _gen_brief(cid, label, summary, trend_kw, posts)
+                    for cid, label, summary, trend_kw, posts in clusters
                 ]
             )
         except Exception:
