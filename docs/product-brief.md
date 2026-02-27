@@ -1,7 +1,7 @@
 # idea-fork — Product Brief
 
 **Author:** zzoo | **Date:** 2026-02-18 | **Status:** Discovery
-**Tagline:** Product Hunt for problems — from raw complaints to ready-to-build product briefs
+**Tagline:** Product Hunt for problems — surface real demand, map it against supply, and generate actionable product briefs
 
 ---
 
@@ -9,9 +9,11 @@
 
 ### What problem are we solving?
 
-Builders spend hours manually browsing Reddit, app stores, and forums trying to find real user pain points. Even when they find something, they can't tell if the need is big enough to build for — and synthesizing scattered complaints into a coherent product direction is entirely manual.
+Builders want to find real problems worth solving. That means understanding two things: **what users need** (demand) and **what's already out there** (supply). Only by seeing both can you spot the gap — unmet needs that no current product addresses well.
 
-The problem isn't just "finding needs." It's the entire journey from **raw signal to actionable business opportunity**. Today, each step is manual, disconnected, and unrepeatable.
+Today this is entirely manual. Builders browse Reddit and app store reviews to find complaints, then separately check Product Hunt and app stores to see what exists. Synthesizing these signals into a coherent product direction is disconnected and unrepeatable.
+
+The problem isn't just "finding needs." It's the entire journey from **raw demand signal + supply landscape → actionable business opportunity**.
 
 ### Who has this problem?
 
@@ -39,17 +41,18 @@ The problem isn't just "finding needs." It's the entire journey from **raw signa
 
 ## 2. Proposed Direction
 
-idea-fork provides three connected experiences:
+idea-fork maps **demand against supply** and surfaces the gaps as product opportunities.
 
-1. **Feed** — A stream of user complaints and needs aggregated from multiple platforms. Browse raw signal, click through to original sources.
-2. **AI Briefs** — Auto-generated product opportunity briefs synthesized from clustered needs. Every claim backed by linked source posts.
-3. **Products** — Trending and newly launched products paired with aggregated user complaints. See what's getting traction and where users are frustrated.
+1. **Feed (Demand)** — A stream of user complaints, needs, and feature requests aggregated from app store reviews and community platforms. The raw demand signal.
+2. **Products (Supply)** — Newly launched and trending products from Product Hunt, App Store, and Play Store — paired with aggregated user complaints. The supply landscape and where it's failing.
+3. **AI Briefs (Insight)** — Auto-generated product opportunity briefs synthesized from demand-supply gaps. Every claim backed by linked source posts. AI identifies where demand is high but supply is weak or absent.
 
-The feed gives users the **raw material**. Briefs give users the **"so what."** Products give users the **"who's failing."**
+The feed shows **what users want**. Products show **what exists**. Briefs reveal **where the opportunity is**.
 
 ### What differentiates this?
 
-- **End-to-end:** No other tool takes users from raw complaints to synthesized product briefs
+- **Demand × Supply:** No other tool maps user complaints against the current product landscape to find gaps
+- **End-to-end:** From raw complaints to synthesized product briefs — no manual synthesis needed
 - **Zero friction:** No login required to browse — open the site, see the latest needs
 - **AI with receipts:** Every brief claim links back to real posts — no unsupported AI opinions
 
@@ -94,12 +97,12 @@ The feed gives users the **raw material**. Briefs give users the **"so what."** 
 
 ## 5. Open Questions
 
-- [ ] Reddit API rate limits and cost structure post-2024?
+- [x] Reddit API access → Denied. Reddit kept as local-only/manual pipeline source. Production uses App Store, Play Store, RSS only.
 - [ ] What LLM tagging accuracy is acceptable?
 - [ ] Optimal clustering approach for grouping similar needs?
 - [ ] Initial user acquisition channel?
 - [ ] Korean market vs global market — which first?
-- [ ] Legal risk scope for data collection? (GDPR, platform TOS)
+- [x] Legal risk scope for data collection? → Reddit requires commercial license; App Store (public API), Play Store (scraping, gray area), Product Hunt (API with token) are usable.
 
 ---
 

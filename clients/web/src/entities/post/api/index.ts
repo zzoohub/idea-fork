@@ -1,6 +1,8 @@
 import { apiFetch } from "@/src/shared/api";
 import type { Post } from "@/src/shared/api";
 
+const useDirectDB = process.env.DATA_SOURCE === "neon";
+
 interface FetchPostsParams {
   tag?: string;
   sort?: string;
@@ -13,6 +15,11 @@ interface FetchPostsParams {
 }
 
 export async function fetchPosts(params?: FetchPostsParams) {
+  if (useDirectDB) {
+    const { queryPosts } = await import("@/src/shared/db/queries/posts");
+    return queryPosts(params);
+  }
+
   const sp = new URLSearchParams();
   if (params?.tag) sp.set("tag", params.tag);
   if (params?.sort) sp.set("sort", params.sort);
@@ -29,5 +36,11 @@ export async function fetchPosts(params?: FetchPostsParams) {
 
 export async function fetchPost(id: number) {
   if (!Number.isInteger(id) || id <= 0) throw new Error("Invalid post ID");
+
+  if (useDirectDB) {
+    const { queryPost } = await import("@/src/shared/db/queries/posts");
+    return queryPost(id);
+  }
+
   return apiFetch<Post>(`/posts/${id}`);
 }

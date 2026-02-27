@@ -63,8 +63,9 @@ Builders (indie hackers, early-stage founders, PMs) spend 5+ hours/week manually
 - **Inbound (complaints)**: Reddit API, RSS Feeds, App Store, Google Play → Data Pipeline → PostgreSQL (raw posts, tags, clusters, briefs)
 - **Inbound (products)**: Product Hunt API, App Store, Google Play → Data Pipeline → PostgreSQL (products + tag-based complaint linking)
 - **Inbound (trends)**: Google Trends → Data Pipeline → demand signals in briefs
-- **Read path**: User → Web App (Next.js SSR) → API Server → PostgreSQL → rendered page
-- **Write path (MVP)**: Brief ratings only — User → API → PostgreSQL
+- **Read path (production)**: User → Web App (Next.js SSR) → Neon DB directly (via `@neondatabase/serverless`) → rendered page
+- **Read path (local/future)**: User → Web App (Next.js SSR) → API Server → PostgreSQL → rendered page
+- **Write path (MVP)**: Brief ratings only — User → Next.js Server Action → Neon DB directly
 
 ### 1.3 Assumptions
 
@@ -137,24 +138,29 @@ The API has meaningful domain logic (not just CRUD) — tagging rules, clusterin
 │  Technology: Next.js 16 + React 19 + Tailwind CSS 4             │
 │  Responsibility: SSR pages (feed, briefs, products), SEO,       │
 │                  static generation where possible                │
-│  Communication: Calls API Server via REST (internal fetch)       │
-└─────────────────────┬───────────────────────────────────────────┘
-                      │ REST (JSON)
-┌─────────────────────▼───────────────────────────────────────────┐
-│  API Server — GCP Cloud Run                                     │
-│  Technology: Python 3.12 + FastAPI + SQLAlchemy 2.0 (async)     │
-│  Responsibility: REST API for feed, briefs, products, ratings.  │
-│                  Data pipeline orchestration (scheduled).         │
-│  Communication: Reads/writes PostgreSQL. Calls Reddit API and   │
-│                 LLM APIs during pipeline runs.                   │
-└─────────────────────┬───────────────────────────────────────────┘
-                      │ SQL (asyncpg)
-┌─────────────────────▼───────────────────────────────────────────┐
+│  Communication: Queries Neon DB directly (production, reads)     │
+│                  or calls API Server via REST (local/future).     │
+│  Data access: Switchable via DATA_SOURCE env var.                │
+└──────────┬──────────────────────────────────┬───────────────────┘
+           │ SQL (@neondatabase/serverless)    │ REST (JSON)
+           │ [production reads]               │ [local/future]
+           │                    ┌──────────────▼──────────────────┐
+           │                    │  API Server — GCP Cloud Run      │
+           │                    │  (Pipeline only in production)   │
+           │                    │  Technology: Python 3.12 +       │
+           │                    │    FastAPI + SQLAlchemy 2.0      │
+           │                    │  Responsibility: Data pipeline   │
+           │                    │    orchestration (scheduled).     │
+           │                    │    REST API (local dev / future). │
+           │                    └──────────────┬──────────────────┘
+           │                                   │ SQL (asyncpg)
+┌──────────▼───────────────────────────────────▼──────────────────┐
 │  Database — Neon (PostgreSQL)                                   │
 │  Technology: PostgreSQL 16 (Neon serverless)                    │
 │  Responsibility: All persistent state — posts, tags, clusters,  │
 │                  briefs, products, ratings.                      │
-│  Communication: Accessed only by API Server.                    │
+│  Communication: Accessed by Web App (reads, production) and     │
+│                 API Server (pipeline writes, all reads locally). │
 └─────────────────────────────────────────────────────────────────┘
 
 External Services:
@@ -522,7 +528,18 @@ Feature flags (via PostHog) for:
   - **Sentence-transformers (local embeddings)**: No API cost. Rejected — Gemini embeddings are higher quality and the API cost is negligible compared to the synthesis LLM calls.
 - **Consequences**: (+) Handles thousands of posts efficiently, automatic cluster count, noise detection (unclustered outliers). (-) Requires `scikit-learn` + `numpy` dependencies; HDBSCAN may produce many small clusters on sparse data.
 
-### ADR-8: Anonymous Sessions for Brief Ratings (No Auth in MVP)
+### ADR-8: Direct Neon Access from Next.js (Bypass API Server for Production Reads)
+
+- **Status**: Accepted
+- **Context**: The API server (FastAPI on Cloud Run) is used for the data pipeline but is not deployed to production for serving user reads. The pipeline runs locally and writes to the production Neon DB. Deploying and maintaining a separate API server for reads adds infrastructure cost and latency for a solo developer when the web app can query the database directly.
+- **Decision**: Next.js queries Neon directly via `@neondatabase/serverless` for all production reads. The data access layer is switchable: each entity API file checks `DATA_SOURCE` env var and dynamically imports either the Neon query module or the `apiFetch` client. Rating writes use Next.js Server Actions that call Neon directly. The `server-only` package prevents accidental client-side imports of database code.
+- **Alternatives Considered**:
+  - **Deploy API server to Cloud Run**: Full-stack deployment. Rejected — adds latency (Next.js → Cloud Run → Neon vs Next.js → Neon), infrastructure cost, and ops overhead for read-only queries. The API server has no read-path logic beyond SQL queries.
+  - **tRPC or API routes in Next.js**: Wrap DB queries in Next.js API routes. Rejected — adds an unnecessary HTTP hop within the same Vercel deployment. Direct imports from server components/actions are simpler and faster.
+  - **Drizzle ORM**: Type-safe query builder over raw SQL. Rejected — the queries are already written and tested as raw SQL ported from the Python repositories. Adding an ORM introduces a dependency and learning curve for no benefit on existing queries.
+- **Consequences**: (+) Eliminates API server from production read path, reduces latency, zero additional infrastructure cost, switchable back to API server via env var. (-) SQL queries are duplicated in TypeScript (alongside Python originals), must be kept in sync. Database schema changes require updating both codebases.
+
+### ADR-9: Anonymous Sessions for Brief Ratings (No Auth in MVP)
 
 - **Status**: Accepted
 - **Context**: PRD requires no-login browsing as P0. The only "write" action in MVP is rating briefs (thumbs up/down). Need to prevent vote spam without requiring accounts.

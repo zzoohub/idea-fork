@@ -1,6 +1,8 @@
 import { apiFetch } from "@/src/shared/api";
 import type { ProductListItem, ProductDetail } from "@/src/shared/api";
 
+const useDirectDB = process.env.DATA_SOURCE === "neon";
+
 interface FetchProductsParams {
   category?: string;
   sort?: string;
@@ -11,6 +13,11 @@ interface FetchProductsParams {
 }
 
 export async function fetchProducts(params?: FetchProductsParams) {
+  if (useDirectDB) {
+    const { queryProducts } = await import("@/src/shared/db/queries/products");
+    return queryProducts(params);
+  }
+
   const sp = new URLSearchParams();
   if (params?.category) sp.set("category", params.category);
   if (params?.sort) sp.set("sort", params.sort);
@@ -24,5 +31,10 @@ export async function fetchProducts(params?: FetchProductsParams) {
 }
 
 export async function fetchProduct(slug: string) {
+  if (useDirectDB) {
+    const { queryProduct } = await import("@/src/shared/db/queries/products");
+    return queryProduct(slug);
+  }
+
   return apiFetch<ProductDetail>(`/products/${encodeURIComponent(slug)}`);
 }

@@ -20,6 +20,7 @@ export default defineConfig({
         "src/widgets/**",
         "src/shared/i18n/**",
         "src/shared/api/types.ts",
+        "src/shared/db/client.ts",
       ],
       thresholds: {
         lines: 100,

@@ -7,9 +7,11 @@
 
 ## 1. Problem
 
-Builders (indie hackers, early-stage founders, PMs) need validated product ideas grounded in real user pain. Discovery is entirely manual: browsing Reddit, scanning app store reviews, hoping to spot patterns. No tool takes users from raw complaints to synthesized, actionable product briefs.
+Builders (indie hackers, early-stage founders, PMs) need validated product ideas grounded in real user pain. Finding a good idea requires understanding two sides: **demand** (what users need and complain about) and **supply** (what products already exist). Only by mapping demand against supply can you spot genuine opportunities — unmet needs that no current product solves well.
 
-**Why now:** LLMs can tag, cluster, and synthesize unstructured text at low cost. The full pipeline from raw post to product brief is technically and economically feasible.
+Today this discovery is entirely manual: browsing Reddit and app store reviews for complaints, checking Product Hunt for what exists, and hoping to spot patterns. No tool connects these signals to surface the gap.
+
+**Why now:** LLMs can tag, cluster, and synthesize unstructured text at low cost. The full pipeline from raw demand + supply signals to product brief is technically and economically feasible.
 
 ---
 
@@ -25,12 +27,12 @@ Builders (indie hackers, early-stage founders, PMs) need validated product ideas
 
 ## 3. Solution
 
-idea-fork aggregates user complaints, clusters them by theme, and generates product opportunity briefs -- every claim backed by source posts.
+idea-fork maps **user demand against product supply** to surface actionable opportunities. It aggregates complaints/needs (demand), tracks new and trending products (supply), and uses AI to identify gaps where demand is high but supply is weak or absent.
 
 **Three experiences:**
-1. **Feed** -- Tagged complaints from Reddit, app stores. Browse, filter, search.
-2. **AI Briefs** -- Synthesized opportunity briefs with demand signals and source attribution.
-3. **Products** -- Trending products paired with aggregated complaints. Find gaps.
+1. **Feed (Demand)** -- User complaints, needs, and feature requests from app store reviews and community platforms. The raw demand signal.
+2. **Products (Supply)** -- New and trending products from Product Hunt, App Store, Play Store — paired with aggregated user complaints. Where supply exists and how it's failing.
+3. **AI Briefs (Insight)** -- Synthesized opportunity briefs generated from demand-supply gaps, with source attribution. AI connects unmet demand to actionable product directions.
 
 ---
 
@@ -67,15 +69,32 @@ idea-fork aggregates user complaints, clusters them by theme, and generates prod
 - [P0] Product detail: header, complaint summary (metrics: total mentions, critical complaints, frustration rate), complaint themes, user complaints (sort by recent/popular/critical, filter by post type), related briefs
 
 ### Data Pipeline
-- [P0] Reddit + RSS + App Store + Google Play ingestion; Product Hunt + App Store + Play Store products
+- [P0] **Demand sources (production):** App Store reviews, Play Store reviews, RSS (HN, TechCrunch)
+- [P0] **Demand sources (local-only):** Reddit — manual pipeline trigger only, due to API policy restrictions. Data flows to production DB.
+- [P0] **Supply sources:** Product Hunt (API), App Store, Play Store
 - [P0] Gemini LLM tagging (post_type, topics, sentiment)
 - [P0] Embedding clustering (Gemini + HDBSCAN) + brief generation with attribution
-- [P0] Google Trends integration
+- [P0] Google Trends integration for trend context
 - [P1] Deduplication, quality scoring
+- [P1] Additional demand source: X/Twitter API v2 (pay-per-use credits, 2M post reads/month cap)
 
 ### General
 - [P0] No login for browsing. Responsive. SEO-friendly.
 - [P1] Analytics (page views, brief reads, link clicks)
+
+---
+
+## 5b. Data Access Architecture
+
+**As-Is:** `User → Next.js (Vercel) → apiFetch() → FastAPI (Cloud Run) → Neon DB`
+**To-Be (production):** `User → Next.js (Vercel) → data layer → Neon DB directly (via @neondatabase/serverless)`
+**Future:** `User → Next.js (Vercel) → data layer → FastAPI (deployed) → Neon DB` (flip env var)
+
+The API server (FastAPI) is used exclusively for the data pipeline and is not deployed to production for serving reads. The Next.js app queries Neon directly using `@neondatabase/serverless`. The data access layer is switchable via the `DATA_SOURCE` env var (`neon` for direct DB, `api` for API server).
+
+The pipeline continues to run locally and writes to the production Neon DB. Only the web read path changes — writes (rating mutations) use Next.js Server Actions that query Neon directly.
+
+When adding new data sources (e.g., X/Twitter) or if the API server is deployed to production, switching back requires only setting `DATA_SOURCE=api`.
 
 ---
 
@@ -85,7 +104,7 @@ idea-fork aggregates user complaints, clusters them by theme, and generates prod
 
 **Out:** Business plan generation, analytics dashboards, marketing automation, real-time alerting, native mobile, paid tier (validate demand first).
 
-**Future:** Premium features, more data sources (X, HN, SO, G2), brief export, collaboration.
+**Future:** Premium features, X/Twitter API integration (pay-per-use, batch complaint/need tweet collection), brief export, collaboration.
 
 ---
 
@@ -93,10 +112,11 @@ idea-fork aggregates user complaints, clusters them by theme, and generates prod
 
 | Risk | Mitigation |
 |------|------------|
-| Reddit API policy change | Multi-source abstraction |
-| Briefs feel generic | Prompt engineering + user feedback loop |
+| Reddit API access denied | Reddit is local-only/manual. Production pipeline runs without Reddit. Multi-source strategy reduces dependency. |
+| Play Store scraping blocked | `google_play_scraper` is unofficial; monitor for breakage, prepare fallback |
+| Briefs feel generic | Prompt engineering + demand-supply gap analysis + user feedback loop |
 | LLM tagging accuracy | Narrow categories, few-shot prompting |
-| Legal challenge | Comply with API TOS, snippets + links only |
+| Legal challenge | App Store (public API), Product Hunt (official API), Reddit (local only). Comply with each platform's TOS. |
 
 ---
 
