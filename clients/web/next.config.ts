@@ -8,6 +8,10 @@ const isDev = process.env.NODE_ENV === "development";
 
 const nextConfig: NextConfig = {
   async rewrites() {
+    // When using direct Neon DB access, route handlers at /api/v1/* serve
+    // requests directly. The rewrite is only needed when proxying to the
+    // FastAPI server (DATA_SOURCE !== "neon").
+    if (process.env.DATA_SOURCE === "neon") return [];
     const apiUrl =
       process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080/v1";
     return [{ source: "/api/v1/:path*", destination: `${apiUrl}/:path*` }];

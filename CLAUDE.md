@@ -128,8 +128,8 @@ just api-pipeline-cron        # Trigger via HTTP (needs API_INTERNAL_SECRET)
 ## Web
 
 ### Web Workflow (MUST FOLLOW)
-- UI components: **z-design-system** + **frontend-design** skills
-- Default: **vercel-react-best-practices** (review)
+- Design System: **z-design-system**
+- Default: **vercel-composition-patterns** (composition) → **vercel-react-best-practices** (optimization)
 
 ### Web Conventions
 - **i18n**: `next-intl`. Locales: `en` (default), `es`, `pt-BR`, `id`, `ja`, `ko`. Messages in `clients/web/messages/`.

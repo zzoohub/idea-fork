@@ -1,4 +1,4 @@
-"""Tests for inbound/http/pipeline/router.py — POST /internal/pipeline/run."""
+"""Tests for inbound/http/pipeline/router.py — pipeline endpoints."""
 from dataclasses import asdict
 from unittest.mock import AsyncMock, patch
 
@@ -416,3 +416,39 @@ def _mock_settings(secret: str):
     settings = MagicMock()
     settings.API_INTERNAL_SECRET = secret
     return settings
+
+
+# ---------------------------------------------------------------------------
+# GET /internal/pipeline/status
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_pipeline_status_returns_running_true():
+    mock_service = AsyncMock()
+    mock_service.is_running = AsyncMock(return_value=True)
+    app = _build_pipeline_app(mock_service)
+
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        resp = await client.get("/internal/pipeline/status")
+
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body == {"data": {"is_running": True}}
+    mock_service.is_running.assert_awaited_once()
+
+
+@pytest.mark.asyncio
+async def test_pipeline_status_returns_running_false():
+    mock_service = AsyncMock()
+    mock_service.is_running = AsyncMock(return_value=False)
+    app = _build_pipeline_app(mock_service)
+
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        resp = await client.get("/internal/pipeline/status")
+
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body == {"data": {"is_running": False}}

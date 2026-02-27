@@ -422,7 +422,7 @@ async def test_stage_tag_second_batch_succeeds_first_fails():
 
 @pytest.mark.asyncio
 async def test_stage_tag_sleeps_after_each_batch():
-    """asyncio.sleep(1) must be called once per batch, even on success."""
+    """asyncio.sleep(0.3) must be called once per batch, even on success."""
     from unittest.mock import patch as mock_patch
 
     posts = [make_post(id=i) for i in range(1, TAGGING_BATCH_SIZE + 6)]  # 2 batches
@@ -439,12 +439,12 @@ async def test_stage_tag_sleeps_after_each_batch():
 
     # 2 batches → 2 sleep calls
     assert mock_sleep.call_count == 2
-    mock_sleep.assert_called_with(1)
+    mock_sleep.assert_called_with(0.3)
 
 
 @pytest.mark.asyncio
 async def test_stage_tag_sleeps_after_failed_batch():
-    """asyncio.sleep(1) must be called even when a batch raises an exception."""
+    """asyncio.sleep(0.3) must be called even when a batch raises an exception."""
     from unittest.mock import patch as mock_patch
 
     posts = [make_post(id=1)]
@@ -459,7 +459,7 @@ async def test_stage_tag_sleeps_after_failed_batch():
     with mock_patch("domain.pipeline.service.asyncio.sleep", new_callable=AsyncMock) as mock_sleep:
         await svc.run()
 
-    mock_sleep.assert_called_once_with(1)
+    mock_sleep.assert_called_once_with(0.3)
 
 
 @pytest.mark.asyncio
@@ -1013,3 +1013,27 @@ def test_pipeline_service_default_max_age_days():
     )
 
     assert svc._max_age_days == 365
+
+
+# ---------------------------------------------------------------------------
+# is_running
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_is_running_returns_true_when_lock_held():
+    repo = make_repo()
+    repo.is_advisory_lock_held = AsyncMock(return_value=True)
+    svc = make_service(repo=repo)
+
+    assert await svc.is_running() is True
+    repo.is_advisory_lock_held.assert_awaited_once()
+
+
+@pytest.mark.asyncio
+async def test_is_running_returns_false_when_lock_not_held():
+    repo = make_repo()
+    repo.is_advisory_lock_held = AsyncMock(return_value=False)
+    svc = make_service(repo=repo)
+
+    assert await svc.is_running() is False

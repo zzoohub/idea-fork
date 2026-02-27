@@ -19,45 +19,29 @@ class Settings(BaseSettings):
     # Pipeline
     PIPELINE_SUBREDDITS: str = (
         # Business & Startups
-        "SaaS,SideProject,smallbusiness,ecommerce,Entrepreneur,startups,"
+        "SaaS,SideProject,Entrepreneur,startups,"
         # Finance & Crypto
-        "personalfinance,FinancialPlanning,CryptoCurrency,BlockchainStartups,Web3,investing,"
+        "personalfinance,CryptoCurrency,investing,"
         # Health & Medical
-        "healthcare,mentalhealth,Supplements,loseit,Nutrition,AskDocs,"
+        "healthcare,mentalhealth,Supplements,"
         # Fitness
-        "Fitness,bodyweightfitness,"
-        # Food
-        "MealPrepSunday,Cooking,EatCheapAndHealthy,"
+        "Fitness,"
         # Productivity
         "productivity,Notion,"
         # Education
-        "learnprogramming,GetStudying,"
-        # Social & Content
-        "ContentCreators,socialmedia,Instagram,"
-        # Entertainment
-        "movies,cordcutters,"
-        # Travel
-        "travel,digitalnomad,"
-        # Music
-        "WeAreTheMusicMakers,"
-        # Photography
-        "photography,"
+        "learnprogramming,"
         # Utilities & Automation
         "selfhosted,automation,"
-        # Shopping
-        "BuyItForLife,"
         # Lifestyle
         "selfimprovement,minimalism,"
         # News & Tech
         "technology,technews,"
-        # Communication
-        "discordapp,"
         # Developer Tools
         "webdev,devops,"
         # General
         "marketing"
     )
-    PIPELINE_FETCH_LIMIT: int = 50
+    PIPELINE_FETCH_LIMIT: int = 25
 
     # RSS
     PIPELINE_RSS_FEEDS: str = "https://hnrss.org/newest?points=50,https://techcrunch.com/feed/"

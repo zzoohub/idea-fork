@@ -199,6 +199,7 @@ class PostgresPipelineRepository:
                         post_count=len(cluster.post_ids),
                         label=cluster.label,
                         summary=cluster.summary,
+                        status="active",
                     )
                     .returning(ClusterRow.id)
                 )
@@ -393,6 +394,18 @@ class PostgresPipelineRepository:
             )
             await session.commit()
             return result.rowcount
+
+    async def is_advisory_lock_held(self) -> bool:
+        async with self._db.session() as session:
+            result = await session.execute(
+                text(
+                    "SELECT EXISTS("
+                    "  SELECT 1 FROM pg_locks"
+                    "  WHERE locktype = 'advisory' AND objid = 1 AND granted = true"
+                    ")"
+                )
+            )
+            return bool(result.scalar())
 
     async def find_related_products(self, keyword: str) -> list[RawProduct]:
         async with self._db.session() as session:

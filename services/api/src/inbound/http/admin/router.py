@@ -42,11 +42,16 @@ button:disabled{opacity:.5;cursor:not-allowed}
   border-top-color:#fff;border-radius:50%;animation:spin .6s linear infinite;
   vertical-align:middle;margin-right:6px}
 @keyframes spin{to{transform:rotate(360deg)}}
+.status-bar{padding:10px 14px;border-radius:6px;font-size:13px;margin-bottom:16px;
+  display:flex;align-items:center;gap:8px}
+.status-bar.running{background:#172554;border:1px solid #1e40af;color:#93c5fd}
+.status-bar.idle{background:#171717;border:1px solid #262626;color:#a3a3a3}
 </style>
 </head>
 <body>
 <div class="wrap">
   <h1>Pipeline Admin</h1>
+  <div id="status-bar" class="status-bar idle">Checking status\u2026</div>
   <div class="row">
     <label for="secret">Internal Secret</label>
     <input id="secret" type="password" placeholder="API_INTERNAL_SECRET" autocomplete="off">
@@ -98,6 +103,39 @@ button:disabled{opacity:.5;cursor:not-allowed}
     resultBox.appendChild(card);
     resultBox.className = 'show';
   }
+
+  var statusBar = document.getElementById('status-bar');
+  var pollTimer = null;
+
+  async function checkStatus() {
+    try {
+      var res = await fetch('/internal/pipeline/status');
+      var json = await res.json();
+      var running = json.data && json.data.is_running;
+      statusBar.className = 'status-bar ' + (running ? 'running' : 'idle');
+      clearChildren(statusBar);
+      if (running) {
+        statusBar.appendChild(el('span', {className: 'spinner'}));
+        statusBar.appendChild(document.createTextNode('Pipeline is running\u2026'));
+        btn.disabled = true;
+      } else {
+        statusBar.appendChild(document.createTextNode('Pipeline is idle'));
+        btn.disabled = false;
+      }
+    } catch (e) {
+      statusBar.className = 'status-bar idle';
+      clearChildren(statusBar);
+      statusBar.appendChild(document.createTextNode('Status unavailable'));
+    }
+  }
+
+  function startPolling() {
+    if (pollTimer) clearInterval(pollTimer);
+    pollTimer = setInterval(checkStatus, 5000);
+  }
+
+  checkStatus();
+  startPolling();
 
   btn.addEventListener('click', async function() {
     var secret = secretInput.value.trim();
@@ -159,9 +197,9 @@ button:disabled{opacity:.5;cursor:not-allowed}
         el('p', {className: 'label', textContent: e.message, style: 'margin-top:8px'})
       ]);
     } finally {
-      btn.disabled = false;
       clearChildren(btn);
       btn.textContent = 'Run Pipeline';
+      checkStatus();
     }
   });
 })();

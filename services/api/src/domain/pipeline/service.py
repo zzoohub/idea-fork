@@ -1,7 +1,7 @@
 import asyncio
 import logging
 
-from domain.pipeline.models import PipelineRunResult
+from domain.pipeline.models import PipelineRunResult, RawPost
 from domain.pipeline.ports import (
     AppStoreClient,
     LlmClient,
@@ -17,6 +17,8 @@ logger = logging.getLogger(__name__)
 
 TAGGING_BATCH_SIZE = 20
 CLUSTERING_BATCH_SIZE = 200
+_REVIEW_CONCURRENCY = 3
+_BRIEF_CONCURRENCY = 3
 _TRENDS_STOP_WORDS = {
     "a", "an", "the", "and", "or", "but", "in", "on",
     "at", "to", "for", "of", "with", "by", "from", "is",
@@ -68,6 +70,9 @@ class PipelineService:
         self._playstore_review_count = playstore_review_count
         self._max_age_days = appstore_max_age_days
 
+    async def is_running(self) -> bool:
+        return await self._repo.is_advisory_lock_held()
+
     async def run(self) -> PipelineRunResult:
         result = PipelineRunResult()
 
@@ -90,125 +95,148 @@ class PipelineService:
 
         return result
 
+    # ------------------------------------------------------------------
+    # Stage: Fetch — parallel data sources
+    # ------------------------------------------------------------------
+
     async def _stage_fetch(self, result: PipelineRunResult) -> None:
         try:
-            # Reddit
-            raw_posts = await self._reddit.fetch_posts(
-                subreddits=self._subreddits,
-                limit=self._fetch_limit,
-            )
-            logger.info("Fetched %d posts from Reddit", len(raw_posts))
-
-            # RSS
-            if self._rss_feeds:
-                rss_posts = await self._rss.fetch_posts(self._rss_feeds)
-                logger.info("Fetched %d posts from RSS", len(rss_posts))
-                raw_posts = raw_posts + rss_posts
-
-            result.posts_fetched = len(raw_posts)
-
-            if raw_posts:
-                result.posts_upserted = await self._repo.upsert_posts(
-                    raw_posts
-                )
-                logger.info("Upserted %d posts", result.posts_upserted)
-
-            # Product Hunt
-            try:
-                products = await self._producthunt.fetch_recent_products()
-                if products:
-                    count = await self._repo.upsert_products(products)
-                    result.products_upserted += count
-                    logger.info("Upserted %d products from Product Hunt", count)
-            except Exception:
-                logger.exception("Product Hunt fetch failed")
-                result.errors.append("Product Hunt fetch failed")
-
-            # App Store
+            tasks = [
+                self._fetch_reddit_rss(result),
+                self._fetch_producthunt(result),
+            ]
             if self._appstore and self._appstore_keywords:
-                try:
-                    app_products = await self._appstore.search_apps(
-                        self._appstore_keywords,
-                        max_age_days=self._max_age_days,
-                    )
-
-                    if app_products:
-                        count = await self._repo.upsert_products(app_products)
-                        result.products_upserted += count
-                        logger.info(
-                            "Upserted %d products from App Store", count
-                        )
-
-                    # Fetch reviews for discovered apps
-                    for product in app_products:
-                        try:
-                            reviews = await self._appstore.fetch_reviews(
-                                product.external_id,
-                                pages=self._appstore_review_pages,
-                            )
-                            if reviews:
-                                upserted = await self._repo.upsert_posts(
-                                    reviews
-                                )
-                                result.posts_fetched += len(reviews)
-                                result.posts_upserted += upserted
-                                logger.info(
-                                    "Upserted %d App Store reviews for %s",
-                                    upserted,
-                                    product.name,
-                                )
-                        except Exception:
-                            logger.exception(
-                                "App Store review fetch failed for %s",
-                                product.external_id,
-                            )
-                except Exception:
-                    logger.exception("App Store fetch failed")
-                    result.errors.append("App Store fetch failed")
-
-            # Play Store
+                tasks.append(self._fetch_appstore(result))
             if self._playstore and self._appstore_keywords:
-                try:
-                    play_products = await self._playstore.search_apps(
-                        self._appstore_keywords,
-                        max_age_days=self._max_age_days,
-                    )
-                    if play_products:
-                        count = await self._repo.upsert_products(play_products)
-                        result.products_upserted += count
-                        logger.info(
-                            "Upserted %d products from Play Store", count
-                        )
+                tasks.append(self._fetch_playstore(result))
 
-                    # Fetch reviews for discovered apps
-                    for product in play_products:
-                        try:
-                            reviews = await self._playstore.fetch_reviews(
-                                product.external_id,
-                                count=self._playstore_review_count,
-                            )
-                            if reviews:
-                                upserted = await self._repo.upsert_posts(
-                                    reviews
-                                )
-                                result.posts_fetched += len(reviews)
-                                result.posts_upserted += upserted
-                                logger.info(
-                                    "Upserted %d Play Store reviews for %s",
-                                    upserted,
-                                    product.name,
-                                )
-                        except Exception:
-                            logger.exception(
-                                "Play Store review fetch failed for %s",
-                                product.external_id,
-                            )
-                except Exception:
-                    logger.exception("Play Store fetch failed")
-                    result.errors.append("Play Store fetch failed")
+            await asyncio.gather(*tasks)
         except Exception:
             logger.exception("Fetch stage failed")
             result.errors.append("Fetch stage failed")
+
+    async def _fetch_reddit_rss(self, result: PipelineRunResult) -> None:
+        raw_posts: list[RawPost] = await self._reddit.fetch_posts(
+            subreddits=self._subreddits,
+            limit=self._fetch_limit,
+        )
+        logger.info("Fetched %d posts from Reddit", len(raw_posts))
+
+        if self._rss_feeds:
+            rss_posts = await self._rss.fetch_posts(self._rss_feeds)
+            logger.info("Fetched %d posts from RSS", len(rss_posts))
+            raw_posts = raw_posts + rss_posts
+
+        result.posts_fetched += len(raw_posts)
+
+        if raw_posts:
+            upserted = await self._repo.upsert_posts(raw_posts)
+            result.posts_upserted += upserted
+            logger.info("Upserted %d posts", upserted)
+
+    async def _fetch_producthunt(self, result: PipelineRunResult) -> None:
+        try:
+            products = await self._producthunt.fetch_recent_products()
+            if products:
+                count = await self._repo.upsert_products(products)
+                result.products_upserted += count
+                logger.info("Upserted %d products from Product Hunt", count)
+        except Exception:
+            logger.exception("Product Hunt fetch failed")
+            result.errors.append("Product Hunt fetch failed")
+
+    async def _fetch_appstore(self, result: PipelineRunResult) -> None:
+        try:
+            app_products = await self._appstore.search_apps(
+                self._appstore_keywords,
+                max_age_days=self._max_age_days,
+            )
+
+            if app_products:
+                count = await self._repo.upsert_products(app_products)
+                result.products_upserted += count
+                logger.info("Upserted %d products from App Store", count)
+
+            # Fetch reviews concurrently with semaphore
+            sem = asyncio.Semaphore(_REVIEW_CONCURRENCY)
+
+            async def _fetch_app_reviews(product):
+                async with sem:
+                    try:
+                        reviews = await self._appstore.fetch_reviews(
+                            product.external_id,
+                            pages=self._appstore_review_pages,
+                        )
+                        if reviews:
+                            upserted = await self._repo.upsert_posts(reviews)
+                            result.posts_fetched += len(reviews)
+                            result.posts_upserted += upserted
+                            logger.info(
+                                "Upserted %d App Store reviews for %s",
+                                upserted,
+                                product.name,
+                            )
+                    except Exception:
+                        logger.exception(
+                            "App Store review fetch failed for %s",
+                            product.external_id,
+                        )
+
+            await asyncio.gather(
+                *[_fetch_app_reviews(p) for p in app_products]
+            )
+        except Exception:
+            logger.exception("App Store fetch failed")
+            result.errors.append("App Store fetch failed")
+
+    async def _fetch_playstore(self, result: PipelineRunResult) -> None:
+        try:
+            play_products = await self._playstore.search_apps(
+                self._appstore_keywords,
+                max_age_days=self._max_age_days,
+            )
+            if play_products:
+                count = await self._repo.upsert_products(play_products)
+                result.products_upserted += count
+                logger.info(
+                    "Upserted %d products from Play Store", count
+                )
+
+            # Fetch reviews concurrently with semaphore
+            sem = asyncio.Semaphore(_REVIEW_CONCURRENCY)
+
+            async def _fetch_play_reviews(product):
+                async with sem:
+                    try:
+                        reviews = await self._playstore.fetch_reviews(
+                            product.external_id,
+                            count=self._playstore_review_count,
+                        )
+                        if reviews:
+                            upserted = await self._repo.upsert_posts(reviews)
+                            result.posts_fetched += len(reviews)
+                            result.posts_upserted += upserted
+                            logger.info(
+                                "Upserted %d Play Store reviews for %s",
+                                upserted,
+                                product.name,
+                            )
+                    except Exception:
+                        logger.exception(
+                            "Play Store review fetch failed for %s",
+                            product.external_id,
+                        )
+
+            await asyncio.gather(
+                *[_fetch_play_reviews(p) for p in play_products]
+            )
+        except Exception:
+            logger.exception("Play Store fetch failed")
+            result.errors.append("Play Store fetch failed")
+
+    # ------------------------------------------------------------------
+    # Stage: Tag
+    # ------------------------------------------------------------------
 
     async def _stage_tag(self, result: PipelineRunResult) -> None:
         try:
@@ -241,10 +269,14 @@ class PipelineService:
                     result.errors.append(
                         f"Tag batch failed ({len(batch)} posts): {type(exc).__name__}: {exc}"
                     )
-                await asyncio.sleep(1)
+                await asyncio.sleep(0.3)
         except Exception:
             logger.exception("Tag stage failed")
             result.errors.append("Tag stage failed")
+
+    # ------------------------------------------------------------------
+    # Stage: Score products
+    # ------------------------------------------------------------------
 
     async def _stage_score_products(self, result: PipelineRunResult) -> None:
         try:
@@ -253,6 +285,10 @@ class PipelineService:
         except Exception:
             logger.exception("Score products stage failed")
             result.errors.append("Score products stage failed")
+
+    # ------------------------------------------------------------------
+    # Stage: Cluster
+    # ------------------------------------------------------------------
 
     async def _stage_cluster(self, result: PipelineRunResult) -> None:
         try:
@@ -272,6 +308,10 @@ class PipelineService:
             logger.exception("Cluster stage failed")
             result.errors.append(f"Cluster stage failed: {exc}")
 
+    # ------------------------------------------------------------------
+    # Stage: Brief — semaphore-bounded parallel generation
+    # ------------------------------------------------------------------
+
     async def _stage_brief(self, result: PipelineRunResult) -> None:
         try:
             clusters = await self._repo.get_clusters_without_briefs()
@@ -282,52 +322,72 @@ class PipelineService:
             logger.info(
                 "Generating briefs for %d clusters", len(clusters)
             )
-            for cluster_id, label, summary, posts in clusters:
-                try:
-                    # Fetch trends data — extract short, meaningful keywords
-                    words = (label + " " + summary).split()
-                    keywords = [
-                        w[:80] for w in words
-                        if len(w) > 2
-                        and w.lower().strip("'\",.!?") not in _TRENDS_STOP_WORDS
-                    ][:5]
-                    if not keywords:
-                        keywords = [label[:80]]
-                    trends_data = None
-                    try:
-                        trends_data = await self._trends.get_interest(keywords)
-                    except Exception:
-                        logger.warning("Trends fetch failed for cluster %d", cluster_id)
 
-                    # Find related products
-                    related_products = None
-                    try:
-                        related_products = await self._repo.find_related_products(label)
-                    except Exception:
-                        logger.warning("Related products lookup failed for cluster %d", cluster_id)
+            sem = asyncio.Semaphore(_BRIEF_CONCURRENCY)
 
-                    draft = await self._llm.synthesize_brief(
-                        label,
-                        summary,
-                        posts,
-                        trends_data=trends_data,
-                        related_products=related_products,
-                    )
-                    await self._repo.save_brief(cluster_id, draft)
-                    result.briefs_generated += 1
-                    logger.info(
-                        "Generated brief for cluster %d: %s",
-                        cluster_id,
-                        draft.title,
-                    )
-                except Exception:
-                    logger.exception(
-                        "Brief generation failed for cluster %d",
-                        cluster_id,
-                    )
-                    result.errors.append(
-                        f"Brief generation failed for cluster {cluster_id}"
-                    )
+            async def _gen_brief(cluster_id, label, summary, posts):
+                async with sem:
+                    try:
+                        words = (label + " " + summary).split()
+                        keywords = [
+                            w[:80] for w in words
+                            if len(w) > 2
+                            and w.lower().strip("'\",.!?") not in _TRENDS_STOP_WORDS
+                        ][:5]
+                        if not keywords:
+                            keywords = [label[:80]]
+
+                        # Fetch trends + related products in parallel
+                        trends_result, products_result = await asyncio.gather(
+                            self._safe_get_trends(cluster_id, keywords),
+                            self._safe_find_related(cluster_id, label),
+                        )
+
+                        draft = await self._llm.synthesize_brief(
+                            label,
+                            summary,
+                            posts,
+                            trends_data=trends_result,
+                            related_products=products_result,
+                        )
+                        await self._repo.save_brief(cluster_id, draft)
+                        result.briefs_generated += 1
+                        logger.info(
+                            "Generated brief for cluster %d: %s",
+                            cluster_id,
+                            draft.title,
+                        )
+                    except Exception:
+                        logger.exception(
+                            "Brief generation failed for cluster %d",
+                            cluster_id,
+                        )
+                        result.errors.append(
+                            f"Brief generation failed for cluster {cluster_id}"
+                        )
+
+            await asyncio.gather(
+                *[
+                    _gen_brief(cid, label, summary, posts)
+                    for cid, label, summary, posts in clusters
+                ]
+            )
         except Exception:
             logger.exception("Brief stage failed")
             result.errors.append("Brief stage failed")
+
+    async def _safe_get_trends(self, cluster_id, keywords):
+        try:
+            return await self._trends.get_interest(keywords)
+        except Exception:
+            logger.warning("Trends fetch failed for cluster %d", cluster_id)
+            return None
+
+    async def _safe_find_related(self, cluster_id, label):
+        try:
+            return await self._repo.find_related_products(label)
+        except Exception:
+            logger.warning(
+                "Related products lookup failed for cluster %d", cluster_id
+            )
+            return None

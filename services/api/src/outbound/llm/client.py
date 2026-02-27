@@ -220,18 +220,22 @@ class GeminiLlmClient:
     async def _label_clusters(
         self, groups: dict[int, list[int]], posts: list[Post]
     ) -> list[ClusteringResult]:
+        import asyncio
+
         post_map = {p.id: p for p in posts}
         results: list[ClusteringResult] = []
 
-        for cluster_label, post_ids in groups.items():
-            if cluster_label == -1:
-                results.append(ClusteringResult(
-                    label="Miscellaneous",
-                    summary="Posts that don't fit into other clusters",
-                    post_ids=post_ids,
-                ))
-                continue
+        # Separate noise cluster from real clusters
+        noise_ids = groups.get(-1)
+        if noise_ids is not None:
+            results.append(ClusteringResult(
+                label="Miscellaneous",
+                summary="Posts that don't fit into other clusters",
+                post_ids=noise_ids,
+            ))
 
+        # Label real clusters in parallel
+        async def _label_one(cluster_label: int, post_ids: list[int]) -> ClusteringResult:
             titles = [
                 post_map[pid].title for pid in post_ids if pid in post_map
             ][:10]
@@ -247,22 +251,30 @@ class GeminiLlmClient:
                 model=self._lite_model, contents=prompt,
             )
             if not response.text:
-                results.append(ClusteringResult(
+                return ClusteringResult(
                     label=f"Cluster {cluster_label}",
                     summary="",
                     post_ids=post_ids,
-                ))
-                continue
+                )
             raw = _strip_code_fences(response.text)
             data = json.loads(raw)
             if isinstance(data, list):
                 data = data[0] if data else {}
 
-            results.append(ClusteringResult(
+            return ClusteringResult(
                 label=data.get("label", f"Cluster {cluster_label}"),
                 summary=data.get("summary", ""),
                 post_ids=post_ids,
-            ))
+            )
+
+        tasks = [
+            _label_one(cl, pids)
+            for cl, pids in groups.items()
+            if cl != -1
+        ]
+        if tasks:
+            labeled = await asyncio.gather(*tasks)
+            results.extend(labeled)
 
         return results
 

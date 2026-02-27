@@ -17,6 +17,13 @@ def _get_service(request: Request) -> PipelineService:
     return request.state.pipeline_service
 
 
+@router.get("/status")
+async def pipeline_status(request: Request):
+    svc = _get_service(request)
+    running = await svc.is_running()
+    return JSONResponse(content={"data": {"is_running": running}})
+
+
 @router.post("/run")
 async def run_pipeline(
     request: Request,
