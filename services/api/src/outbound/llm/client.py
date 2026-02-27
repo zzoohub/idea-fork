@@ -266,6 +266,12 @@ class GeminiLlmClient:
                         post_ids=post_ids,
                     )
                 raw = _strip_code_fences(response.text)
+                if not raw:
+                    return ClusteringResult(
+                        label=f"Cluster {cluster_label}",
+                        summary="",
+                        post_ids=post_ids,
+                    )
                 data = json.loads(raw)
                 if isinstance(data, list):
                     data = data[0] if data else {}
