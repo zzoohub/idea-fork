@@ -1,0 +1,54 @@
+direction: down
+
+users: Users / Browser {
+  icon: https://icons.terrastruct.com/essentials%2F359-users.svg
+  shape: person
+}
+
+web: Web App (Next.js on Vercel) {
+  icon: https://icons.terrastruct.com/dev%2Fnodejs.svg
+  tooltip: "SSR, FSD architecture, dual data access, i18n (6 locales)"
+}
+
+api: API + Pipeline (FastAPI on Cloud Run) {
+  icon: https://icons.terrastruct.com/dev%2Fpython.svg
+  tooltip: "Hexagonal architecture, 5-stage pipeline: fetch → tag → score → cluster → synthesize"
+}
+
+db: Database (Neon PostgreSQL) {
+  icon: https://icons.terrastruct.com/dev%2Fpostgresql.svg
+  shape: cylinder
+  tooltip: "10 tables: post, tag, product, brief, cluster, rating + join tables"
+}
+
+sources: External Data Sources {
+  icon: https://icons.terrastruct.com/tech%2F022-server.svg
+  tooltip: "Reddit, RSS, App Store, Play Store, Product Hunt, Google Trends"
+}
+
+ai: AI Services (Google Gemini + HDBSCAN) {
+  icon: https://icons.terrastruct.com/tech%2F022-server.svg
+  tooltip: "Flash Lite (tag/label), Embeddings (vectorize), Flash (synthesize), HDBSCAN (cluster)"
+}
+
+# User read path (production)
+users -> web: "HTTPS (browse feed, read briefs, rate)"
+web -> db: "direct SQL reads (@neondatabase/serverless)" {
+  style.stroke: "#2563eb"
+}
+
+# User write path (ratings)
+web -> db: "Server Action writes (ratings)" {
+  style.stroke: "#f59e0b"
+}
+
+# Pipeline path
+sources -> api: "daily fetch (Cloud Scheduler trigger)" {
+  style.stroke-dash: 5
+}
+api -> ai: "tag + embed + synthesize" {
+  style.stroke-dash: 5
+}
+api -> db: "pipeline upserts (asyncpg)" {
+  style.stroke: "#16a34a"
+}

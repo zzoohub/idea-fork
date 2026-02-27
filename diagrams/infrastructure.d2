@@ -1,0 +1,181 @@
+direction: down
+
+# ── External Users ──────────────────────────────────────────
+users: Users {
+  icon: https://icons.terrastruct.com/essentials%2F359-users.svg
+  shape: person
+}
+
+# ── Vercel ──────────────────────────────────────────────────
+vercel: Vercel {
+  web: Next.js 16 Web App {
+    icon: https://icons.terrastruct.com/dev%2Fnodejs.svg
+    tooltip: "SSR, FSD architecture, Tailwind v4, bun"
+  }
+  cdn: Cloudflare CDN {
+    tooltip: "Static assets, edge caching"
+  }
+}
+
+# ── GCP (us-east4) ─────────────────────────────────────────
+gcp: GCP (us-east4) {
+  scheduler: Cloud Scheduler {
+    tooltip: "Daily at 2PM ET, POST /internal/pipeline/run"
+  }
+
+  cloudrun: Cloud Run v2 {
+    api: idea-fork-api (FastAPI) {
+      icon: https://icons.terrastruct.com/dev%2Fpython.svg
+      tooltip: "1 vCPU, 1Gi, 0-3 instances, Python 3.12"
+    }
+  }
+
+  ar: Artifact Registry {
+    icon: https://icons.terrastruct.com/dev%2Fdocker.svg
+    tooltip: "Docker repo, keeps 10 latest images"
+  }
+
+  sa: Service Account (idea-fork-api) {
+    tooltip: "Dedicated SA for Cloud Run"
+  }
+
+  logging: Cloud Logging + Monitoring {
+    tooltip: "Structured JSON logs, latency metrics"
+  }
+}
+
+# ── Neon (aws-us-east-1) ───────────────────────────────────
+neon: Neon (aws-us-east-1) {
+  db: PostgreSQL 18 (idea_fork) {
+    icon: https://icons.terrastruct.com/dev%2Fpostgresql.svg
+    shape: cylinder
+    tooltip: "0.25-1 CU autoscaling, main branch, PgBouncer pooler"
+  }
+}
+
+# ── External Data Sources ──────────────────────────────────
+sources: Data Sources {
+  reddit: Reddit API {
+    tooltip: "~44 subreddits, public JSON"
+  }
+  rss: RSS Feeds {
+    tooltip: "HN (50+ pts), TechCrunch"
+  }
+  ph: Product Hunt API {
+    tooltip: "GraphQL, 30 products/run"
+  }
+  appstore: App Store {
+    tooltip: "iTunes API, 20 keyword categories"
+  }
+  playstore: Google Play {
+    tooltip: "Scraper, 20 keyword categories"
+  }
+  trends: Google Trends {
+    tooltip: "pytrends, demand signals"
+  }
+}
+
+# ── AI Services ─────────────────────────────────────────────
+ai: AI / ML Services {
+  gemini: Google Gemini API {
+    icon: https://icons.terrastruct.com/tech%2F022-server.svg
+    tooltip: "Flash Lite (tag/label), Embeddings, Flash (synthesize)"
+  }
+  hdbscan: HDBSCAN (in-process) {
+    tooltip: "scikit-learn, local clustering on Cloud Run"
+  }
+}
+
+# ── Observability ───────────────────────────────────────────
+observability: Observability {
+  sentry: Sentry {
+    tooltip: "Error tracking, web + API"
+  }
+  posthog: PostHog {
+    tooltip: "Client-side analytics, us.i.posthog.com"
+  }
+}
+
+# ── Connections ─────────────────────────────────────────────
+
+# User → Web
+users -> vercel.cdn: HTTPS
+vercel.cdn -> vercel.web
+
+# Web → DB (production reads)
+vercel.web -> neon.db: "direct SQL reads (@neondatabase/serverless)" {
+  style.stroke: "#2563eb"
+}
+
+# Web → DB (rating writes)
+vercel.web -> neon.db: "Server Action writes (ratings)" {
+  style.stroke: "#f59e0b"
+}
+
+# Pipeline trigger
+gcp.scheduler -> gcp.cloudrun.api: "POST /internal/pipeline/run" {
+  style.stroke-dash: 5
+}
+
+# API → Data sources
+gcp.cloudrun.api -> sources.reddit: "fetch" {
+  style.stroke-dash: 5
+}
+gcp.cloudrun.api -> sources.rss: "fetch" {
+  style.stroke-dash: 5
+}
+gcp.cloudrun.api -> sources.ph: "fetch" {
+  style.stroke-dash: 5
+}
+gcp.cloudrun.api -> sources.appstore: "fetch" {
+  style.stroke-dash: 5
+}
+gcp.cloudrun.api -> sources.playstore: "fetch" {
+  style.stroke-dash: 5
+}
+gcp.cloudrun.api -> sources.trends: "fetch" {
+  style.stroke-dash: 5
+}
+
+# API → AI
+gcp.cloudrun.api -> ai.gemini: "tag + embed + synthesize" {
+  style.stroke-dash: 5
+}
+gcp.cloudrun.api -> ai.hdbscan: "cluster embeddings" {
+  style.stroke-dash: 5
+}
+
+# API → DB (pipeline writes)
+gcp.cloudrun.api -> neon.db: "pipeline writes (asyncpg + PgBouncer)" {
+  style.stroke: "#16a34a"
+}
+
+# Docker image
+gcp.ar -> gcp.cloudrun.api: "container image" {
+  style.stroke-dash: 5
+  style.stroke: "#6b7280"
+}
+
+# Service account
+gcp.sa -> gcp.cloudrun.api: "identity" {
+  style.stroke-dash: 5
+  style.stroke: "#6b7280"
+}
+
+# Observability
+vercel.web -> observability.sentry: "errors" {
+  style.stroke-dash: 5
+  style.stroke: "#9333ea"
+}
+vercel.web -> observability.posthog: "analytics" {
+  style.stroke-dash: 5
+  style.stroke: "#9333ea"
+}
+gcp.cloudrun.api -> observability.sentry: "errors" {
+  style.stroke-dash: 5
+  style.stroke: "#9333ea"
+}
+gcp.cloudrun.api -> gcp.logging: "logs + metrics" {
+  style.stroke-dash: 5
+  style.stroke: "#9333ea"
+}

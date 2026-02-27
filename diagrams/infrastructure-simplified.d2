@@ -1,0 +1,63 @@
+direction: down
+
+users: Users {
+  icon: https://icons.terrastruct.com/essentials%2F359-users.svg
+  shape: person
+}
+
+web: Web App (Vercel / Next.js) {
+  icon: https://icons.terrastruct.com/dev%2Fnodejs.svg
+}
+
+api: API + Pipeline (GCP Cloud Run / FastAPI) {
+  icon: https://icons.terrastruct.com/dev%2Fpython.svg
+}
+
+db: Database (Neon PostgreSQL) {
+  icon: https://icons.terrastruct.com/dev%2Fpostgresql.svg
+  shape: cylinder
+}
+
+sources: External Data Sources {
+  icon: https://icons.terrastruct.com/tech%2F022-server.svg
+  tooltip: "Reddit, RSS, App Store, Play Store, Product Hunt, Google Trends"
+}
+
+ai: AI Services (Google Gemini) {
+  icon: https://icons.terrastruct.com/tech%2F022-server.svg
+  tooltip: "Gemini Flash/Lite for tagging, embedding, synthesis + HDBSCAN clustering"
+}
+
+observability: Observability (Sentry + PostHog) {
+  shape: cloud
+}
+
+# User read path
+users -> web: HTTPS
+web -> db: "direct SQL (production reads)" {
+  style.stroke: "#2563eb"
+}
+
+# Pipeline write path
+api -> sources: "fetch daily" {
+  style.stroke-dash: 5
+}
+api -> ai: "tag + embed + synthesize" {
+  style.stroke-dash: 5
+}
+api -> db: "pipeline writes (asyncpg)" {
+  style.stroke: "#16a34a"
+}
+
+# Observability
+web -> observability: "errors + analytics" {
+  style.stroke-dash: 5
+  style.stroke: "#9333ea"
+}
+api -> observability: "errors" {
+  style.stroke-dash: 5
+  style.stroke: "#9333ea"
+}
+
+# Cron trigger note
+api.tooltip: "Cloud Scheduler triggers POST /internal/pipeline/run daily at 2PM ET"

@@ -1,0 +1,186 @@
+direction: down
+
+# ── Users ───────────────────────────────────────────────────
+users: Users / Browser {
+  icon: https://icons.terrastruct.com/essentials%2F359-users.svg
+  shape: person
+  tooltip: "Anonymous, session_id cookie, 6 locales"
+}
+
+# ── Web App ─────────────────────────────────────────────────
+web: Web App (Next.js 16 on Vercel) {
+  app-layer: App Layer {
+    tooltip: "Root layout, i18n routing, global providers"
+  }
+  views: Views Layer {
+    tooltip: "6 pages: feed, briefs list, brief detail, products list, product detail, search"
+  }
+  widgets: Widgets Layer {
+    tooltip: "Composed UI sections (feed cards, brief cards)"
+  }
+  features: Features Layer {
+    tooltip: "Feed filters, brief rating, search, tag chips"
+  }
+  entities: Entities Layer {
+    tooltip: "Post, Brief, Product, Tag — each with API + UI"
+  }
+  shared: Shared Layer {
+    tooltip: "DB queries, i18n, analytics, UI components, API client"
+  }
+
+  app-layer -> views
+  views -> widgets
+  widgets -> features
+  features -> entities
+  entities -> shared
+}
+
+# ── API Server ──────────────────────────────────────────────
+api: API Server (FastAPI on Cloud Run) {
+  inbound: Inbound (HTTP Routers) {
+    tooltip: "/v1/posts, /v1/briefs, /v1/products, /v1/tags, /v1/search, /internal/pipeline"
+  }
+
+  domain: Domain Layer {
+    post: Post Module {
+      tooltip: "Raw complaints, CRUD, tagging state"
+    }
+    brief: Brief Module {
+      tooltip: "AI briefs, source attribution, ratings"
+    }
+    product: Product Module {
+      tooltip: "Trending products, complaint aggregation"
+    }
+    pipeline: Pipeline Module {
+      tooltip: "5 stages: fetch → tag → score → cluster → synthesize"
+    }
+  }
+
+  outbound: Outbound (Adapters) {
+    pg: Postgres Repos {
+      icon: https://icons.terrastruct.com/dev%2Fpostgresql.svg
+      tooltip: "SQLAlchemy async, mapper.py (ORM → domain)"
+    }
+    gemini: Gemini Adapter {
+      tooltip: "google-genai SDK, Flash/Lite/Embedding models"
+    }
+    reddit: Reddit Adapter {
+      tooltip: "Public JSON, ~44 subreddits"
+    }
+    rss: RSS Adapter {
+      tooltip: "feedparser, HN + TechCrunch"
+    }
+    appstore: App Store Adapter {
+      tooltip: "iTunes API, 20 keywords"
+    }
+    playstore: Play Store Adapter {
+      tooltip: "google-play-scraper"
+    }
+    ph: Product Hunt Adapter {
+      tooltip: "GraphQL, API token"
+    }
+    trends: Trends Adapter {
+      tooltip: "pytrends, demand signals"
+    }
+  }
+
+  inbound -> domain
+  domain -> outbound
+  domain.brief -> domain.post: "briefs from post clusters"
+  domain.product -> domain.post: "products linked via tags"
+  domain.pipeline -> domain.post: "writes posts"
+  domain.pipeline -> domain.brief: "generates briefs"
+  domain.pipeline -> domain.product: "ingests products"
+}
+
+# ── Database ────────────────────────────────────────────────
+db: Database (Neon PostgreSQL 18) {
+  icon: https://icons.terrastruct.com/dev%2Fpostgresql.svg
+  shape: cylinder
+  tooltip: "10 tables: post, tag, post_tag, product, product_tag, product_post, brief, brief_source, cluster, cluster_post, rating"
+}
+
+# ── External Services ───────────────────────────────────────
+sources: External Data Sources {
+  reddit: Reddit API
+  rss: RSS Feeds (HN, TechCrunch)
+  appstore: App Store (iTunes API)
+  playstore: Google Play
+  ph: Product Hunt (GraphQL)
+  trends: Google Trends (pytrends)
+}
+
+ai: AI Services {
+  gemini-lite: Gemini Flash Lite (tagging + labeling)
+  gemini-embed: Gemini Embeddings (vectorize)
+  hdbscan: HDBSCAN (local clustering)
+  gemini-flash: Gemini Flash (brief synthesis)
+}
+
+observability: Observability {
+  sentry: Sentry (errors)
+  posthog: PostHog (analytics)
+}
+
+# ── Connections ─────────────────────────────────────────────
+
+# User → Web
+users -> web: "HTTPS (browse, read, rate)"
+
+# Web → DB (production)
+web.shared -> db: "direct SQL reads (@neondatabase/serverless)" {
+  style.stroke: "#2563eb"
+}
+web.shared -> db: "Server Action writes (ratings)" {
+  style.stroke: "#f59e0b"
+}
+
+# API → DB
+api.outbound.pg -> db: "asyncpg + PgBouncer" {
+  style.stroke: "#16a34a"
+}
+
+# API → External sources
+api.outbound.reddit -> sources.reddit: {
+  style.stroke-dash: 5
+}
+api.outbound.rss -> sources.rss: {
+  style.stroke-dash: 5
+}
+api.outbound.appstore -> sources.appstore: {
+  style.stroke-dash: 5
+}
+api.outbound.playstore -> sources.playstore: {
+  style.stroke-dash: 5
+}
+api.outbound.ph -> sources.ph: {
+  style.stroke-dash: 5
+}
+api.outbound.trends -> sources.trends: {
+  style.stroke-dash: 5
+}
+
+# API → AI
+api.outbound.gemini -> ai.gemini-lite: "tag + label" {
+  style.stroke-dash: 5
+}
+api.outbound.gemini -> ai.gemini-embed: "embed" {
+  style.stroke-dash: 5
+}
+api.outbound.gemini -> ai.gemini-flash: "synthesize" {
+  style.stroke-dash: 5
+}
+
+# Observability
+web -> observability.posthog: "analytics" {
+  style.stroke-dash: 5
+  style.stroke: "#9333ea"
+}
+web -> observability.sentry: "errors" {
+  style.stroke-dash: 5
+  style.stroke: "#9333ea"
+}
+api -> observability.sentry: "errors" {
+  style.stroke-dash: 5
+  style.stroke: "#9333ea"
+}

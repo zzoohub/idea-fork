@@ -16,24 +16,23 @@ Builders (indie hackers, early-stage founders, PMs) spend 5+ hours/week manually
 ### 1.2 System Context Diagram
 
 ```
-                          ┌──────────────────────────────────────┐
-                          │           idea-fork system           │
-                          │                                      │
-  ┌────────┐   browse     │  ┌──────────┐      ┌─────────────┐  │
-  │  User  │◀────────────▶│  │  Web App │◀────▶│  API Server │  │
-  │(browser│              │  │ (Next.js)│      │  (FastAPI)   │  │
-  └────────┘              │  └──────────┘      └──────┬──────┘  │
-                          │                           │         │
-                          │                    ┌──────▼──────┐  │
-                          │                    │  PostgreSQL  │  │
-                          │                    │    (Neon)    │  │
-                          │                    └──────▲──────┘  │
-                          │                           │         │
-                          │                    ┌──────┴──────┐  │
-                          │                    │ Data Pipeline│  │
-                          │                    │  (scheduled) │  │
-                          │                    └──────┬──────┘  │
-                          └───────────────────────────┼─────────┘
+                          ┌─────────────────────────────────────────┐
+                          │            idea-fork system              │
+                          │                                         │
+  ┌────────┐   browse     │  ┌──────────┐    SQL (production reads) │
+  │  User  │◀────────────▶│  │  Web App │─────────────┐            │
+  │(browser│              │  │ (Next.js)│             │            │
+  └────────┘              │  └──────────┘      ┌──────▼──────┐     │
+                          │                    │  PostgreSQL  │     │
+                          │                    │    (Neon)    │     │
+                          │                    └──────▲──────┘     │
+                          │                           │            │
+                          │  ┌───────────┐    pipeline writes      │
+                          │  │API Server │────────────┘            │
+                          │  │ (FastAPI) │  (not in prod read path)│
+                          │  └─────┬─────┘                         │
+                          │        │ Data Pipeline (scheduled)      │
+                          └────────┼───────────────────────────────┘
                                                       │
                           ┌───────────────────────────┼─────────┐
                           │     External Services     │         │
@@ -156,7 +155,7 @@ The API has meaningful domain logic (not just CRUD) — tagging rules, clusterin
            │                                   │ SQL (asyncpg)
 ┌──────────▼───────────────────────────────────▼──────────────────┐
 │  Database — Neon (PostgreSQL)                                   │
-│  Technology: PostgreSQL 16 (Neon serverless)                    │
+│  Technology: PostgreSQL 16 (Neon), 18 (local dev)               │
 │  Responsibility: All persistent state — posts, tags, clusters,  │
 │                  briefs, products, ratings.                      │
 │  Communication: Accessed by Web App (reads, production) and     │
@@ -437,7 +436,7 @@ Feature flags (via PostHog) for:
 | LLM briefs feel generic / low quality | High | Medium | Invest in prompt engineering with few-shot examples. User rating feedback loop informs prompt iteration. Manual quality review of sample briefs weekly. |
 | LLM tagging accuracy < 85% | Medium | Low | Start with narrow categories. Few-shot prompting. If accuracy is low, add human review queue (post-MVP). |
 | Neon cold start latency spikes | Medium | Low | Keep API server min-instances=1 to maintain warm connections. Neon's connection pooler mitigates cold starts. |
-| LLM costs exceed budget | Medium | Medium | Use smallest effective model per task (Haiku for tagging, larger model only for synthesis). Daily budget circuit breaker in pipeline. Monitor cost per brief. |
+| LLM costs exceed budget | Medium | Medium | Use smallest effective model per task (Gemini Flash Lite for tagging, Gemini Flash for synthesis). Daily budget circuit breaker in pipeline. Monitor cost per brief. |
 | SEO performance insufficient | Medium | Low | Next.js SSR/SSG ensures crawlable pages. Structured data (JSON-LD) for briefs. Sitemap generation. |
 
 ### 9.2 Open Questions
@@ -457,11 +456,11 @@ Feature flags (via PostHog) for:
 ### ADR-1: Python (FastAPI) for Backend
 
 - **Status**: Accepted
-- **Context**: The backend has heavy LLM API integration (tagging, clustering, synthesis), requiring libraries like `anthropic`, `openai`, `sentence-transformers`, and `scikit-learn` for clustering. The data pipeline is ML-adjacent.
+- **Context**: The backend has heavy LLM API integration (tagging, clustering, synthesis), using `google-genai` (Gemini API) and `scikit-learn` for HDBSCAN clustering. The data pipeline is ML-adjacent.
 - **Decision**: Python 3.12 with FastAPI.
 - **Alternatives Considered**:
   - **Rust (Axum)**: Better performance and lower cloud costs. Rejected because the LLM/ML library ecosystem in Rust is immature. Calling Python from Rust (PyO3) adds complexity. The bottleneck is LLM API latency, not server-side compute — Rust's speed advantage is minimal here.
-  - **TypeScript (Node.js)**: Good LLM library support. Rejected because Python's data processing ecosystem (pandas, scikit-learn, sentence-transformers) is significantly richer for the pipeline workload. FastAPI's async performance is comparable to Node for I/O-bound work.
+  - **TypeScript (Node.js)**: Good LLM library support. Rejected because Python's data processing ecosystem (scikit-learn, numpy) is significantly richer for the pipeline workload. FastAPI's async performance is comparable to Node for I/O-bound work.
 - **Consequences**: (+) Rich ML/LLM ecosystem, fast development, strong async support. (-) Higher memory footprint than Rust, slower cold starts on Cloud Run (~1-2s vs ~200ms).
 
 ### ADR-2: Single Service + Scheduled Pipeline (not Microservices)
@@ -477,7 +476,7 @@ Feature flags (via PostHog) for:
 ### ADR-3: Hexagonal Architecture (Ports & Adapters) for Code Structure
 
 - **Status**: Accepted
-- **Context**: The API integrates with multiple external services (Reddit API, Anthropic, OpenAI, PostgreSQL) that may change. Domain logic includes tagging rules, clustering heuristics, and brief quality scoring — not trivial CRUD.
+- **Context**: The API integrates with multiple external services (Reddit API, Google Gemini, PostgreSQL) that may change. Domain logic includes tagging rules, clustering heuristics, and brief quality scoring — not trivial CRUD.
 - **Decision**: Hexagonal architecture with ports (interfaces) and adapters (implementations) for all external integrations.
 - **Alternatives Considered**:
   - **Layered architecture**: Simpler, less boilerplate. Rejected because multiple external API integrations would leak through layers. Swapping LLM providers or adding data sources would require changes across layers.
@@ -532,10 +531,10 @@ Feature flags (via PostHog) for:
 
 - **Status**: Accepted
 - **Context**: The API server (FastAPI on Cloud Run) is used for the data pipeline but is not deployed to production for serving user reads. The pipeline runs locally and writes to the production Neon DB. Deploying and maintaining a separate API server for reads adds infrastructure cost and latency for a solo developer when the web app can query the database directly.
-- **Decision**: Next.js queries Neon directly via `@neondatabase/serverless` for all production reads. The data access layer is switchable: each entity API file checks `DATA_SOURCE` env var and dynamically imports either the Neon query module or the `apiFetch` client. Rating writes use Next.js Server Actions that call Neon directly. The `server-only` package prevents accidental client-side imports of database code.
+- **Decision**: Next.js queries Neon directly via `@neondatabase/serverless` for all production reads. The data access layer is switchable: each entity API file (`src/entities/*/api/index.ts`) checks the `DATA_SOURCE` env var and dynamically imports either the Neon query module (`src/shared/db/queries/*`) or the `apiFetch` client. In production (`DATA_SOURCE=neon`), Next.js Route Handlers at `app/api/v1/*` serve reads directly from Neon, while rating writes use Next.js Server Actions. The `server-only` package prevents accidental client-side imports of database code.
 - **Alternatives Considered**:
   - **Deploy API server to Cloud Run**: Full-stack deployment. Rejected — adds latency (Next.js → Cloud Run → Neon vs Next.js → Neon), infrastructure cost, and ops overhead for read-only queries. The API server has no read-path logic beyond SQL queries.
-  - **tRPC or API routes in Next.js**: Wrap DB queries in Next.js API routes. Rejected — adds an unnecessary HTTP hop within the same Vercel deployment. Direct imports from server components/actions are simpler and faster.
+  - **tRPC**: Type-safe RPC layer. Rejected — adds a dependency and abstraction layer for queries that are already straightforward SQL. The current approach uses Next.js Route Handlers (`app/api/v1/*`) for client-side fetches and Server Actions for mutations, which is sufficient.
   - **Drizzle ORM**: Type-safe query builder over raw SQL. Rejected — the queries are already written and tested as raw SQL ported from the Python repositories. Adding an ORM introduces a dependency and learning curve for no benefit on existing queries.
 - **Consequences**: (+) Eliminates API server from production read path, reduces latency, zero additional infrastructure cost, switchable back to API server via env var. (-) SQL queries are duplicated in TypeScript (alongside Python originals), must be kept in sync. Database schema changes require updating both codebases.
 

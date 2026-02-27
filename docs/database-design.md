@@ -1,7 +1,7 @@
 # idea-fork — Database Design
 
 **Status**: Active
-**Database**: PostgreSQL 16 (Neon serverless)
+**Database**: PostgreSQL 16 (Neon serverless, production) / PostgreSQL 18 (local dev via Docker)
 **SADD Reference**: [docs/design-doc.md](/docs/design-doc.md)
 
 ---
