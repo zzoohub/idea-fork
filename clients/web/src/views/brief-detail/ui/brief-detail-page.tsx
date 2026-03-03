@@ -5,7 +5,6 @@ import { useTranslations } from "next-intl";
 import { Link } from "@/src/shared/i18n/navigation";
 import {
   Icon,
-  ErrorState,
 } from "@/src/shared/ui";
 import { useStaggerReveal } from "@/src/shared/lib/gsap";
 import { isSafeUrl } from "@/src/shared/lib/sanitize-url";
@@ -15,7 +14,6 @@ import {
 } from "@/src/entities/brief/ui";
 import type { DemandSignalData } from "@/src/entities/brief/ui";
 import { BriefRating } from "@/src/features/rating/ui";
-import { fetchBrief } from "@/src/entities/brief/api";
 import type { BriefDetail } from "@/src/shared/api";
 import { extractDemandSignals } from "@/src/shared/lib/extract-demand-signals";
 import { extractSubreddits } from "@/src/shared/lib/extract-subreddits";
@@ -28,53 +26,24 @@ import { trackBriefViewed, trackBriefSourceClicked } from "@/src/shared/analytic
    BriefDetailPage
    -------------------------------------------------------------------------- */
 interface BriefDetailPageProps {
-  slug: string;
+  brief: BriefDetail;
 }
 
-export function BriefDetailPage({ slug }: BriefDetailPageProps) {
-  const [brief, setBrief] = useState<BriefDetail | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+export function BriefDetailPage({ brief }: BriefDetailPageProps) {
   const [showAllSources, setShowAllSources] = useState(false);
   const t = useTranslations("briefDetail");
   const tCommon = useTranslations("common");
   const tA11y = useTranslations("accessibility");
 
   useEffect(() => {
-    let cancelled = false;
-
-    fetchBrief(slug)
-      .then((res) => {
-        if (!cancelled) {
-          setBrief(res.data);
-          setLoading(false);
-          setError(null);
-        }
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setError(t("errors.loadFailed"));
-          setLoading(false);
-        }
-      });
-
-    return () => { cancelled = true; };
-  }, [slug, t]);
-
-  useEffect(() => {
-    if (brief) {
-      trackBriefViewed({
-        brief_id: brief.id,
-        brief_title: brief.title,
-        source_post_count: brief.source_count,
-      });
-    }
-  }, [brief]);
+    trackBriefViewed({
+      brief_id: brief.id,
+      brief_title: brief.title,
+      source_post_count: brief.source_count,
+    });
+  }, [brief.id, brief.title, brief.source_count]);
 
   const articleRef = useStaggerReveal({ selector: "> *", stagger: 0.1 });
-
-  if (loading) return <BriefDetailSkeleton />;
-  if (error || !brief) return <ErrorState message={error ?? t("errors.notFound")} onRetry={() => window.location.reload()} />;
 
   /* Map API data to component interfaces */
   const parsed = extractDemandSignals(brief.demand_signals);
@@ -422,32 +391,3 @@ function SourcePostCard({
   );
 }
 
-/* --------------------------------------------------------------------------
-   Loading skeleton
-   -------------------------------------------------------------------------- */
-function BriefDetailSkeleton() {
-  return (
-    <div className="mx-auto w-full max-w-[1280px] px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-8 items-start">
-        <div className="min-w-0 space-y-6">
-          <div className="skeleton h-5 w-40 rounded" />
-          <div className="skeleton h-10 w-3/4 rounded" />
-          <div className="flex gap-3">
-            <div className="skeleton h-10 w-24 rounded-lg" />
-            <div className="skeleton h-10 w-36 rounded-lg" />
-          </div>
-          <div className="skeleton h-5 w-64 rounded" />
-          <div className="border-t border-[#283039] my-8" />
-          <div className="space-y-3">
-            <div className="skeleton h-4 w-full rounded" />
-            <div className="skeleton h-4 w-full rounded" />
-            <div className="skeleton h-4 w-3/4 rounded" />
-          </div>
-        </div>
-        <div className="hidden lg:block">
-          <div className="skeleton h-48 w-full rounded-xl" />
-        </div>
-      </div>
-    </div>
-  );
-}

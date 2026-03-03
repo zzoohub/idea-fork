@@ -6,14 +6,12 @@ import { Link } from "@/src/shared/i18n/navigation";
 import { Icon } from "@/src/shared/ui/icon";
 import { Badge } from "@/src/shared/ui/badge";
 import { Chip } from "@/src/shared/ui/chip";
-import { ErrorState } from "@/src/shared/ui/error-state";
 import { EmptyState } from "@/src/shared/ui/empty-state";
 import {
   ProductHeader,
   SignalSummary,
 } from "@/src/entities/product/ui";
 import { isSafeUrl } from "@/src/shared/lib/sanitize-url";
-import { fetchProduct } from "@/src/entities/product/api";
 import type { ProductDetail, ProductPost } from "@/src/shared/api";
 import { formatRelativeTime } from "@/src/shared/lib/format-relative-time";
 import { useStaggerReveal, useScrollReveal } from "@/src/shared/lib/gsap";
@@ -122,13 +120,10 @@ function getSourceConfig(post: ProductPost) {
    -------------------------------------------------------------------------- */
 
 interface ProductDetailPageProps {
-  slug: string;
+  product: ProductDetail;
 }
 
-export function ProductDetailPage({ slug }: ProductDetailPageProps) {
-  const [product, setProduct] = useState<ProductDetail | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+export function ProductDetailPage({ product }: ProductDetailPageProps) {
   const [showAllSignals, setShowAllSignals] = useState(false);
   const [sortBy, setSortBy] = useState<"recent" | "popular" | "critical">("recent");
   const [activePostType, setActivePostType] = useState<string | null>(null);
@@ -139,41 +134,15 @@ export function ProductDetailPage({ slug }: ProductDetailPageProps) {
   const tFeed = useTranslations("feed.postTypes");
 
   useEffect(() => {
-    let cancelled = false;
-
-    fetchProduct(slug)
-      .then((res) => {
-        if (!cancelled) {
-          setProduct(res.data);
-          setLoading(false);
-          setError(null);
-        }
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setError(t("errors.loadFailed"));
-          setLoading(false);
-        }
-      });
-
-    return () => { cancelled = true; };
-  }, [slug, t]);
-
-  useEffect(() => {
-    if (product) {
-      trackProductViewed({
-        product_id: product.id,
-        product_name: product.name,
-      });
-    }
-  }, [product]);
+    trackProductViewed({
+      product_id: product.id,
+      product_name: product.name,
+    });
+  }, [product.id, product.name]);
 
   const headerRef = useStaggerReveal({ selector: "> *", stagger: 0.1 });
   const signalsRef = useScrollReveal({ selector: "> article" });
   const relatedRef = useScrollReveal();
-
-  if (loading) return <ProductDetailSkeleton />;
-  if (error || !product) return <ErrorState message={error ?? t("errors.notFound")} onRetry={() => window.location.reload()} />;
 
   const computedThemes = computeThemes(product.posts, (key) => tFeed(key as never));
 
