@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { fetchProduct } from "@/src/entities/product/api";
+import { queryProduct } from "@/src/shared/db/queries/products";
 import { ProductDetailPage } from "@/src/views/product-detail/ui";
 
 // Next.js 16: params is a Promise
@@ -10,8 +10,10 @@ export default async function ProductDetail({
 }) {
   const { slug } = await params;
 
-  const result = await fetchProduct(slug).catch(() => null);
-  if (!result?.data) notFound();
-
-  return <ProductDetailPage product={result.data} />;
+  try {
+    const result = await queryProduct(slug);
+    return <ProductDetailPage product={result.data} />;
+  } catch {
+    notFound();
+  }
 }
