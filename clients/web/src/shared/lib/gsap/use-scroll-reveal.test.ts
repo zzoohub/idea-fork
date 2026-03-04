@@ -9,6 +9,7 @@ const { mockFrom, mockUseGSAP, mockUseReducedMotion } = vi.hoisted(() => ({
 
 vi.mock("./register", () => ({
   gsap: { from: mockFrom },
+  ScrollTrigger: { refresh: vi.fn() },
   useGSAP: mockUseGSAP,
 }));
 

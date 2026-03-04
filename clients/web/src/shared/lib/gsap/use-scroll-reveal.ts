@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef } from "react";
-import { gsap, useGSAP } from "./register";
+import { gsap, ScrollTrigger, useGSAP } from "./register";
 import { PRESET, STAGGER } from "./presets";
 import { useReducedMotion } from "./use-reduced-motion";
 
@@ -43,6 +43,11 @@ export function useScrollReveal<T extends HTMLElement = HTMLDivElement>({
           toggleActions: "play none none none",
         },
       });
+
+      // On client-side navigation ScrollTrigger may not detect elements
+      // already in the viewport. Refresh after a frame so positions are
+      // recalculated and the animation fires immediately when visible.
+      requestAnimationFrame(() => ScrollTrigger.refresh());
     },
     { scope: containerRef, dependencies: [reducedMotion, stagger, start, selector] },
   );
