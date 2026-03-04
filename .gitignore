@@ -116,3 +116,4 @@ infra/sdks/
 *.bak
 *.tmp
 .diagram/
+.vercel
