@@ -2,7 +2,7 @@
 
 **Status:** MVP — one dashboard only
 **Last updated:** 2026-02-24
-**Managed by:** z-data-analyst
+**Managed by:** data-analyst
 
 ---
 

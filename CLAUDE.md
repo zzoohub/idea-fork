@@ -56,8 +56,8 @@ just infra-preview / infra-up         # Pulumi (production stack)
 ### MUST
 1. All changes must use skills, including after plan mode.
 2. After implementation, run sub-agents in parallel when applicable:
-   - **z-security-reviewer**: logic changes (API, auth, data, infra)
-   - **z-verifier**: testable code changes
+   - **security-reviewer**: logic changes (API, auth, data, infra)
+   - **verifier**: testable code changes
    > Skip for docs/copy-only. Skip browser test if `/chrome` unavailable.
 3. Marketing content must reference `docs/product-brief.md`.
 4. User-facing events must be defined in `biz/analytics/tracking-plan.md` before implementation.
@@ -74,8 +74,8 @@ just infra-preview / infra-up         # Pulumi (production stack)
 ## API
 
 ### Workflow (MUST FOLLOW)
-- Schema changes: **z-database-design** → **z-rest-api-design**
-- Default: **z-fastapi-hexagonal** + **z-postgresql**
+- Schema changes: **database-design** → **rest-api-design**
+- Default: **fastapi-hexagonal** + **postgresql**
 
 ### Conventions
 - Errors: RFC 9457 (`application/problem+json`). Validation 422: `errors` array `{field, code, message}`.
@@ -93,7 +93,7 @@ just infra-preview / infra-up         # Pulumi (production stack)
 ## Web
 
 ### Workflow (MUST FOLLOW)
-- **z-design-system** → **vercel-composition-patterns** → **vercel-react-best-practices**
+- **design-system** → **vercel-composition-patterns** → **vercel-react-best-practices**
 
 ### Conventions
 - **i18n**: `next-intl`. Locales: `en`, `es`, `pt-BR`, `id`, `ja`, `ko`. Messages in `messages/`.

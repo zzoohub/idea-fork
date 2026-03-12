@@ -29,12 +29,12 @@ No signal after 2–3 pivots? Kill the idea. Move on.
 **You do this:** Describe what you want to build. Agents handle the rest.
 
 ```
-z-product-brief                         # You describe the idea
-  → z-prd-craft                         # PRD → docs/prd.md
-  → z-ux-designer (agent)               # UX spec → docs/ux-design.md
+product-brief                         # You describe the idea
+  → prd-craft                         # PRD → docs/prd.md
+  → ux-designer (agent)               # UX spec → docs/ux-design.md
     + Google Stitch (MCP)               # Visual mockups (parallel)
-  → z-ui-engineer (agent)               # Component implementation
-  → z-interactive-engineer (agent)       # Motion, 3D, gestures, atmosphere
+  → ui-engineer (agent)               # Component implementation
+  → interactive-engineer (agent)       # Motion, 3D, gestures, atmosphere
   → You review the UX and approve
 ```
 
@@ -46,23 +46,23 @@ Tracking plan is defined in parallel with architecture — so events are baked i
 the implementation from the start, not bolted on after.
 
 ```
-z-software-architect                    # Design doc → docs/design-doc.md
-  → z-database-architect                # DB design → docs/database-design.md
-  → z-api-design                        # API endpoints (plan)
+software-architect                    # Design doc → docs/design-doc.md
+  → database-architect                # DB design → docs/database-design.md
+  → api-design                        # API endpoints (plan)
 
-z-data-analyst (parallel with above)    # Tracking plan defined during design
+data-analyst (parallel with above)    # Tracking plan defined during design
   → biz/analytics/tracking-plan.md      # Events + Aha Moment definition
   → biz/analytics/funnels.md            # Funnel stages + target conversion rates
   → biz/analytics/dashboards.md         # Dashboard specs for PostHog
   → biz/analytics/kill-criteria.md      # What numbers trigger Kill / Keep / Scale
 
-  → Backend implementation              # z-axum-hexagonal / z-fastapi-hexagonal
+  → Backend implementation              # axum-hexagonal / fastapi-hexagonal
                                         # (includes tracking events in code)
-  → Frontend implementation             # z-nextjs
+  → Frontend implementation             # nextjs
                                         # (includes tracking events in code)
   → (auto, parallel)
-      z-security-reviewer               # Security audit → fix
-      z-tester                          # Unit + integration tests → fix
+      security-reviewer               # Security audit → fix
+      tester                          # Unit + integration tests → fix
 ```
 
 **Test strategy at this stage:** Unit tests + integration tests only.
@@ -109,11 +109,11 @@ so every subsequent push goes through the pipeline.
 
 ## 4. Launch → Marketing
 
-**You do this:** Tell z-marketer about your product. It prepares all launch materials.
+**You do this:** Tell marketer about your product. It prepares all launch materials.
 You execute on launch day. **Operate starts here and runs forever.**
 
 ```
-z-marketer (agent)
+marketer (agent)
   → biz/marketing/strategy.md           # Positioning, audience, channels
   → biz/marketing/pricing.md            # Tiers and packaging
   → biz/marketing/competitors.md        # Who you're up against
@@ -152,7 +152,7 @@ z-marketer (agent)
 **You do this:** Check the dashboard every morning (5 min). Make the Kill/Keep/Scale call at week 2.
 
 ```
-z-data-analyst (agent)
+data-analyst (agent)
   → biz/analytics/reports/              # Weekly reports, deep-dives
   → biz/analytics/health-score.md       # Customer health score model
   → Kill / Keep / Scale recommendation  # You make the final call
@@ -176,17 +176,17 @@ z-data-analyst (agent)
 
 **Only after Scale decision.** Growing a leaky product is a waste of money.
 
-**You do this:** Tell z-growth-optimizer what to improve. It designs experiments and optimization strategies.
+**You do this:** Tell growth-optimizer what to improve. It designs experiments and optimization strategies.
 
 ```
-z-growth-optimizer (agent)
+growth-optimizer (agent)
   → biz/growth/experiments.md           # ICE-scored experiment backlog + results
   → biz/growth/referral-program.md      # Referral + viral loop design
   → biz/growth/churn-prevention.md      # Cancel flow, save offers, intervention
   → biz/growth/dunning.md              # Payment failure recovery
   → biz/growth/cro/                     # Per-page/flow CRO analyses
   → biz/growth/seo/                     # Content SEO: keyword strategy, blog, landing page optimization
-  → Experiment results → z-data-analyst # Handoff for statistical analysis
+  → Experiment results → data-analyst # Handoff for statistical analysis
 ```
 
 **Now add E2E tests:**

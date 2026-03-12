@@ -2,7 +2,7 @@
 
 ## Phase 1: Infrastructure Config
 - [x] 1. `config.ts` — locales 배열에 6개 locale 추가, Locale 타입 갱신
-- [x] 2. `routing.ts` — locales 목록 업데이트 + `localeCookie` 설정 추가 (z-i18n v4 권장)
+- [x] 2. `routing.ts` — locales 목록 업데이트 + `localeCookie` 설정 추가 (i18n v4 권장)
 - [x] 3. `request.ts` — 동적 import 패턴으로 변경
 - [x] 4. `global.d.ts` — Locale 타입이 routing에서 자동 추론되므로 변경 불필요 (확인 완료)
 

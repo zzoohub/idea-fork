@@ -2,7 +2,7 @@
 
 **Status:** Phase 2 — implement when weekly visitors exceed 500
 **Last updated:** 2026-02-24
-**Managed by:** z-data-analyst
+**Managed by:** data-analyst
 
 ---
 

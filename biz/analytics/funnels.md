@@ -2,7 +2,7 @@
 
 **Status:** MVP — benchmarks are directional, not targets
 **Last updated:** 2026-02-24
-**Managed by:** z-data-analyst
+**Managed by:** data-analyst
 
 ---
 

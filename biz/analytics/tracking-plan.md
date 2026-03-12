@@ -2,7 +2,7 @@
 
 **Status:** MVP — validate within first 90 days of real traffic
 **Last updated:** 2026-02-24
-**Managed by:** z-data-analyst
+**Managed by:** data-analyst
 
 ---
 

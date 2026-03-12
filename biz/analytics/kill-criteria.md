@@ -3,7 +3,7 @@
 **Decision frequency:** Weekly check starting Week 4 after first real traffic
 **Decision maker:** zzoo
 **Last updated:** 2026-02-24
-**Managed by:** z-data-analyst
+**Managed by:** data-analyst
 
 ---
 
