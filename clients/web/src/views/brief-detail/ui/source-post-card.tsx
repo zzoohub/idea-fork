@@ -59,7 +59,7 @@ export function SourcePostCard({
       onClick={handleClick}
       className={[
         "group block p-5 rounded-xl",
-        "bg-[#1a242d] border border-[#283039]",
+        "bg-surface-dark border border-border-dark",
         "hover:border-slate-600",
         "transition-colors no-underline",
       ].join(" ")}
@@ -86,14 +86,14 @@ export function SourcePostCard({
             <time className="text-slate-500 shrink-0">{post.date}</time>
           </div>
         </div>
-        <span className="shrink-0 ml-3 text-xs font-semibold text-[#137fec] bg-[#137fec]/10 px-2.5 py-1 rounded-full">
+        <span className="shrink-0 ml-3 text-xs font-semibold text-primary bg-[#137fec]/10 px-2.5 py-1 rounded-full">
           {tCommon("source", { number: sourceNumber })}
         </span>
       </div>
 
       {/* Optional title */}
       {post.title && (
-        <p className="text-white font-medium mb-2 leading-snug group-hover:text-[#137fec] transition-colors">
+        <p className="text-white font-medium mb-2 leading-snug group-hover:text-primary transition-colors">
           {post.title}
         </p>
       )}

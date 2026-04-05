@@ -8,7 +8,7 @@ const VARIANT_CLASSES = {
   active:
     "bg-primary text-white shadow-lg shadow-primary/20 border border-transparent",
   inactive:
-    "bg-white dark:bg-[#1b2531] border border-slate-200 dark:border-[#283039] text-text-secondary",
+    "bg-white dark:bg-surface-dark border border-slate-200 dark:border-border-dark text-text-secondary",
 } as const;
 
 type ChipBaseProps = {

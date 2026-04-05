@@ -100,7 +100,7 @@ export function ProductDetailPage({ product }: ProductDetailPageProps) {
           <li>
             <Link
               href="/products"
-              className="text-slate-500 dark:text-slate-400 hover:text-[#137fec] transition-colors duration-150 no-underline"
+              className="text-slate-500 dark:text-slate-400 hover:text-primary transition-colors duration-150 no-underline"
             >
               {t("breadcrumbProducts")}
             </Link>
@@ -194,9 +194,9 @@ export function ProductDetailPage({ product }: ProductDetailPageProps) {
                 aria-pressed={sortBy === option}
                 className={[
                   "px-3.5 py-1.5 rounded-lg text-sm font-medium transition-colors duration-150 cursor-pointer",
-                  "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#137fec]",
+                  "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary",
                   sortBy === option
-                    ? "bg-[#137fec] text-white shadow-sm"
+                    ? "bg-primary text-white shadow-sm"
                     : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700",
                 ].join(" ")}
                 onClick={() => setSortBy(option)}
@@ -259,14 +259,14 @@ export function ProductDetailPage({ product }: ProductDetailPageProps) {
                   className={[
                     "group p-5 rounded-2xl cursor-pointer",
                     "bg-white dark:bg-[#18212F]",
-                    "border border-slate-200 dark:border-[#283039]",
-                    "hover:border-[#137fec]/50",
+                    "border border-slate-200 dark:border-border-dark",
+                    "hover:border-primary/50",
                     "transition-all duration-200",
                   ].join(" ")}
                   onClick={() => toggleExpanded(complaint.id, complaint)}
                 >
                   {/* Title */}
-                  <h3 className="text-base font-semibold text-slate-900 dark:text-slate-50 group-hover:text-[#137fec] transition-colors duration-150 mb-2">
+                  <h3 className="text-base font-semibold text-slate-900 dark:text-slate-50 group-hover:text-primary transition-colors duration-150 mb-2">
                     {complaint.title}
                   </h3>
 
@@ -310,7 +310,7 @@ export function ProductDetailPage({ product }: ProductDetailPageProps) {
                   )}
 
                   {/* Footer: actions */}
-                  <div className="flex items-center gap-5 mt-4 pt-3 border-t border-slate-100 dark:border-[#283039]">
+                  <div className="flex items-center gap-5 mt-4 pt-3 border-t border-slate-100 dark:border-border-dark">
                     <span className="inline-flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
                       <Icon name="thumbs-up" size={14} />
                       <span className="tabular-nums">{complaint.score.toLocaleString()}</span>
@@ -322,7 +322,7 @@ export function ProductDetailPage({ product }: ProductDetailPageProps) {
                         target="_blank"
                         rel="noopener noreferrer"
                         onClick={(e) => e.stopPropagation()}
-                        className="inline-flex items-center gap-1 text-xs font-medium text-[#137fec] hover:text-[#0f6bca] transition-colors duration-150"
+                        className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:text-[#0f6bca] transition-colors duration-150"
                       >
                         {tCommon("viewOriginal")}
                         <Icon name="external-link" size={14} />
@@ -342,11 +342,11 @@ export function ProductDetailPage({ product }: ProductDetailPageProps) {
               type="button"
               className={[
                 "inline-flex items-center gap-2 px-5 py-2.5 rounded-xl",
-                "text-sm font-semibold text-[#137fec]",
+                "text-sm font-semibold text-primary",
                 "bg-[#137fec]/5 hover:bg-[#137fec]/10",
                 "border border-[#137fec]/20",
                 "transition-colors duration-150 cursor-pointer",
-                "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#137fec]",
+                "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary",
               ].join(" ")}
               onClick={() => setShowAllSignals((prev) => !prev)}
             >
@@ -377,9 +377,9 @@ export function ProductDetailPage({ product }: ProductDetailPageProps) {
               <Link
                 key={brief.id}
                 href={`/briefs/${brief.slug}`}
-                className="group block p-5 rounded-2xl bg-white dark:bg-[#18212F] border border-slate-200 dark:border-[#283039] hover:border-[#137fec]/50 transition-all duration-200 no-underline"
+                className="group block p-5 rounded-2xl bg-white dark:bg-[#18212F] border border-slate-200 dark:border-border-dark hover:border-primary/50 transition-all duration-200 no-underline"
               >
-                <h3 className="text-base font-semibold text-slate-900 dark:text-slate-50 group-hover:text-[#137fec] transition-colors duration-150 line-clamp-2 mb-2">
+                <h3 className="text-base font-semibold text-slate-900 dark:text-slate-50 group-hover:text-primary transition-colors duration-150 line-clamp-2 mb-2">
                   {brief.title}
                 </h3>
                 <p className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed line-clamp-2 mb-4">
@@ -390,7 +390,7 @@ export function ProductDetailPage({ product }: ProductDetailPageProps) {
                     <Icon name="file-text" size={14} />
                     {t("sources", { count: brief.source_count })}
                   </span>
-                  <span className="inline-flex items-center gap-1 text-xs font-medium text-[#137fec] group-hover:text-[#0f6bca] transition-colors duration-150">
+                  <span className="inline-flex items-center gap-1 text-xs font-medium text-primary group-hover:text-[#0f6bca] transition-colors duration-150">
                     {t("readBrief")}
                     <Icon name="arrow-right" size={14} />
                   </span>

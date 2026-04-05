@@ -10,8 +10,8 @@ interface CardProps {
 
 const CARD_CLASSES = [
   "block",
-  "bg-white dark:bg-[#1b2531]",
-  "border border-slate-200 dark:border-[#283039]",
+  "bg-white dark:bg-surface-dark",
+  "border border-slate-200 dark:border-border-dark",
   "rounded-xl p-5",
   "transition-colors",
   "hover:border-primary/50 hover:shadow-lg hover:shadow-primary/10",

@@ -64,7 +64,7 @@ export function SearchSkeleton() {
       </div>
 
       {/* Tab skeleton */}
-      <div className="flex gap-0 border-b border-slate-200 dark:border-[#283039]">
+      <div className="flex gap-0 border-b border-slate-200 dark:border-border-dark">
         {Array.from({ length: 4 }).map((_, i) => (
           <div key={i} className="px-3 pb-2.5 pt-1">
             <Skeleton variant="text" className="h-4 w-20" />

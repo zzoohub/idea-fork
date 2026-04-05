@@ -206,7 +206,7 @@ function FeedPageInner() {
     <div className="flex flex-col gap-5 w-full max-w-3xl mx-auto pb-10">
       {/* Post type tabs */}
       <div
-        className="flex items-center overflow-x-auto border-b border-slate-200 dark:border-[#283039] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden relative"
+        className="flex items-center overflow-x-auto border-b border-slate-200 dark:border-border-dark [scrollbar-width:none] [&::-webkit-scrollbar]:hidden relative"
         role="tablist"
         aria-label={tA11y("filterByPostType")}
       >
@@ -222,9 +222,9 @@ function FeedPageInner() {
               onClick={() => handlePostTypeChange(tab.key)}
               className={[
                 "relative shrink-0 px-3 pb-2.5 pt-1 text-sm font-medium transition-colors duration-150",
-                "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#137fec]",
+                "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary",
                 isActive
-                  ? "text-[#137fec]"
+                  ? "text-primary"
                   : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300",
               ].join(" ")}
             >
@@ -234,7 +234,7 @@ function FeedPageInner() {
         })}
         <span
           ref={tabIndicatorRef}
-          className="absolute bottom-0 left-0 h-0.5 bg-[#137fec] rounded-full"
+          className="absolute bottom-0 left-0 h-0.5 bg-primary rounded-full"
           style={{ opacity: 0, width: 0 }}
           aria-hidden="true"
         />
@@ -297,7 +297,7 @@ function FeedPageInner() {
       {hasNext && (
         <div ref={sentinelRef} className="flex justify-center py-8">
           {loadingMore && (
-            <div className="h-6 w-6 animate-spin rounded-full border-2 border-slate-300 border-t-[#137fec]" />
+            <div className="h-6 w-6 animate-spin rounded-full border-2 border-slate-300 border-t-primary" />
           )}
         </div>
       )}
@@ -317,7 +317,7 @@ function FeedSkeleton() {
       aria-label="Loading posts"
     >
       {/* Post type tab skeleton */}
-      <div className="flex gap-0 border-b border-slate-200 dark:border-[#283039]">
+      <div className="flex gap-0 border-b border-slate-200 dark:border-border-dark">
         {Array.from({ length: 5 }).map((_, i) => (
           <div key={i} className="px-3 pb-2.5 pt-1">
             <Skeleton variant="text" className="h-4 w-16" />

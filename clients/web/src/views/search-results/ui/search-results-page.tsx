@@ -194,7 +194,7 @@ function SearchResultsInner() {
 
       {/* Tabs */}
       <div
-        className="flex items-center overflow-x-auto border-b border-slate-200 dark:border-[#283039] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        className="flex items-center overflow-x-auto border-b border-slate-200 dark:border-border-dark [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         role="tablist"
         aria-label={tA11y("filterByContentType")}
       >
@@ -320,7 +320,7 @@ function AllResults({
 
       {products.length > 0 && (
         <>
-          {briefs.length > 0 && <hr className="border-slate-200 dark:border-[#283039]" />}
+          {briefs.length > 0 && <hr className="border-slate-200 dark:border-border-dark" />}
           <section>
             <h2 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">
               {t("tabs.products")}
@@ -345,7 +345,7 @@ function AllResults({
 
       {posts.length > 0 && (
         <>
-          {(briefs.length > 0 || products.length > 0) && <hr className="border-slate-200 dark:border-[#283039]" />}
+          {(briefs.length > 0 || products.length > 0) && <hr className="border-slate-200 dark:border-border-dark" />}
           <section>
             <h2 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">
               {t("tabs.posts")}

@@ -63,14 +63,14 @@ export function BriefBody({
       {/* Problem Statement                                                   */}
       {/* ------------------------------------------------------------------ */}
       <section
-        className="rounded-xl bg-[#1a242d] border border-[#283039] p-6 sm:p-8"
+        className="rounded-xl bg-surface-dark border border-border-dark p-6 sm:p-8"
         aria-labelledby="brief-problem-heading"
       >
         <div className="flex items-center gap-3 mb-5">
           <Icon
             name="triangle-alert"
             size={24}
-            className="text-[#137fec] shrink-0"
+            className="text-primary shrink-0"
           />
           <h2
             id="brief-problem-heading"
@@ -89,7 +89,7 @@ export function BriefBody({
       {/* ------------------------------------------------------------------ */}
       {content.demandSignals && (
         <section
-          className="rounded-xl bg-[#1a242d] border border-[#283039] p-6 sm:p-8"
+          className="rounded-xl bg-surface-dark border border-border-dark p-6 sm:p-8"
           aria-labelledby="brief-demand-heading"
         >
           {/* Header row */}
@@ -97,7 +97,7 @@ export function BriefBody({
             <Icon
               name="activity"
               size={24}
-              className="text-[#137fec] shrink-0"
+              className="text-primary shrink-0"
             />
             <h2
               id="brief-demand-heading"
@@ -142,7 +142,7 @@ export function BriefBody({
                     return (
                       <div
                         key={i}
-                        className="flex-1 rounded-t bg-[#137fec]"
+                        className="flex-1 rounded-t bg-primary"
                         style={{
                           height: `${height}%`,
                           opacity,
@@ -168,7 +168,7 @@ export function BriefBody({
       {/* ------------------------------------------------------------------ */}
       {content.suggestedDirections.length > 0 && (
         <section
-          className="relative rounded-xl bg-[#1a242d] border border-[#283039] p-6 sm:p-8 overflow-hidden"
+          className="relative rounded-xl bg-surface-dark border border-border-dark p-6 sm:p-8 overflow-hidden"
           aria-labelledby="brief-directions-heading"
         >
           {/* Subtle background decoration */}
@@ -182,7 +182,7 @@ export function BriefBody({
               <Icon
                 name="lightbulb"
                 size={24}
-                className="text-[#137fec] shrink-0"
+                className="text-primary shrink-0"
               />
               <h2
                 id="brief-directions-heading"
@@ -197,7 +197,7 @@ export function BriefBody({
                 <li key={i} className="flex gap-4">
                   {/* Styled number */}
                   <span
-                    className="size-8 shrink-0 rounded-full bg-[#137fec]/10 text-[#137fec] flex items-center justify-center font-bold text-sm"
+                    className="size-8 shrink-0 rounded-full bg-[#137fec]/10 text-primary flex items-center justify-center font-bold text-sm"
                     aria-hidden="true"
                   >
                     {i + 1}

@@ -124,7 +124,7 @@ export function NavigationBar() {
           "flex items-center justify-between",
           "h-14 px-4 sm:px-6",
           "bg-white/95 dark:bg-[#111418]/95 backdrop-blur-md",
-          "border-b border-slate-200 dark:border-[#283039]",
+          "border-b border-slate-200 dark:border-border-dark",
         ].join(" ")}
       >
         {/* -- Left side: Logo + desktop nav links -- */}
@@ -270,7 +270,7 @@ export function NavigationBar() {
           "fixed bottom-0 left-0 right-0 z-50",
           "h-14",
           "bg-white/95 dark:bg-[#111418]/95 backdrop-blur-md",
-          "border-t border-slate-200 dark:border-[#283039]",
+          "border-t border-slate-200 dark:border-border-dark",
           "pb-[env(safe-area-inset-bottom)]",
         ].join(" ")}
         aria-label={tA11y("mainNavigation")}

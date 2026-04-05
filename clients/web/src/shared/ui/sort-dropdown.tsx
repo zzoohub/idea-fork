@@ -35,8 +35,8 @@ export function SortDropdown({
         onChange={onChange ? (e) => onChange(e.target.value) : undefined}
         className={[
           "appearance-none rounded-lg",
-          "border border-slate-200 dark:border-[#283039]",
-          "bg-white dark:bg-[#283039]",
+          "border border-slate-200 dark:border-border-dark",
+          "bg-white dark:bg-border-dark",
           "py-2 pl-9 pr-8",
           "text-body-sm text-text-primary",
           "transition-colors cursor-pointer",

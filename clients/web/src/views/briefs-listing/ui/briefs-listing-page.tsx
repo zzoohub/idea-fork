@@ -126,7 +126,7 @@ function BriefsListingInner() {
       </div>
 
       {/* Sticky filter bar */}
-      <div className="sticky top-14 z-40 -mx-6 px-6 py-4 border-b border-slate-200 dark:border-[#283039] backdrop-blur-xl bg-white/80 dark:bg-[#101922]/80">
+      <div className="sticky top-14 z-40 -mx-6 px-6 py-4 border-b border-slate-200 dark:border-border-dark backdrop-blur-xl bg-white/80 dark:bg-[#101922]/80">
         <div className="flex items-center justify-end gap-4">
           {/* Sort dropdown */}
           <SortDropdown
@@ -181,7 +181,7 @@ function BriefsListingInner() {
       {hasNext && (
         <div ref={sentinelRef} className="flex justify-center mt-12 mb-4 py-4">
           {loadingMore && (
-            <div className="h-6 w-6 animate-spin rounded-full border-2 border-slate-300 border-t-[#137fec]" />
+            <div className="h-6 w-6 animate-spin rounded-full border-2 border-slate-300 border-t-primary" />
           )}
         </div>
       )}
@@ -202,7 +202,7 @@ function BriefsListingSkeleton() {
       </div>
 
       {/* Filter bar skeleton */}
-      <div className="flex items-center gap-2 py-4 mb-8 border-b border-slate-200 dark:border-[#283039]">
+      <div className="flex items-center gap-2 py-4 mb-8 border-b border-slate-200 dark:border-border-dark">
         {Array.from({ length: 5 }).map((_, i) => (
           <Skeleton key={i} variant="chip" className="w-24 h-9" />
         ))}

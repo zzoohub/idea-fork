@@ -59,7 +59,7 @@ export function SignalSummary({
       aria-label={t("totalMentions")}
     >
       {/* Total Mentions Card */}
-      <div className="relative overflow-hidden p-5 rounded-2xl bg-white dark:bg-[#18212F] border border-slate-200 dark:border-[#283039]">
+      <div className="relative overflow-hidden p-5 rounded-2xl bg-white dark:bg-[#18212F] border border-slate-200 dark:border-border-dark">
         <div className="absolute -right-2 -top-2 opacity-10" aria-hidden="true">
           <Icon name="messages-square" size={64} className="text-blue-500" />
         </div>
@@ -80,7 +80,7 @@ export function SignalSummary({
       </div>
 
       {/* Critical Signals Card */}
-      <div className="relative overflow-hidden p-5 rounded-2xl bg-white dark:bg-[#18212F] border border-slate-200 dark:border-[#283039]">
+      <div className="relative overflow-hidden p-5 rounded-2xl bg-white dark:bg-[#18212F] border border-slate-200 dark:border-border-dark">
         <div className="absolute -right-2 -top-2 opacity-10" aria-hidden="true">
           <Icon name="triangle-alert" size={64} className="text-orange-500" />
         </div>
@@ -103,7 +103,7 @@ export function SignalSummary({
       </div>
 
       {/* Frustration Rate Card */}
-      <div className="relative overflow-hidden p-5 rounded-2xl bg-white dark:bg-[#18212F] border border-slate-200 dark:border-[#283039]">
+      <div className="relative overflow-hidden p-5 rounded-2xl bg-white dark:bg-[#18212F] border border-slate-200 dark:border-border-dark">
         <div className="absolute -right-2 -top-2 opacity-10" aria-hidden="true">
           <Icon name="chart-line" size={64} className="text-orange-500" />
         </div>

@@ -145,7 +145,7 @@ export function BriefDetailPage({ brief }: BriefDetailPageProps) {
               className={[
                 "inline-flex items-center gap-2",
                 "px-4 py-2.5 rounded-lg",
-                "bg-[#137fec] text-white",
+                "bg-primary text-white",
                 "text-sm font-semibold",
                 "hover:bg-[#1171d4]",
                 "transition-colors cursor-pointer",
@@ -162,7 +162,7 @@ export function BriefDetailPage({ brief }: BriefDetailPageProps) {
           </div>
 
           {/* Divider */}
-          <div className="border-t border-[#283039] my-8" />
+          <div className="border-t border-border-dark my-8" />
 
           {/* Brief body sections */}
           <BriefBody
@@ -175,7 +175,7 @@ export function BriefDetailPage({ brief }: BriefDetailPageProps) {
           />
 
           {/* Divider */}
-          <div className="border-t border-[#283039] my-8" />
+          <div className="border-t border-border-dark my-8" />
 
           {/* ---- Key Source Posts ---- */}
           {sourceSnapshots.length > 0 && (
@@ -184,7 +184,7 @@ export function BriefDetailPage({ brief }: BriefDetailPageProps) {
                 <Icon
                   name="messages-square"
                   size={24}
-                  className="text-[#137fec] shrink-0"
+                  className="text-primary shrink-0"
                 />
                 <h2
                   id="source-posts-heading"
@@ -225,7 +225,7 @@ export function BriefDetailPage({ brief }: BriefDetailPageProps) {
                     onClick={() => setShowAllSources((prev) => !prev)}
                     className={[
                       "inline-flex items-center gap-2",
-                      "text-sm font-semibold text-[#137fec]",
+                      "text-sm font-semibold text-primary",
                       "hover:text-[#4da3f5]",
                       "transition-colors cursor-pointer",
                     ].join(" ")}
@@ -244,7 +244,7 @@ export function BriefDetailPage({ brief }: BriefDetailPageProps) {
           )}
 
           {/* Divider */}
-          <div className="border-t border-[#283039] my-8" />
+          <div className="border-t border-border-dark my-8" />
 
           {/* ---- Feedback footer ---- */}
           <section
@@ -260,12 +260,12 @@ export function BriefDetailPage({ brief }: BriefDetailPageProps) {
         {/* ================================================================ */}
         <aside className="hidden lg:flex flex-col gap-6 sticky top-8">
           {/* Summary card */}
-          <div className="rounded-xl bg-gradient-to-br from-[#1a242d] to-[#141c24] border border-[#283039] p-5">
+          <div className="rounded-xl bg-gradient-to-br from-[#1a242d] to-[#141c24] border border-border-dark p-5">
             <div className="flex items-center gap-2 mb-4">
               <Icon
                 name="sparkles"
                 size={18}
-                className="text-[#137fec]"
+                className="text-primary"
               />
               <h3 className="text-sm font-bold text-white">{t("opportunity")}</h3>
             </div>
@@ -280,7 +280,7 @@ export function BriefDetailPage({ brief }: BriefDetailPageProps) {
             className={[
               "flex items-center justify-center gap-1.5",
               "w-full py-2.5 rounded-lg",
-              "border border-[#283039]",
+              "border border-border-dark",
               "text-xs font-semibold text-slate-400",
               "hover:text-white hover:border-slate-500",
               "transition-colors no-underline",

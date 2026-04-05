@@ -111,10 +111,10 @@ export function PostCard({
     <article
       className={[
         "group",
-        "rounded-xl border border-slate-200 dark:border-[#283039]",
-        "bg-white dark:bg-[#1b2531]",
+        "rounded-xl border border-slate-200 dark:border-border-dark",
+        "bg-white dark:bg-surface-dark",
         "p-5",
-        "hover:border-[#137fec]/50",
+        "hover:border-primary/50",
         "transition-colors duration-200",
       ].join(" ")}
     >
@@ -156,7 +156,7 @@ export function PostCard({
       {/* Row 2: Title + snippet */}
       <div className="mt-3">
         {title && (
-          <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100 group-hover:text-[#137fec] transition-colors duration-200">
+          <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100 group-hover:text-primary transition-colors duration-200">
             {title}
           </h3>
         )}
@@ -176,7 +176,7 @@ export function PostCard({
           {tags.map((tag) => {
             const tagClasses = [
               "inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium",
-              "bg-slate-100 dark:bg-[#283039] text-slate-600 dark:text-slate-400",
+              "bg-slate-100 dark:bg-border-dark text-slate-600 dark:text-slate-400",
             ].join(" ");
 
             if (onTagClick) {
@@ -202,7 +202,7 @@ export function PostCard({
       )}
 
       {/* Divider */}
-      <div className="h-px bg-slate-100 dark:bg-[#283039] mt-4 mb-3" />
+      <div className="h-px bg-slate-100 dark:bg-border-dark mt-4 mb-3" />
 
       {/* Footer: Stats + links */}
       <div className="flex items-center justify-between">
@@ -243,7 +243,7 @@ export function PostCard({
               <span className="text-slate-300 dark:text-slate-600" aria-hidden="true">|</span>
               <Link
                 href={`/briefs/${briefSlug}`}
-                className="inline-flex items-center gap-1 text-sm font-semibold text-[#137fec] hover:text-[#0f6bd0] transition-colors duration-150"
+                className="inline-flex items-center gap-1 text-sm font-semibold text-primary hover:text-[#0f6bd0] transition-colors duration-150"
               >
                 <Icon name="zap" size={16} />
                 {t("relatedBrief")}

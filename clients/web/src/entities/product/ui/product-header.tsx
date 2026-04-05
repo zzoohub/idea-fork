@@ -35,7 +35,7 @@ export function ProductHeader({
         "flex flex-col sm:flex-row items-start gap-6",
         "p-6 rounded-2xl",
         "bg-white dark:bg-[#18212F]",
-        "border border-slate-200 dark:border-[#283039]",
+        "border border-slate-200 dark:border-border-dark",
         "shadow-sm",
         className,
       ]
@@ -53,7 +53,7 @@ export function ProductHeader({
         />
       ) : (
         <div
-          className="flex size-24 shrink-0 items-center justify-center rounded-xl bg-[#137fec]/10 text-4xl font-bold text-[#137fec]"
+          className="flex size-24 shrink-0 items-center justify-center rounded-xl bg-[#137fec]/10 text-4xl font-bold text-primary"
           aria-hidden="true"
         >
           {name.charAt(0).toUpperCase()}
@@ -96,7 +96,7 @@ export function ProductHeader({
               href={websiteUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 text-sm text-[#137fec] hover:text-[#0f6bca] transition-colors duration-150"
+              className="inline-flex items-center gap-1.5 text-sm text-primary hover:text-[#0f6bca] transition-colors duration-150"
             >
               <Icon name="globe" size={16} />
               {new URL(websiteUrl).hostname.replace("www.", "")}
@@ -133,10 +133,10 @@ function ShareButton() {
         "text-sm font-semibold",
         "transition-colors duration-150",
         "cursor-pointer",
-        "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#137fec]",
+        "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary",
         copied
           ? "bg-emerald-500 text-white shadow-lg shadow-emerald-500/20"
-          : "bg-[#137fec] text-white shadow-lg shadow-[#137fec]/20 hover:bg-[#0f6bca] active:bg-[#0d5eaf]",
+          : "bg-primary text-white shadow-lg shadow-[#137fec]/20 hover:bg-[#0f6bca] active:bg-[#0d5eaf]",
       ].join(" ")}
     >
       <Icon name={copied ? "check" : "link"} size={18} />

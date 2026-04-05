@@ -82,7 +82,7 @@ export function BriefCard({
         </div>
 
         {/* Row 2: Title */}
-        <h3 className="text-xl font-bold text-slate-900 dark:text-white group-hover:text-[#137fec] leading-tight mb-2 transition-colors">
+        <h3 className="text-xl font-bold text-slate-900 dark:text-white group-hover:text-primary leading-tight mb-2 transition-colors">
           {title}
         </h3>
 
@@ -92,7 +92,7 @@ export function BriefCard({
         </p>
 
         {/* Row 4: Footer */}
-        <div className="mt-auto border-t border-slate-200 dark:border-[#283039] pt-4 flex flex-col gap-4">
+        <div className="mt-auto border-t border-slate-200 dark:border-border-dark pt-4 flex flex-col gap-4">
           {/* Sub-row 1: Meta info */}
           <div className="flex justify-between items-center">
             <div className="flex items-center gap-2">
@@ -126,7 +126,7 @@ export function BriefCard({
                 </span>
               ))}
             </div>
-            <span className="inline-flex items-center gap-1 text-[#137fec] text-sm font-bold shrink-0">
+            <span className="inline-flex items-center gap-1 text-primary text-sm font-bold shrink-0">
               {t("readBrief")}
               <span data-arrow className="inline-flex">
                 <Icon name="arrow-right" size={16} />

@@ -152,7 +152,7 @@ export function ProductsListingPage() {
                 type="button"
                 className={[
                   "px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors duration-150 cursor-pointer",
-                  "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#137fec]",
+                  "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary",
                   activePeriod === opt.value
                     ? "text-primary border border-primary/40 bg-primary/5 dark:bg-primary/10"
                     : "text-slate-500 dark:text-slate-400 border border-transparent hover:text-slate-700 dark:hover:text-slate-300 hover:border-slate-300 dark:hover:border-slate-600",
@@ -201,7 +201,7 @@ export function ProductsListingPage() {
           {hasNext && (
             <div ref={sentinelRef} className="flex justify-center mt-10 py-4">
               {loadingMore && (
-                <div className="h-6 w-6 animate-spin rounded-full border-2 border-slate-300 border-t-[#137fec]" />
+                <div className="h-6 w-6 animate-spin rounded-full border-2 border-slate-300 border-t-primary" />
               )}
             </div>
           )}

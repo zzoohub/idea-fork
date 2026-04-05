@@ -41,7 +41,7 @@ export function SearchInput({
         placeholder={placeholder}
         className={[
           "w-full rounded-xl",
-          "border border-transparent bg-slate-100 dark:bg-[#1b2531]",
+          "border border-transparent bg-slate-100 dark:bg-surface-dark",
           "py-2.5 pl-10",
           value ? "pr-10" : "pr-4",
           "text-body text-text-primary placeholder:text-text-tertiary",

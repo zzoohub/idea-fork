@@ -10,7 +10,7 @@ export function ProductDetailSkeleton() {
 
       {/* Header skeleton */}
       <div className="space-y-6 mb-10">
-        <div className="p-6 rounded-2xl border border-slate-200 dark:border-[#283039]">
+        <div className="p-6 rounded-2xl border border-slate-200 dark:border-border-dark">
           <div className="flex items-start gap-6">
             <div className="skeleton size-24 shrink-0 rounded-xl" />
             <div className="flex-1 space-y-3">
@@ -25,7 +25,7 @@ export function ProductDetailSkeleton() {
           {Array.from({ length: 3 }).map((_, i) => (
             <div
               key={i}
-              className="p-5 rounded-2xl border border-slate-200 dark:border-[#283039]"
+              className="p-5 rounded-2xl border border-slate-200 dark:border-border-dark"
             >
               <div className="skeleton h-4 w-24 rounded mb-3" />
               <div className="skeleton h-8 w-20 rounded mb-2" />
@@ -47,7 +47,7 @@ export function ProductDetailSkeleton() {
         {Array.from({ length: 3 }).map((_, i) => (
           <div
             key={i}
-            className="p-5 rounded-2xl border border-slate-200 dark:border-[#283039]"
+            className="p-5 rounded-2xl border border-slate-200 dark:border-border-dark"
           >
             <div className="flex items-center gap-3 mb-3">
               <div className="skeleton size-8 rounded-full" />

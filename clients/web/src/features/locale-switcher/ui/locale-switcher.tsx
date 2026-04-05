@@ -97,7 +97,7 @@ export function LocaleSwitcher() {
             "min-w-[140px] py-1",
             "rounded-lg border",
             "bg-white dark:bg-[#1a1f25]",
-            "border-slate-200 dark:border-[#283039]",
+            "border-slate-200 dark:border-border-dark",
             "shadow-lg",
           ].join(" ")}
         >
@@ -113,7 +113,7 @@ export function LocaleSwitcher() {
                   "transition-colors duration-100",
                   loc === locale
                     ? "text-primary font-semibold bg-primary/5"
-                    : "text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-[#283039]",
+                    : "text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-border-dark",
                   "cursor-pointer",
                 ].join(" ")}
               >

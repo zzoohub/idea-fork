@@ -140,7 +140,7 @@ export function FilterChipBar({
           className={[
             "absolute right-0 top-full mt-1.5 z-50",
             "flex flex-wrap gap-1.5",
-            "bg-white dark:bg-[#1b2531] border border-slate-200 dark:border-[#283039] rounded-xl",
+            "bg-white dark:bg-surface-dark border border-slate-200 dark:border-border-dark rounded-xl",
             "p-3 shadow-lg",
             "min-w-[180px] max-w-[320px]",
           ].join(" ")}
