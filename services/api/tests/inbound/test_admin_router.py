@@ -19,45 +19,13 @@ def _build_admin_app() -> FastAPI:
     return app
 
 
-def _make_mock_db():
-    """Return a mock Database that yields a mock session."""
-    mock_session = AsyncMock()
-    mock_session.__aenter__ = AsyncMock(return_value=mock_session)
-    mock_session.__aexit__ = AsyncMock(return_value=False)
-    mock_db = MagicMock()
-    mock_db.session.return_value = mock_session
-    mock_db.dispose = AsyncMock()
-    return mock_db
-
-
 def _create_app_with_debug(debug: bool) -> FastAPI:
     """Create the real app via create_app() with API_DEBUG set to the given value."""
+    from tests.test_app_main import _make_mock_db, _patch_create_app
+
     mock_db = _make_mock_db()
 
-    with (
-        patch("app.main.get_settings") as mock_settings,
-        patch("app.main.Database", return_value=mock_db),
-        patch("app.main.PostgresTagRepository"),
-        patch("app.main.PostgresPostRepository"),
-        patch("app.main.PostgresBriefRepository"),
-        patch("app.main.PostgresProductRepository"),
-        patch("app.main.PostgresRatingRepository"),
-        patch("app.main.PostgresPipelineRepository"),
-        patch("app.main.RedditApiClient"),
-        patch("app.main.GeminiLlmClient"),
-    ):
-        settings = MagicMock()
-        settings.API_DATABASE_URL = "postgresql+asyncpg://localhost/test"
-        settings.API_CORS_ALLOWED_ORIGINS = "http://localhost:3000"
-        settings.API_DEBUG = debug
-        settings.REDDIT_USER_AGENT = "test-agent"
-        settings.GOOGLE_API_KEY = "test-key"
-        settings.LLM_MODEL = "gemini-2.5-flash"
-        settings.PIPELINE_SUBREDDITS = "startups,SaaS"
-        settings.PIPELINE_FETCH_LIMIT = 100
-        settings.API_INTERNAL_SECRET = "test-secret"
-        mock_settings.return_value = settings
-
+    with _patch_create_app(mock_db, API_DEBUG=debug, API_INTERNAL_SECRET="test-secret"):
         from app.main import create_app
 
         return create_app()

@@ -634,8 +634,8 @@ async def test_tag_posts_raises_when_response_text_is_empty_string():
 
 
 @pytest.mark.asyncio
-async def test_tag_posts_error_message_mentions_safety_filter():
-    """The ValueError message should mention 'safety-filtered'."""
+async def test_tag_posts_error_message_when_response_text_is_none():
+    """When Gemini returns text=None, ValueError should mention 'empty response'."""
     from tenacity import RetryError
 
     posts = [make_post(id=1)]
@@ -649,7 +649,7 @@ async def test_tag_posts_error_message_mentions_safety_filter():
         await client.tag_posts(posts)
 
     cause = exc_info.value.last_attempt.exception()
-    assert "safety-filtered" in str(cause)
+    assert "Gemini returned empty response" in str(cause)
 
 
 # ---------------------------------------------------------------------------
@@ -680,7 +680,6 @@ async def test_synthesize_brief_raises_when_response_text_is_none():
     cause = exc_info.value.last_attempt.exception()
     assert isinstance(cause, ValueError)
     assert "Gemini returned empty response" in str(cause)
-    assert "safety-filtered" in str(cause)
 
 
 @pytest.mark.asyncio

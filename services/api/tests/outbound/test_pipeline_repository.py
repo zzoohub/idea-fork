@@ -245,7 +245,7 @@ async def test_get_pending_posts_returns_mapped_posts():
     session.execute = AsyncMock(return_value=exec_result)
 
     repo = PostgresPipelineRepository(db)
-    posts = await repo.get_pending_posts(limit=50)
+    posts = await repo.get_pending_posts()
 
     assert len(posts) == 1
     assert isinstance(posts[0], Post)
