@@ -16,24 +16,9 @@ import type { ProductDetail, ProductPost } from "@/src/shared/api";
 import { formatRelativeTime } from "@/src/shared/lib/format-relative-time";
 import { useStaggerReveal, useScrollReveal } from "@/src/shared/lib/gsap";
 import { trackProductViewed, trackProductSignalClicked } from "@/src/shared/analytics";
+import { POST_TYPE_LABEL_KEY } from "@/src/shared/lib/post-types";
 
 const INITIAL_VISIBLE_COUNT = 3;
-
-/* --------------------------------------------------------------------------
-   Compute themes from post_type breakdown
-   -------------------------------------------------------------------------- */
-const POST_TYPE_LABEL_KEY: Record<string, string> = {
-  need: "need",
-  complaint: "complaint",
-  feature_request: "featureRequest",
-  alternative_seeking: "alternative",
-  comparison: "comparison",
-  question: "question",
-  review: "review",
-  showcase: "showcase",
-  discussion: "discussion",
-  other: "other",
-};
 
 interface ComputedTheme {
   type: string;

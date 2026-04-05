@@ -5,12 +5,15 @@ import { Link } from "@/src/shared/i18n/navigation";
 import { Icon } from "@/src/shared/ui/icon";
 import { Badge } from "@/src/shared/ui/badge";
 import { isSafeUrl } from "@/src/shared/lib/sanitize-url";
+import type { PostSource } from "@/src/shared/lib/post-source";
+import {
+  POST_TYPE_LABEL_KEY,
+  POST_TYPE_BADGE_VARIANT,
+} from "@/src/shared/lib/post-types";
 
 /* --------------------------------------------------------------------------
    Types
    -------------------------------------------------------------------------- */
-
-type PostSource = "reddit" | "twitter" | "linkedin" | "appstore";
 
 interface PostCardProps {
   source: PostSource;
@@ -27,26 +30,6 @@ interface PostCardProps {
   briefSlug?: string;
   onTagClick?: (tag: string) => void;
 }
-
-/* --------------------------------------------------------------------------
-   Post type badge key mapping
-   -------------------------------------------------------------------------- */
-
-const POST_TYPE_LABEL_KEY: Record<string, "need" | "complaint" | "featureRequest" | "alternative" | "comparison" | "question" | "review"> = {
-  need: "need",
-  complaint: "complaint",
-  feature_request: "featureRequest",
-  alternative_seeking: "alternative",
-  comparison: "comparison",
-  question: "question",
-  review: "review",
-};
-
-const POST_TYPE_BADGE_VARIANT: Record<string, "frustrated" | "request" | "question"> = {
-  complaint: "frustrated",
-  feature_request: "request",
-  question: "question",
-};
 
 /* --------------------------------------------------------------------------
    Source avatars

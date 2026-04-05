@@ -16,6 +16,7 @@ import { extractDemandSignals } from "@/src/shared/lib/extract-demand-signals";
 import { computeHeatLevel } from "@/src/shared/lib/compute-heat-level";
 import { formatRelativeTime } from "@/src/shared/lib/format-relative-time";
 import type { BriefListItem, ProductListItem, Post } from "@/src/shared/api";
+import { mapSource, mapSourceName } from "@/src/shared/lib/post-source";
 import { trackSearchPerformed, trackSearchResultClicked } from "@/src/shared/analytics";
 
 /* --------------------------------------------------------------------------
@@ -33,31 +34,6 @@ type ContentType = "briefs" | "products" | "posts";
 const VALID_TYPES = new Set<string>(["briefs", "products", "posts"]);
 
 const PREVIEW_LIMIT = 3;
-
-/* --------------------------------------------------------------------------
-   Map API source string to PostCard source type
-   -------------------------------------------------------------------------- */
-function mapSource(source: string) {
-  const s = source.toLowerCase();
-  if (s === "reddit") return "reddit" as const;
-  if (s === "twitter" || s === "x") return "twitter" as const;
-  if (s === "linkedin") return "linkedin" as const;
-  if (s === "appstore" || s === "app_store") return "appstore" as const;
-  if (s === "playstore" || s === "play_store" || s === "google_play")
-    return "appstore" as const;
-  return "reddit" as const;
-}
-
-function mapSourceName(post: Post): string {
-  if (post.subreddit) return `r/${post.subreddit}`;
-  const s = post.source.toLowerCase();
-  if (s === "twitter" || s === "x") return "Twitter / X";
-  if (s === "linkedin") return "LinkedIn";
-  if (s === "appstore" || s === "app_store") return "App Store";
-  if (s === "playstore" || s === "play_store" || s === "google_play")
-    return "Google Play";
-  return post.source;
-}
 
 /* --------------------------------------------------------------------------
    Client-side filter helpers

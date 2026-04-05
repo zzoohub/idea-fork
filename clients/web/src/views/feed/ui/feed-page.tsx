@@ -13,6 +13,7 @@ import { fetchPosts } from "@/src/entities/post/api";
 import { fetchTags } from "@/src/entities/tag/api";
 import type { Post, Tag } from "@/src/shared/api";
 import { formatRelativeTime } from "@/src/shared/lib/format-relative-time";
+import { mapSource, mapSourceName } from "@/src/shared/lib/post-source";
 import { trackFeedPostClicked, trackFeedFiltered } from "@/src/shared/analytics";
 
 /* --------------------------------------------------------------------------
@@ -32,27 +33,6 @@ const POST_TYPE_TAB_KEYS = [
 const VALID_POST_TYPES = new Set(
   POST_TYPE_TAB_KEYS.flatMap((t) => (t.key !== null ? [t.key] : [])),
 );
-
-/* --------------------------------------------------------------------------
-   Map API source string to PostCard source type
-   -------------------------------------------------------------------------- */
-function mapSource(source: string) {
-  const s = source.toLowerCase();
-  if (s === "reddit") return "reddit" as const;
-  if (s === "twitter" || s === "x") return "twitter" as const;
-  if (s === "linkedin") return "linkedin" as const;
-  if (s === "appstore" || s === "app_store") return "appstore" as const;
-  return "reddit" as const;
-}
-
-function mapSourceName(post: Post): string {
-  if (post.subreddit) return `r/${post.subreddit}`;
-  const s = post.source.toLowerCase();
-  if (s === "twitter" || s === "x") return "Twitter / X";
-  if (s === "linkedin") return "LinkedIn";
-  if (s === "appstore" || s === "app_store") return "App Store";
-  return post.source;
-}
 
 /* --------------------------------------------------------------------------
    Map API sort param to backend sort field
