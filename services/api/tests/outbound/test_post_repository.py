@@ -254,23 +254,4 @@ async def test_get_post_not_found():
     assert result is None
 
 
-# ---------------------------------------------------------------------------
-# _apply_cursor — None vs provided
-# ---------------------------------------------------------------------------
-
-def test_apply_cursor_none_returns_stmt():
-    repo = PostgresPostRepository(MagicMock())
-    stmt = MagicMock()
-    result = repo._apply_cursor(stmt, None, MagicMock())
-    assert result is stmt
-
-
-def test_apply_cursor_with_value_calls_where():
-    from outbound.postgres.models import PostRow
-
-    repo = PostgresPostRepository(MagicMock())
-    stmt = MagicMock()
-    stmt.where = MagicMock(return_value=stmt)
-    cursor = encode_cursor({"v": "2026-02-18T00:00:00+00:00", "id": 10})
-    result = repo._apply_cursor(stmt, cursor, PostRow.external_created_at)
-    stmt.where.assert_called_once()
+# apply_cursor tests moved to tests/shared/test_pagination.py

@@ -1,10 +1,11 @@
 import base64
 import json
+from dataclasses import dataclass
 from datetime import datetime
 from decimal import Decimal
 from typing import Any
 
-from sqlalchemy import DateTime, Numeric
+from sqlalchemy import DateTime, Numeric, Select, and_, or_
 from sqlalchemy.orm import MappedColumn
 
 # Cursors are base64-encoded JSON blobs generated server-side.
@@ -51,3 +52,53 @@ def cast_cursor_value(value: Any, column: MappedColumn) -> Any:
     if isinstance(col_type, Numeric) and isinstance(value, str):
         return Decimal(value)
     return value
+
+
+def apply_cursor(
+    stmt: Select, cursor: str | None, sort_col: MappedColumn, id_col: MappedColumn
+) -> Select:
+    """Apply keyset (cursor) pagination to a SQLAlchemy SELECT statement.
+
+    Shared across repositories to avoid duplicating the same cursor logic.
+    """
+    if cursor is None:
+        return stmt
+
+    values = decode_cursor(cursor)
+    cursor_sort_val = cast_cursor_value(values.get("v"), sort_col)
+    cursor_id = values.get("id")
+
+    return stmt.where(
+        or_(
+            sort_col < cursor_sort_val,
+            and_(sort_col == cursor_sort_val, id_col < cursor_id),
+        )
+    )
+
+
+@dataclass(frozen=True)
+class Page[T]:
+    items: list[T]
+    has_next: bool
+    next_cursor: str | None
+
+
+def paginate(
+    rows: list[Any],
+    *,
+    limit: int,
+    sort_attr: str,
+) -> Page:
+    """Build a cursor-paginated page from over-fetched rows.
+
+    Expects ``len(rows)`` to be ``limit + 1`` when there is a next page.
+    """
+    has_next = len(rows) > limit
+    items = rows[:limit]
+
+    next_cursor = None
+    if has_next and items:
+        last = items[-1]
+        next_cursor = encode_cursor({"v": getattr(last, sort_attr), "id": last.id})
+
+    return Page(items=items, has_next=has_next, next_cursor=next_cursor)

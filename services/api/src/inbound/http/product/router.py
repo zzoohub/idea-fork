@@ -10,7 +10,7 @@ from inbound.http.product.response import (
     RelatedBriefResponseData,
 )
 from inbound.http.response import cache_collection, cache_detail, envelope
-from shared.pagination import encode_cursor
+from shared.pagination import encode_cursor, paginate
 
 router = APIRouter(prefix="/products", tags=["products"])
 
@@ -33,21 +33,12 @@ async def list_products(
 ):
     svc = _get_service(request)
     products = await svc.list_products(params)
-    has_next = len(products) > params.limit
-    items = products[: params.limit]
-
-    meta: dict = {"has_next": has_next, "next_cursor": None}
-    if has_next and items:
-        last = items[-1]
-        sort_attr = SORT_ATTR_MAP[params.sort]
-        meta["next_cursor"] = encode_cursor(
-            {"v": getattr(last, sort_attr), "id": last.id}
-        )
+    page = paginate(products, limit=params.limit, sort_attr=SORT_ATTR_MAP[params.sort])
 
     cache_collection(response)
     return envelope(
-        [ProductListResponseData.from_domain(p).model_dump(mode="json") for p in items],
-        meta=meta,
+        [ProductListResponseData.from_domain(p).model_dump(mode="json") for p in page.items],
+        meta={"has_next": page.has_next, "next_cursor": page.next_cursor},
     )
 
 

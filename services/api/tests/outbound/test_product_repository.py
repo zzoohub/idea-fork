@@ -268,26 +268,7 @@ async def test_get_product_posts_empty():
     assert result == []
 
 
-# ---------------------------------------------------------------------------
-# _apply_cursor — None vs provided
-# ---------------------------------------------------------------------------
-
-def test_apply_cursor_none_returns_stmt():
-    repo = PostgresProductRepository(MagicMock())
-    stmt = MagicMock()
-    result = repo._apply_cursor(stmt, None, MagicMock())
-    assert result is stmt
-
-
-def test_apply_cursor_with_value_calls_where():
-    from outbound.postgres.models import ProductRow
-
-    repo = PostgresProductRepository(MagicMock())
-    stmt = MagicMock()
-    stmt.where = MagicMock(return_value=stmt)
-    cursor = encode_cursor({"v": "8.5", "id": 10})
-    result = repo._apply_cursor(stmt, cursor, ProductRow.trending_score)
-    stmt.where.assert_called_once()
+# apply_cursor tests moved to tests/shared/test_pagination.py
 
 
 # ---------------------------------------------------------------------------

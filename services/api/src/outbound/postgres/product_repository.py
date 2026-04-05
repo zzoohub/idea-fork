@@ -1,5 +1,4 @@
-from sqlalchemy import and_, func, or_, select, text
-from sqlalchemy.orm import aliased
+from sqlalchemy import func, select, text
 
 from domain.post.models import Post, PostTag
 from domain.product.models import Product, ProductListParams, ProductMetrics, RelatedBrief
@@ -11,7 +10,7 @@ from outbound.postgres.models import (
     ProductRow,
     ProductTagRow,
 )
-from shared.pagination import cast_cursor_value, decode_cursor
+from shared.pagination import decode_cursor
 
 SORT_COLUMN_MAP = {
     "-trending_score": ProductRow.trending_score,
@@ -264,19 +263,3 @@ class PostgresProductRepository:
                 for row in result.fetchall()
             ]
 
-    def _apply_cursor(self, stmt, cursor: str | None, sort_col):
-        if cursor is None:
-            return stmt
-
-        values = decode_cursor(cursor)
-        cursor_sort_val = cast_cursor_value(values.get("v"), sort_col)
-        cursor_id = values.get("id")
-
-        return stmt.where(
-            or_(
-                sort_col < cursor_sort_val,
-                and_(
-                    sort_col == cursor_sort_val, ProductRow.id < cursor_id
-                ),
-            )
-        )

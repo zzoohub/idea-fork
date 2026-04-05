@@ -5,7 +5,7 @@ from domain.post.service import PostService
 from inbound.http.post.dependencies import get_post_list_params
 from inbound.http.post.response import PostResponseData
 from inbound.http.response import cache_collection, cache_detail, envelope
-from shared.pagination import encode_cursor
+from shared.pagination import paginate
 
 router = APIRouter(prefix="/posts", tags=["posts"])
 
@@ -28,21 +28,12 @@ async def list_posts(
 ):
     svc = _get_service(request)
     posts = await svc.list_posts(params)
-    has_next = len(posts) > params.limit
-    items = posts[: params.limit]
-
-    meta: dict = {"has_next": has_next, "next_cursor": None}
-    if has_next and items:
-        last = items[-1]
-        sort_attr = SORT_ATTR_MAP[params.sort]
-        meta["next_cursor"] = encode_cursor(
-            {"v": getattr(last, sort_attr), "id": last.id}
-        )
+    page = paginate(posts, limit=params.limit, sort_attr=SORT_ATTR_MAP[params.sort])
 
     cache_collection(response)
     return envelope(
-        [PostResponseData.from_domain(p).model_dump(mode="json") for p in items],
-        meta=meta,
+        [PostResponseData.from_domain(p).model_dump(mode="json") for p in page.items],
+        meta={"has_next": page.has_next, "next_cursor": page.next_cursor},
     )
 
 

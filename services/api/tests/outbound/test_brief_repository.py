@@ -176,25 +176,4 @@ async def test_get_brief_by_id_not_found():
     assert result is None
 
 
-# ---------------------------------------------------------------------------
-# _apply_cursor — both branches (None cursor vs. provided cursor)
-# ---------------------------------------------------------------------------
-
-def test_apply_cursor_with_none_returns_stmt_unchanged():
-    """When cursor is None, _apply_cursor should return stmt as-is."""
-    repo = PostgresBriefRepository(MagicMock())
-    stmt = MagicMock()
-    result = repo._apply_cursor(stmt, None, MagicMock())
-    assert result is stmt
-
-
-def test_apply_cursor_with_value_calls_where():
-    """When cursor is provided, _apply_cursor should apply a where clause."""
-    from outbound.postgres.models import BriefRow
-
-    repo = PostgresBriefRepository(MagicMock())
-    stmt = MagicMock()
-    stmt.where = MagicMock(return_value=stmt)
-    cursor = encode_cursor({"v": "2026-02-19T00:00:00+00:00", "id": 10})
-    result = repo._apply_cursor(stmt, cursor, BriefRow.published_at)
-    stmt.where.assert_called_once()
+# apply_cursor tests moved to tests/shared/test_pagination.py

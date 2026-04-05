@@ -1,10 +1,10 @@
-from sqlalchemy import and_, or_, select
+from sqlalchemy import select
 
 from domain.brief.models import Brief, BriefListParams
 from outbound.postgres.database import Database
 from outbound.postgres.mapper import brief_to_domain
 from outbound.postgres.models import BriefRow
-from shared.pagination import cast_cursor_value, decode_cursor
+from shared.pagination import apply_cursor
 
 SORT_COLUMN_MAP = {
     "-published_at": BriefRow.published_at,
@@ -24,7 +24,7 @@ class PostgresBriefRepository:
             .where(BriefRow.status == "published")
             .order_by(sort_col.desc(), BriefRow.id.desc())
         )
-        stmt = self._apply_cursor(stmt, params.cursor, sort_col)
+        stmt = apply_cursor(stmt, params.cursor, sort_col, BriefRow.id)
         stmt = stmt.limit(params.limit + 1)
 
         async with self._db.session() as session:
@@ -49,17 +49,3 @@ class PostgresBriefRepository:
             row = result.scalars().first()
             return brief_to_domain(row) if row else None
 
-    def _apply_cursor(self, stmt, cursor: str | None, sort_col):
-        if cursor is None:
-            return stmt
-
-        values = decode_cursor(cursor)
-        cursor_sort_val = cast_cursor_value(values.get("v"), sort_col)
-        cursor_id = values.get("id")
-
-        return stmt.where(
-            or_(
-                sort_col < cursor_sort_val,
-                and_(sort_col == cursor_sort_val, BriefRow.id < cursor_id),
-            )
-        )

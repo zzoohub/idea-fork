@@ -5,7 +5,7 @@ from domain.brief.service import BriefService
 from inbound.http.brief.dependencies import get_brief_list_params
 from inbound.http.brief.response import BriefDetailResponseData, BriefListResponseData
 from inbound.http.response import cache_collection, cache_detail, envelope
-from shared.pagination import encode_cursor
+from shared.pagination import paginate
 
 router = APIRouter(prefix="/briefs", tags=["briefs"])
 
@@ -28,21 +28,12 @@ async def list_briefs(
 ):
     svc = _get_service(request)
     briefs = await svc.list_briefs(params)
-    has_next = len(briefs) > params.limit
-    items = briefs[: params.limit]
-
-    meta: dict = {"has_next": has_next, "next_cursor": None}
-    if has_next and items:
-        last = items[-1]
-        sort_attr = SORT_ATTR_MAP[params.sort]
-        meta["next_cursor"] = encode_cursor(
-            {"v": getattr(last, sort_attr), "id": last.id}
-        )
+    page = paginate(briefs, limit=params.limit, sort_attr=SORT_ATTR_MAP[params.sort])
 
     cache_collection(response)
     return envelope(
-        [BriefListResponseData.from_domain(b).model_dump(mode="json") for b in items],
-        meta=meta,
+        [BriefListResponseData.from_domain(b).model_dump(mode="json") for b in page.items],
+        meta={"has_next": page.has_next, "next_cursor": page.next_cursor},
     )
 
 
