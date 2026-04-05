@@ -1,12 +1,12 @@
 import asyncio
 import logging
-import re
 from datetime import UTC, datetime, timedelta
 
 import httpx
 from tenacity import retry, stop_after_attempt, wait_exponential
 
 from domain.pipeline.models import RawPost, RawProduct
+from shared.slugify import slugify
 
 logger = logging.getLogger(__name__)
 
@@ -14,13 +14,6 @@ _ITUNES_SEARCH_URL = "https://itunes.apple.com/search"
 _ITUNES_REVIEWS_URL = (
     "https://itunes.apple.com/{country}/rss/customerreviews/page={page}/id={app_id}/json"
 )
-_SLUG_RE = re.compile(r"[^a-z0-9]+")
-
-
-def _slugify(name: str) -> str:
-    slug = name.lower().strip()
-    slug = _SLUG_RE.sub("-", slug)
-    return slug.strip("-")
 
 
 def _parse_release_date(raw: str | None) -> datetime | None:
@@ -62,7 +55,7 @@ class AppStoreClient:
                             RawProduct(
                                 external_id=ext_id,
                                 name=item.get("trackName", ""),
-                                slug=f"{_slugify(item.get('trackName', ''))}-{ext_id}",
+                                slug=f"{slugify(item.get('trackName', ''))}-{ext_id}",
                                 tagline=None,
                                 description=item.get("description"),
                                 url=item.get("trackViewUrl"),

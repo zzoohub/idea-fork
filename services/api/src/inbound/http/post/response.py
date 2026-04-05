@@ -3,11 +3,7 @@ from datetime import datetime
 from pydantic import BaseModel
 
 from domain.post.models import Post
-
-
-class PostTagResponseData(BaseModel):
-    slug: str
-    name: str
+from inbound.http.response import TagData
 
 
 class PostResponseData(BaseModel):
@@ -22,7 +18,7 @@ class PostResponseData(BaseModel):
     num_comments: int
     sentiment: str | None
     post_type: str | None
-    tags: list[PostTagResponseData]
+    tags: list[TagData]
 
     @classmethod
     def from_domain(cls, post: Post) -> "PostResponseData":
@@ -38,5 +34,5 @@ class PostResponseData(BaseModel):
             num_comments=post.num_comments,
             sentiment=post.sentiment,
             post_type=post.post_type,
-            tags=[PostTagResponseData(slug=t.slug, name=t.name) for t in post.tags],
+            tags=[TagData(slug=t.slug, name=t.name) for t in post.tags],
         )

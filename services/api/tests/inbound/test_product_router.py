@@ -10,8 +10,8 @@ from inbound.http.product.response import (
     ProductMetricsResponseData,
     ProductPostResponseData,
     RelatedBriefResponseData,
-    TagResponseData,
 )
+from inbound.http.response import TagData
 from tests.conftest import build_test_app, make_post, make_product
 
 
@@ -326,18 +326,18 @@ async def test_get_product_detail_metrics_zero_values():
 
 
 # ---------------------------------------------------------------------------
-# Response model unit tests: TagResponseData
+# Response model unit tests: TagData
 # ---------------------------------------------------------------------------
 
 
 def test_tag_response_data_fields():
-    tag = TagResponseData(slug="payments", name="Payments")
+    tag = TagData(slug="payments", name="Payments")
     assert tag.slug == "payments"
     assert tag.name == "Payments"
 
 
 def test_tag_response_data_serializes_to_dict():
-    tag = TagResponseData(slug="ai-ml", name="AI/ML")
+    tag = TagData(slug="ai-ml", name="AI/ML")
     d = tag.model_dump()
     assert d == {"slug": "ai-ml", "name": "AI/ML"}
 
@@ -378,13 +378,13 @@ def test_product_metrics_response_data_zero_values():
 
 
 def test_product_list_response_data_from_domain_with_tags():
-    """from_domain must map product.tags to TagResponseData objects."""
+    """from_domain must map product.tags to TagData objects."""
     tags = [PostTag(slug="productivity", name="Productivity"), PostTag(slug="saas", name="SaaS")]
     product = make_product(tags=tags)
     response = ProductListResponseData.from_domain(product)
 
     assert len(response.tags) == 2
-    assert isinstance(response.tags[0], TagResponseData)
+    assert isinstance(response.tags[0], TagData)
     assert response.tags[0].slug == "productivity"
     assert response.tags[1].slug == "saas"
 

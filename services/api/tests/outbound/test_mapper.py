@@ -13,7 +13,6 @@ from domain.tag.models import Tag
 from outbound.postgres.mapper import (
     brief_to_domain,
     post_to_domain,
-    post_to_domain_no_tags,
     product_to_domain,
     rating_to_domain,
     tag_to_domain,
@@ -189,16 +188,15 @@ def test_post_to_domain_maps_optional_fields_as_none():
 
 
 # ---------------------------------------------------------------------------
-# post_to_domain_no_tags
+# post_to_domain with include_tags=False
 # ---------------------------------------------------------------------------
 
-def test_post_to_domain_no_tags_returns_empty_tags():
+def test_post_to_domain_include_tags_false_returns_empty_tags():
     tag_row = _make_tag_row()
     post_row = _make_post_row(tags=[tag_row])
-    post = post_to_domain_no_tags(post_row)
+    post = post_to_domain(post_row, include_tags=False)
 
     assert isinstance(post, Post)
-    # Tags should always be empty regardless of row.tags
     assert post.tags == []
     assert post.id == post_row.id
 

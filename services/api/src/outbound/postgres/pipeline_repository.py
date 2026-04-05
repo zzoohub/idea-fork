@@ -1,5 +1,4 @@
 import logging
-import re
 from datetime import UTC, datetime
 
 from sqlalchemy import case, func, select, text, update
@@ -10,6 +9,7 @@ from domain.pipeline.models import BriefDraft, ClusteringResult, RawPost, RawPro
 from domain.post.models import ACTIONABLE_POST_TYPES, Post
 from outbound.postgres.database import Database
 from outbound.postgres.mapper import post_to_domain
+from shared.slugify import slugify
 from outbound.postgres.models import (
     BriefRow,
     BriefSourceRow,
@@ -23,12 +23,6 @@ from outbound.postgres.models import (
 )
 
 logger = logging.getLogger(__name__)
-
-
-def _slugify(name: str) -> str:
-    slug = name.lower().strip()
-    slug = re.sub(r"[^a-z0-9]+", "-", slug)
-    return slug.strip("-")
 
 
 class PostgresPipelineRepository:
@@ -280,7 +274,7 @@ class PostgresPipelineRepository:
             now = datetime.now(UTC).replace(tzinfo=None)
 
             # Ensure slug uniqueness by appending cluster_id
-            slug = f"{_slugify(draft.slug)}-{cluster_id}"
+            slug = f"{slugify(draft.slug)}-{cluster_id}"
 
             stmt = (
                 pg_insert(BriefRow)
@@ -378,7 +372,7 @@ class PostgresPipelineRepository:
     async def _link_product_tags(
         self, session: AsyncSession, product_id: int, category: str
     ) -> None:
-        slug = _slugify(category)
+        slug = slugify(category)
         tag_name = category.strip().title()
 
         tag_stmt = pg_insert(TagRow).values(name=tag_name, slug=slug)

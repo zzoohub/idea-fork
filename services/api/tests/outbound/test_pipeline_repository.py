@@ -9,27 +9,9 @@ import pytest
 
 from domain.pipeline.models import BriefDraft, ClusteringResult, RawPost, RawProduct, TaggingResult
 from domain.post.models import Post, PostTag
-from outbound.postgres.pipeline_repository import PostgresPipelineRepository, _slugify
+from outbound.postgres.pipeline_repository import PostgresPipelineRepository
 
-
-# ---------------------------------------------------------------------------
-# _slugify helper
-# ---------------------------------------------------------------------------
-
-def test_slugify_lowercase():
-    assert _slugify("Hello World") == "hello-world"
-
-
-def test_slugify_strips_special_chars():
-    assert _slugify("AI/ML & Data!") == "ai-ml-data"
-
-
-def test_slugify_strips_leading_trailing_hyphens():
-    assert _slugify("---test---") == "test"
-
-
-def test_slugify_collapses_multiple_separators():
-    assert _slugify("one   two   three") == "one-two-three"
+# slugify tests consolidated into tests/shared/test_slugify.py
 
 
 # ---------------------------------------------------------------------------

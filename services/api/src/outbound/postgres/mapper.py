@@ -16,7 +16,7 @@ def tag_to_domain(row: TagRow) -> Tag:
     return Tag(id=row.id, slug=row.slug, name=row.name)
 
 
-def post_to_domain(row: PostRow) -> Post:
+def post_to_domain(row: PostRow, *, include_tags: bool = True) -> Post:
     return Post(
         id=row.id,
         title=row.title,
@@ -29,24 +29,7 @@ def post_to_domain(row: PostRow) -> Post:
         num_comments=row.num_comments,
         sentiment=row.sentiment,
         post_type=row.post_type,
-        tags=[PostTag(slug=t.slug, name=t.name) for t in row.tags],
-    )
-
-
-def post_to_domain_no_tags(row: PostRow) -> Post:
-    return Post(
-        id=row.id,
-        title=row.title,
-        body=row.body,
-        source=row.source,
-        subreddit=row.subreddit,
-        external_url=row.external_url,
-        external_created_at=row.external_created_at,
-        score=row.score,
-        num_comments=row.num_comments,
-        sentiment=row.sentiment,
-        post_type=row.post_type,
-        tags=[],
+        tags=[PostTag(slug=t.slug, name=t.name) for t in row.tags] if include_tags else [],
     )
 
 

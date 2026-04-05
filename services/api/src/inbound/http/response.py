@@ -1,6 +1,13 @@
 from typing import Any
 
+from pydantic import BaseModel
 from starlette.responses import Response
+
+
+class TagData(BaseModel):
+    """Reusable slug+name tag model shared across post and product responses."""
+    slug: str
+    name: str
 
 
 def envelope(data: Any, meta: dict[str, Any] | None = None) -> dict[str, Any]:

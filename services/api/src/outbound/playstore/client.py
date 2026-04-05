@@ -1,19 +1,11 @@
 import asyncio
 import logging
-import re
 from datetime import UTC, datetime, timedelta
 
 from domain.pipeline.models import RawPost, RawProduct
+from shared.slugify import slugify
 
 logger = logging.getLogger(__name__)
-
-_SLUG_RE = re.compile(r"[^a-z0-9]+")
-
-
-def _slugify(name: str) -> str:
-    slug = name.lower().strip()
-    slug = _SLUG_RE.sub("-", slug)
-    return slug.strip("-")
 
 
 def _parse_released(raw: str | None) -> datetime | None:
@@ -66,7 +58,7 @@ class PlayStoreClient:
                         RawProduct(
                             external_id=app_id,
                             name=item.get("title", ""),
-                            slug=f"{_slugify(item.get('title', ''))}-{_slugify(app_id)}",
+                            slug=f"{slugify(item.get('title', ''))}-{slugify(app_id)}",
                             tagline=None,
                             description=item.get("description"),
                             url=f"https://play.google.com/store/apps/details?id={app_id}",

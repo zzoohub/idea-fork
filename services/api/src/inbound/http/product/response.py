@@ -4,11 +4,7 @@ from pydantic import BaseModel
 
 from domain.post.models import Post
 from domain.product.models import Product, ProductMetrics, RelatedBrief
-
-
-class TagResponseData(BaseModel):
-    slug: str
-    name: str
+from inbound.http.response import TagData
 
 
 class ProductListResponseData(BaseModel):
@@ -25,7 +21,7 @@ class ProductListResponseData(BaseModel):
     launched_at: datetime | None
     signal_count: int
     trending_score: float
-    tags: list[TagResponseData]
+    tags: list[TagData]
 
     @classmethod
     def from_domain(cls, product: Product) -> "ProductListResponseData":
@@ -43,7 +39,7 @@ class ProductListResponseData(BaseModel):
             launched_at=product.launched_at,
             signal_count=product.signal_count,
             trending_score=product.trending_score,
-            tags=[TagResponseData(slug=t.slug, name=t.name) for t in product.tags],
+            tags=[TagData(slug=t.slug, name=t.name) for t in product.tags],
         )
 
 

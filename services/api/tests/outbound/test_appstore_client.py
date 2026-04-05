@@ -5,36 +5,9 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 
 from domain.pipeline.models import RawPost, RawProduct
-from outbound.appstore.client import AppStoreClient, _slugify, _parse_release_date
+from outbound.appstore.client import AppStoreClient, _parse_release_date
 
-
-# ---------------------------------------------------------------------------
-# _slugify helper
-# ---------------------------------------------------------------------------
-
-
-def test_slugify_basic():
-    assert _slugify("Hello World") == "hello-world"
-
-
-def test_slugify_special_characters():
-    assert _slugify("App & Tools!") == "app-tools"
-
-
-def test_slugify_leading_trailing_separators():
-    assert _slugify("  --My App--  ") == "my-app"
-
-
-def test_slugify_numbers_preserved():
-    assert _slugify("App 2.0") == "app-2-0"
-
-
-def test_slugify_empty_string():
-    assert _slugify("") == ""
-
-
-def test_slugify_already_lowercase():
-    assert _slugify("myapp") == "myapp"
+# slugify tests consolidated into tests/shared/test_slugify.py
 
 
 # ---------------------------------------------------------------------------
