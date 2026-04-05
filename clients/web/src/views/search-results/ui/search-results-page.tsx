@@ -4,20 +4,20 @@ import { useSearchParams } from "next/navigation";
 import { useEffect, useState, useCallback, useMemo, useRef, Suspense } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "@/src/shared/i18n/navigation";
-import { Skeleton, EmptyState, ErrorState } from "@/src/shared/ui";
+import { ErrorState } from "@/src/shared/ui";
 import { useScrollReveal } from "@/src/shared/lib/gsap";
-import { BriefCard } from "@/src/entities/brief/ui";
-import { ProductCard } from "@/src/entities/product/ui";
-import { PostCard } from "@/src/entities/post/ui";
 import { fetchBriefs } from "@/src/entities/brief/api";
 import { fetchProducts } from "@/src/entities/product/api";
 import { fetchPosts } from "@/src/entities/post/api";
-import { extractDemandSignals } from "@/src/shared/lib/extract-demand-signals";
-import { computeHeatLevel } from "@/src/shared/lib/compute-heat-level";
-import { formatRelativeTime } from "@/src/shared/lib/format-relative-time";
 import type { BriefListItem, ProductListItem, Post } from "@/src/shared/api";
-import { mapSource, mapSourceName } from "@/src/shared/lib/post-source";
 import { trackSearchPerformed, trackSearchResultClicked } from "@/src/shared/analytics";
+import {
+  BriefCardItem,
+  ProductCardItem,
+  PostCardItem,
+  filterBriefs,
+} from "./search-result-cards";
+import { SearchSkeleton, NoResults } from "./search-skeleton";
 
 /* --------------------------------------------------------------------------
    Content type tabs
@@ -34,19 +34,6 @@ type ContentType = "briefs" | "products" | "posts";
 const VALID_TYPES = new Set<string>(["briefs", "products", "posts"]);
 
 const PREVIEW_LIMIT = 3;
-
-/* --------------------------------------------------------------------------
-   Client-side filter helpers
-   -------------------------------------------------------------------------- */
-function filterBriefs(briefs: BriefListItem[], query: string): BriefListItem[] {
-  const q = query.toLowerCase();
-  return briefs.filter(
-    (b) =>
-      b.title.toLowerCase().includes(q) ||
-      b.summary.toLowerCase().includes(q),
-  );
-}
-
 
 /* --------------------------------------------------------------------------
    SearchResultsInner
@@ -119,8 +106,8 @@ function SearchResultsInner() {
     () => (query ? filterBriefs(briefs, query) : []),
     [briefs, query],
   );
-  const filteredProducts = products; // already filtered by backend
-  const filteredPosts = posts; // already filtered by backend
+  const filteredProducts = products;
+  const filteredPosts = posts;
 
   const totalResults =
     filteredBriefs.length + filteredProducts.length + filteredPosts.length;
@@ -333,7 +320,7 @@ function AllResults({
 
       {products.length > 0 && (
         <>
-          {briefs.length > 0 && <Divider />}
+          {briefs.length > 0 && <hr className="border-slate-200 dark:border-[#283039]" />}
           <section>
             <h2 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">
               {t("tabs.products")}
@@ -358,7 +345,7 @@ function AllResults({
 
       {posts.length > 0 && (
         <>
-          {(briefs.length > 0 || products.length > 0) && <Divider />}
+          {(briefs.length > 0 || products.length > 0) && <hr className="border-slate-200 dark:border-[#283039]" />}
           <section>
             <h2 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">
               {t("tabs.posts")}
@@ -366,7 +353,7 @@ function AllResults({
             <div ref={postsListRef} className="flex flex-col gap-5 max-w-3xl mx-auto">
               {posts.slice(0, PREVIEW_LIMIT).map((post, idx) => (
                 <div key={post.id} onClick={() => trackSearchResultClicked({ query, result_type: "post", result_position: idx + 1 })}>
-                  <PostCardItem post={post} query={query} />
+                  <PostCardItem post={post} />
                 </div>
               ))}
             </div>
@@ -419,7 +406,7 @@ function PostsResults({ posts, query }: { posts: Post[]; query: string }) {
     <div className="flex flex-col gap-5 max-w-3xl mx-auto">
       {posts.map((post, idx) => (
         <div key={post.id} onClick={() => trackSearchResultClicked({ query, result_type: "post", result_position: idx + 1 })}>
-          <PostCardItem post={post} query={query} />
+          <PostCardItem post={post} />
         </div>
       ))}
     </div>
@@ -427,71 +414,7 @@ function PostsResults({ posts, query }: { posts: Post[]; query: string }) {
 }
 
 /* --------------------------------------------------------------------------
-   Card wrappers (map data → card props)
-   -------------------------------------------------------------------------- */
-function BriefCardItem({ brief }: { brief: BriefListItem }) {
-  const parsed = extractDemandSignals(brief.demand_signals);
-  const heatLevel = computeHeatLevel({
-    postCount: parsed.postCount,
-    newestPostAt: parsed.newestPostAt,
-  });
-  const freshness = parsed.newestPostAt
-    ? formatRelativeTime(parsed.newestPostAt)
-    : null;
-
-  return (
-    <BriefCard
-      title={brief.title}
-      heatLevel={heatLevel}
-      signalCount={parsed.postCount || brief.source_count}
-      communityCount={parsed.subredditCount || 1}
-      freshness={freshness}
-      snippet={brief.summary}
-      tags={[]}
-      slug={brief.slug}
-    />
-  );
-}
-
-function ProductCardItem({ product }: { product: ProductListItem }) {
-  return (
-    <ProductCard
-      name={product.name}
-      slug={product.slug}
-      iconUrl={product.image_url ?? undefined}
-      productUrl={product.url ?? undefined}
-      category={product.category ?? "Uncategorized"}
-      heatLevel={computeHeatLevel({
-        postCount: product.signal_count,
-        newestPostAt: product.launched_at,
-      })}
-      signalCount={product.signal_count}
-      tagline={product.tagline ?? product.description ?? ""}
-      source={product.source ?? undefined}
-      tags={product.tags ?? []}
-    />
-  );
-}
-
-function PostCardItem({ post, query }: { post: Post; query: string }) {
-  return (
-    <PostCard
-      source={mapSource(post.source)}
-      sourceName={mapSourceName(post)}
-      date={formatRelativeTime(post.external_created_at)}
-      title={post.title}
-      snippet={post.body ?? ""}
-      postType={post.post_type ?? undefined}
-      tags={post.tags.map((t) => ({ label: t.name, value: t.slug }))}
-      upvotes={post.score}
-      commentCount={post.num_comments}
-      originalUrl={post.external_url}
-    />
-  );
-}
-
-/* --------------------------------------------------------------------------
-   Small shared components
+   View all link
    -------------------------------------------------------------------------- */
 function ViewAllLink({
   count,
@@ -512,108 +435,6 @@ function ViewAllLink({
       >
         {tCommon("viewAll", { count, label })} &rarr;
       </button>
-    </div>
-  );
-}
-
-function Divider() {
-  return (
-    <hr className="border-slate-200 dark:border-[#283039]" />
-  );
-}
-
-function NoResults({
-  query,
-  onClear,
-}: {
-  query: string;
-  onClear: () => void;
-}) {
-  const t = useTranslations("search");
-  const tCommon = useTranslations("common");
-  const router = useRouter();
-  return (
-    <div className="flex flex-col items-center justify-center py-layout-lg text-center">
-      <p className="text-body text-text-secondary">
-        {t("empty.message", { query })}
-      </p>
-      <p className="mt-space-sm text-body-sm text-text-tertiary max-w-[320px]">
-        {t("empty.suggestion")}
-      </p>
-      <div className="mt-space-lg flex items-center gap-3">
-        <button
-          type="button"
-          onClick={onClear}
-          className="px-4 py-2 text-sm font-medium rounded-lg text-text-secondary hover:bg-bg-tertiary transition-colors cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
-        >
-          {tCommon("clearSearch")}
-        </button>
-        <button
-          type="button"
-          onClick={() => router.push("/briefs")}
-          className="px-4 py-2 text-sm font-semibold rounded-lg text-primary hover:bg-primary/10 transition-colors cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
-        >
-          {t("empty.browseBriefs")}
-        </button>
-      </div>
-    </div>
-  );
-}
-
-/* --------------------------------------------------------------------------
-   Loading skeleton
-   -------------------------------------------------------------------------- */
-function SearchSkeleton() {
-  return (
-    <div
-      className="flex flex-col gap-6 w-full max-w-4xl mx-auto pb-20 md:pb-10"
-      aria-busy="true"
-      aria-label="Loading search results"
-    >
-      {/* Header skeleton */}
-      <div className="flex items-baseline justify-between">
-        <Skeleton variant="text" className="h-8 w-64" />
-        <Skeleton variant="text" className="h-4 w-20" />
-      </div>
-
-      {/* Tab skeleton */}
-      <div className="flex gap-0 border-b border-slate-200 dark:border-[#283039]">
-        {Array.from({ length: 4 }).map((_, i) => (
-          <div key={i} className="px-3 pb-2.5 pt-1">
-            <Skeleton variant="text" className="h-4 w-20" />
-          </div>
-        ))}
-      </div>
-
-      {/* Section: Briefs skeleton */}
-      <div className="flex flex-col gap-4">
-        <Skeleton variant="text" className="h-6 w-16" />
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {Array.from({ length: 3 }).map((_, i) => (
-            <Skeleton key={i} variant="card" className="h-72" />
-          ))}
-        </div>
-      </div>
-
-      {/* Section: Products skeleton */}
-      <div className="flex flex-col gap-4">
-        <Skeleton variant="text" className="h-6 w-20" />
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {Array.from({ length: 3 }).map((_, i) => (
-            <Skeleton key={i} variant="card" className="h-72" />
-          ))}
-        </div>
-      </div>
-
-      {/* Section: Posts skeleton */}
-      <div className="flex flex-col gap-4">
-        <Skeleton variant="text" className="h-6 w-14" />
-        <div className="flex flex-col gap-5 max-w-3xl mx-auto w-full">
-          {Array.from({ length: 3 }).map((_, i) => (
-            <Skeleton key={i} variant="card" className="h-36" />
-          ))}
-        </div>
-      </div>
     </div>
   );
 }
