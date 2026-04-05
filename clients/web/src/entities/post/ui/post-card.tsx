@@ -147,7 +147,7 @@ export function PostCard({
         <div className="flex items-center gap-1.5 shrink-0">
           {postType && POST_TYPE_LABEL_KEY[postType] && (
             <Badge variant={POST_TYPE_BADGE_VARIANT[postType] ?? "default"}>
-              {tFeed(POST_TYPE_LABEL_KEY[postType])}
+              {tFeed(POST_TYPE_LABEL_KEY[postType] as never)}
             </Badge>
           )}
         </div>
