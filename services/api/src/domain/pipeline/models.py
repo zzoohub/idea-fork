@@ -1,6 +1,7 @@
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any
+
+from domain.brief.models import DemandSignals, SourceSnapshot
 
 
 @dataclass(frozen=True)
@@ -54,8 +55,8 @@ class BriefDraft:
     problem_statement: str
     opportunity: str
     solution_directions: list[str]
-    demand_signals: dict[str, Any]
-    source_snapshots: list[dict[str, Any]]
+    demand_signals: DemandSignals
+    source_snapshots: list[SourceSnapshot]
     source_post_ids: list[int]
 
 
