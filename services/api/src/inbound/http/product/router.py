@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, Request, Response
 
 from domain.product.models import ProductListParams
-from domain.product.service import ProductService
+from inbound.http.dependencies import service_dep
 from inbound.http.product.dependencies import get_product_list_params
 from inbound.http.product.response import (
     ProductListResponseData,
@@ -20,9 +20,7 @@ SORT_ATTR_MAP = {
     "-launched_at": "launched_at",
 }
 
-
-def _get_service(request: Request) -> ProductService:
-    return request.state.product_service
+_get_service = service_dep("product_service")
 
 
 @router.get("")

@@ -1,9 +1,9 @@
 from fastapi import APIRouter, Depends, Request, Response
 
 from domain.brief.models import BriefListParams
-from domain.brief.service import BriefService
 from inbound.http.brief.dependencies import get_brief_list_params
 from inbound.http.brief.response import BriefDetailResponseData, BriefListResponseData
+from inbound.http.dependencies import service_dep
 from inbound.http.response import cache_collection, cache_detail, envelope
 from shared.pagination import paginate
 
@@ -15,9 +15,7 @@ SORT_ATTR_MAP = {
     "-source_count": "source_count",
 }
 
-
-def _get_service(request: Request) -> BriefService:
-    return request.state.brief_service
+_get_service = service_dep("brief_service")
 
 
 @router.get("")

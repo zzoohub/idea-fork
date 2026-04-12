@@ -1,14 +1,12 @@
 from fastapi import APIRouter, Query, Request, Response
 
-from domain.tag.service import TagService
+from inbound.http.dependencies import service_dep
 from inbound.http.response import cache_collection, cache_static, envelope
 from inbound.http.tag.response import TagResponseData
 
 router = APIRouter(prefix="/tags", tags=["tags"])
 
-
-def _get_service(request: Request) -> TagService:
-    return request.state.tag_service
+_get_service = service_dep("tag_service")
 
 
 @router.get("")

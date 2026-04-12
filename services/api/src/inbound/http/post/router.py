@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, Request, Response
 
 from domain.post.models import PostListParams
-from domain.post.service import PostService
+from inbound.http.dependencies import service_dep
 from inbound.http.post.dependencies import get_post_list_params
 from inbound.http.post.response import PostResponseData
 from inbound.http.response import cache_collection, cache_detail, envelope
@@ -15,9 +15,7 @@ SORT_ATTR_MAP = {
     "-num_comments": "num_comments",
 }
 
-
-def _get_service(request: Request) -> PostService:
-    return request.state.post_service
+_get_service = service_dep("post_service")
 
 
 @router.get("")

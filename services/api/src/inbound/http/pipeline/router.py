@@ -5,16 +5,14 @@ from dataclasses import asdict
 from fastapi import APIRouter, Header, Request
 from starlette.responses import JSONResponse
 
-from domain.pipeline.service import PipelineService
+from inbound.http.dependencies import service_dep
 from shared.config import get_settings
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/pipeline", tags=["pipeline"])
 
-
-def _get_service(request: Request) -> PipelineService:
-    return request.state.pipeline_service
+_get_service = service_dep("pipeline_service")
 
 
 @router.get("/status")

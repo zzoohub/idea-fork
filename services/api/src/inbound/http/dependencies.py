@@ -1,6 +1,15 @@
+from typing import Any, Callable
+
 from fastapi import Request
 
 from inbound.http.errors import BadRequestError
+
+
+def service_dep(attr: str) -> Callable[..., Any]:
+    def _get_service(request: Request) -> Any:
+        return getattr(request.state, attr)
+
+    return _get_service
 
 # Mirror the DB constraint: chk_rating_session_id_length (1–255 chars).
 _SESSION_ID_MAX_LEN = 255
