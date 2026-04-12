@@ -104,6 +104,19 @@ class GeminiLlmClient:
         self._lite_model = lite_model
         self._brief_temperature = brief_temperature
 
+    @staticmethod
+    def _parse_response_json(response: Any) -> Any:
+        if not response.text:
+            finish_reason = None
+            if response.candidates:
+                finish_reason = response.candidates[0].finish_reason
+            if finish_reason and str(finish_reason) in _SAFETY_FINISH_REASONS:
+                raise SafetyFilteredError(
+                    f"Gemini refused: finish_reason={finish_reason}"
+                )
+            raise ValueError("Gemini returned empty response")
+        return json.loads(_strip_code_fences(response.text))
+
     @retry(
         stop=stop_after_attempt(3),
         wait=wait_exponential(min=2, max=30),
@@ -125,18 +138,7 @@ class GeminiLlmClient:
             contents=prompt,
         )
 
-        if not response.text:
-            finish_reason = None
-            if response.candidates:
-                finish_reason = response.candidates[0].finish_reason
-            if finish_reason and str(finish_reason) in _SAFETY_FINISH_REASONS:
-                raise SafetyFilteredError(
-                    f"Gemini refused: finish_reason={finish_reason}"
-                )
-            raise ValueError("Gemini returned empty response")
-
-        raw = _strip_code_fences(response.text)
-        items = json.loads(raw)
+        items = self._parse_response_json(response)
 
         valid_ids = {p.id for p in posts}
         results: list[TaggingResult] = []
@@ -227,6 +229,57 @@ class GeminiLlmClient:
 
         return groups
 
+    async def _label_single_cluster(
+        self,
+        cluster_label: int,
+        post_ids: list[int],
+        post_map: dict[int, Post],
+    ) -> ClusteringResult:
+        fallback = ClusteringResult(
+            label=f"Cluster {cluster_label}", summary="", post_ids=post_ids,
+        )
+        titles = [
+            post_map[pid].title for pid in post_ids if pid in post_map
+        ][:10]
+        prompt = (
+            "Given these post titles from one thematic cluster, generate a "
+            "JSON object with:\n"
+            "- 'label': short descriptive label\n"
+            "- 'summary': 1 sentence summary\n"
+            "- 'trend_keywords': 2-3 Google Trends search phrases "
+            "(multi-word phrases like 'project management tool', "
+            "NOT single words)\n\n"
+            "Titles:\n"
+            + "\n".join(f"- {t}" for t in titles)
+            + "\nReturn only valid JSON."
+        )
+
+        response = await self._client.aio.models.generate_content(
+            model=self._lite_model, contents=prompt,
+        )
+        try:
+            data = self._parse_response_json(response)
+        except (ValueError, json.JSONDecodeError):
+            logger.warning(
+                "Gemini returned invalid response for cluster %s", cluster_label,
+            )
+            return fallback
+
+        if isinstance(data, list):
+            data = data[0] if data else {}
+
+        trend_keywords = [
+            str(k)[:80] for k in data.get("trend_keywords", [])
+            if isinstance(k, str) and len(k.strip()) > 0
+        ][:5]
+
+        return ClusteringResult(
+            label=data.get("label", f"Cluster {cluster_label}"),
+            summary=data.get("summary", ""),
+            post_ids=post_ids,
+            trend_keywords=trend_keywords,
+        )
+
     async def _label_clusters(
         self, groups: dict[int, list[int]], posts: list[Post]
     ) -> list[ClusteringResult]:
@@ -235,7 +288,6 @@ class GeminiLlmClient:
         post_map = {p.id: p for p in posts}
         results: list[ClusteringResult] = []
 
-        # Separate noise cluster from real clusters
         noise_ids = groups.get(-1)
         if noise_ids is not None:
             results.append(ClusteringResult(
@@ -244,79 +296,15 @@ class GeminiLlmClient:
                 post_ids=noise_ids,
             ))
 
-        # Semaphore to avoid Gemini 503 from too many concurrent requests
         sem = asyncio.Semaphore(3)
 
-        # Label real clusters with bounded concurrency
-        async def _label_one(cluster_label: int, post_ids: list[int]) -> ClusteringResult:
+        async def _bounded_label(cl: int, pids: list[int]) -> ClusteringResult:
             async with sem:
-                titles = [
-                    post_map[pid].title for pid in post_ids if pid in post_map
-                ][:10]
-                prompt = (
-                    "Given these post titles from one thematic cluster, generate a "
-                    "JSON object with:\n"
-                    "- 'label': short descriptive label\n"
-                    "- 'summary': 1 sentence summary\n"
-                    "- 'trend_keywords': 2-3 Google Trends search phrases "
-                    "(multi-word phrases like 'project management tool', "
-                    "NOT single words)\n\n"
-                    "Titles:\n"
-                    + "\n".join(f"- {t}" for t in titles)
-                    + "\nReturn only valid JSON."
-                )
+                return await self._label_single_cluster(cl, pids, post_map)
 
-                response = await self._client.aio.models.generate_content(
-                    model=self._lite_model, contents=prompt,
-                )
-                if not response.text:
-                    return ClusteringResult(
-                        label=f"Cluster {cluster_label}",
-                        summary="",
-                        post_ids=post_ids,
-                    )
-                raw = _strip_code_fences(response.text)
-                if not raw:
-                    return ClusteringResult(
-                        label=f"Cluster {cluster_label}",
-                        summary="",
-                        post_ids=post_ids,
-                    )
-                try:
-                    data = json.loads(raw)
-                except json.JSONDecodeError:
-                    logger.warning(
-                        "Gemini returned invalid JSON for cluster %s: %s",
-                        cluster_label, raw[:200],
-                    )
-                    return ClusteringResult(
-                        label=f"Cluster {cluster_label}",
-                        summary="",
-                        post_ids=post_ids,
-                    )
-                if isinstance(data, list):
-                    data = data[0] if data else {}
-
-                trend_keywords = [
-                    str(k)[:80] for k in data.get("trend_keywords", [])
-                    if isinstance(k, str) and len(k.strip()) > 0
-                ][:5]
-
-                return ClusteringResult(
-                    label=data.get("label", f"Cluster {cluster_label}"),
-                    summary=data.get("summary", ""),
-                    post_ids=post_ids,
-                    trend_keywords=trend_keywords,
-                )
-
-        tasks = [
-            _label_one(cl, pids)
-            for cl, pids in groups.items()
-            if cl != -1
-        ]
+        tasks = [_bounded_label(cl, pids) for cl, pids in groups.items() if cl != -1]
         if tasks:
-            labeled = await asyncio.gather(*tasks)
-            results.extend(labeled)
+            results.extend(await asyncio.gather(*tasks))
 
         return results
 
@@ -377,18 +365,7 @@ class GeminiLlmClient:
             config={"temperature": self._brief_temperature},
         )
 
-        if not response.text:
-            finish_reason = None
-            if response.candidates:
-                finish_reason = response.candidates[0].finish_reason
-            if finish_reason and str(finish_reason) in _SAFETY_FINISH_REASONS:
-                raise SafetyFilteredError(
-                    f"Gemini refused: finish_reason={finish_reason}"
-                )
-            raise ValueError("Gemini returned empty response")
-
-        raw = _strip_code_fences(response.text)
-        data = json.loads(raw)
+        data = self._parse_response_json(response)
 
         return BriefDraft(
             title=str(data["title"])[:200],
