@@ -1,11 +1,18 @@
-from typing import Any
+from typing import Any, Self
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from starlette.responses import Response
 
 
-class TagData(BaseModel):
-    """Reusable slug+name tag model shared across post and product responses."""
+class ResponseData(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    @classmethod
+    def from_domain(cls, obj: Any) -> Self:
+        return cls.model_validate(obj)
+
+
+class TagData(ResponseData):
     slug: str
     name: str
 

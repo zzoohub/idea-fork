@@ -1,13 +1,11 @@
 from datetime import datetime
+from typing import Self
 
-from pydantic import BaseModel
-
-from domain.post.models import Post
-from domain.product.models import Product, ProductMetrics, RelatedBrief
-from inbound.http.response import TagData
+from domain.product.models import Product
+from inbound.http.response import ResponseData, TagData
 
 
-class ProductListResponseData(BaseModel):
+class ProductListResponseData(ResponseData):
     id: int
     slug: str
     name: str
@@ -24,26 +22,14 @@ class ProductListResponseData(BaseModel):
     tags: list[TagData]
 
     @classmethod
-    def from_domain(cls, product: Product) -> "ProductListResponseData":
-        return cls(
-            id=product.id,
-            slug=product.slug,
-            name=product.name,
-            tagline=product.tagline,
-            description=product.description,
-            url=product.url,
-            image_url=product.image_url,
-            category=product.category,
-            source=product.source,
-            sources=product.sources if product.sources else [product.source],
-            launched_at=product.launched_at,
-            signal_count=product.signal_count,
-            trending_score=product.trending_score,
-            tags=[TagData(slug=t.slug, name=t.name) for t in product.tags],
-        )
+    def from_domain(cls, product: Product) -> Self:
+        obj = cls.model_validate(product)
+        if not obj.sources:
+            obj.sources = [obj.source]
+        return obj
 
 
-class ProductPostResponseData(BaseModel):
+class ProductPostResponseData(ResponseData):
     id: int
     title: str
     body: str | None
@@ -55,49 +41,16 @@ class ProductPostResponseData(BaseModel):
     post_type: str | None
     sentiment: str | None
 
-    @classmethod
-    def from_domain(cls, post: Post) -> "ProductPostResponseData":
-        return cls(
-            id=post.id,
-            title=post.title,
-            body=post.body,
-            source=post.source,
-            subreddit=post.subreddit,
-            external_url=post.external_url,
-            external_created_at=post.external_created_at,
-            score=post.score,
-            post_type=post.post_type,
-            sentiment=post.sentiment,
-        )
 
-
-class RelatedBriefResponseData(BaseModel):
+class RelatedBriefResponseData(ResponseData):
     id: int
     slug: str
     title: str
     summary: str
     source_count: int
 
-    @classmethod
-    def from_domain(cls, brief: RelatedBrief) -> "RelatedBriefResponseData":
-        return cls(
-            id=brief.id,
-            slug=brief.slug,
-            title=brief.title,
-            summary=brief.summary,
-            source_count=brief.source_count,
-        )
 
-
-class ProductMetricsResponseData(BaseModel):
+class ProductMetricsResponseData(ResponseData):
     total_mentions: int
     negative_count: int
     sentiment_score: int
-
-    @classmethod
-    def from_domain(cls, metrics: ProductMetrics) -> "ProductMetricsResponseData":
-        return cls(
-            total_mentions=metrics.total_mentions,
-            negative_count=metrics.negative_count,
-            sentiment_score=metrics.sentiment_score,
-        )

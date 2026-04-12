@@ -1,13 +1,7 @@
-from pydantic import BaseModel
-
-from domain.tag.models import Tag
+from inbound.http.response import ResponseData
 
 
-class TagResponseData(BaseModel):
+class TagResponseData(ResponseData):
     id: int
     slug: str
     name: str
-
-    @classmethod
-    def from_domain(cls, tag: Tag) -> "TagResponseData":
-        return cls(id=tag.id, slug=tag.slug, name=tag.name)
