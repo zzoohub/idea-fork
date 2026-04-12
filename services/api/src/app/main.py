@@ -21,7 +21,9 @@ from inbound.http.post.router import router as post_router
 from inbound.http.product.router import router as product_router
 from inbound.http.rating.router import router as rating_router
 from inbound.http.tag.router import router as tag_router
+from outbound.appstore.client import AppStoreClient
 from outbound.llm.client import GeminiLlmClient
+from outbound.playstore.client import PlayStoreClient
 from outbound.postgres.brief_repository import PostgresBriefRepository
 from outbound.postgres.database import Database
 from outbound.postgres.pipeline_repository import PostgresPipelineRepository
@@ -29,18 +31,14 @@ from outbound.postgres.post_repository import PostgresPostRepository
 from outbound.postgres.product_repository import PostgresProductRepository
 from outbound.postgres.rating_repository import PostgresRatingRepository
 from outbound.postgres.tag_repository import PostgresTagRepository
-from outbound.appstore.client import AppStoreClient
-from outbound.playstore.client import PlayStoreClient
 from outbound.producthunt.client import ProductHuntApiClient
 from outbound.reddit.client import RedditApiClient
 from outbound.rss.client import RssFeedClient
 from outbound.trends.client import GoogleTrendsClient
-from shared.config import get_settings
+from shared.config import Settings, get_settings
 
 
-def create_app() -> FastAPI:
-    settings = get_settings()
-
+def _init_sentry(settings: Settings) -> None:
     if settings.SENTRY_DSN:
         sentry_sdk.init(
             dsn=settings.SENTRY_DSN,
@@ -50,21 +48,39 @@ def create_app() -> FastAPI:
             send_default_pii=False,
         )
 
-    db = Database(settings.API_DATABASE_URL)
 
+def _create_repositories(db: Database) -> dict:
     tag_repo = PostgresTagRepository(db)
     post_repo = PostgresPostRepository(db)
     brief_repo = PostgresBriefRepository(db)
     product_repo = PostgresProductRepository(db)
     rating_repo = PostgresRatingRepository(db)
-
-    tag_service = TagService(tag_repo)
-    post_service = PostService(post_repo)
-    brief_service = BriefService(brief_repo)
-    product_service = ProductService(product_repo)
-    rating_service = RatingService(rating_repo, brief_repo)
-
     pipeline_repo = PostgresPipelineRepository(db)
+    return {
+        "tag": tag_repo,
+        "post": post_repo,
+        "brief": brief_repo,
+        "product": product_repo,
+        "rating": rating_repo,
+        "pipeline": pipeline_repo,
+    }
+
+
+def _create_services(repos: dict) -> dict:
+    return {
+        "tag_service": TagService(repos["tag"]),
+        "post_service": PostService(repos["post"]),
+        "brief_service": BriefService(repos["brief"]),
+        "product_service": ProductService(repos["product"]),
+        "rating_service": RatingService(repos["rating"], repos["brief"]),
+    }
+
+
+def _parse_csv(value: str) -> list[str]:
+    return [s.strip() for s in value.split(",") if s.strip()]
+
+
+def _create_pipeline_service(settings: Settings, repos: dict) -> PipelineService:
     reddit_client = RedditApiClient(user_agent=settings.REDDIT_USER_AGENT)
     llm_client = GeminiLlmClient(
         api_key=settings.GOOGLE_API_KEY,
@@ -74,20 +90,16 @@ def create_app() -> FastAPI:
     )
     rss_client = RssFeedClient()
     trends_client = GoogleTrendsClient()
-    producthunt_client = ProductHuntApiClient(
-        api_token=settings.PRODUCTHUNT_API_TOKEN,
-    )
-    subreddits = [s.strip() for s in settings.PIPELINE_SUBREDDITS.split(",")]
-    rss_feeds = [f.strip() for f in settings.PIPELINE_RSS_FEEDS.split(",") if f.strip()]
-    appstore_keywords = [
-        k.strip()
-        for k in settings.PIPELINE_APPSTORE_KEYWORDS.split(",")
-        if k.strip()
-    ]
+    producthunt_client = ProductHuntApiClient(api_token=settings.PRODUCTHUNT_API_TOKEN)
+
+    subreddits = _parse_csv(settings.PIPELINE_SUBREDDITS)
+    rss_feeds = _parse_csv(settings.PIPELINE_RSS_FEEDS)
+    appstore_keywords = _parse_csv(settings.PIPELINE_APPSTORE_KEYWORDS)
     appstore_client = AppStoreClient() if appstore_keywords else None
     playstore_client = PlayStoreClient() if appstore_keywords else None
-    pipeline_service = PipelineService(
-        repo=pipeline_repo,
+
+    return PipelineService(
+        repo=repos["pipeline"],
         reddit=reddit_client,
         llm=llm_client,
         rss=rss_client,
@@ -104,16 +116,19 @@ def create_app() -> FastAPI:
         appstore_max_age_days=settings.PIPELINE_APPSTORE_MAX_AGE_DAYS,
     )
 
+
+def create_app() -> FastAPI:
+    settings = get_settings()
+    _init_sentry(settings)
+
+    db = Database(settings.API_DATABASE_URL)
+    repos = _create_repositories(db)
+    services = _create_services(repos)
+    services["pipeline_service"] = _create_pipeline_service(settings, repos)
+
     @asynccontextmanager
     async def lifespan(_app: FastAPI) -> AsyncIterator[dict]:
-        yield {
-            "tag_service": tag_service,
-            "post_service": post_service,
-            "brief_service": brief_service,
-            "product_service": product_service,
-            "rating_service": rating_service,
-            "pipeline_service": pipeline_service,
-        }
+        yield services
         await db.dispose()
 
     app = FastAPI(
@@ -127,7 +142,7 @@ def create_app() -> FastAPI:
 
     app.state.limiter = limiter
 
-    origins = [o.strip() for o in settings.API_CORS_ALLOWED_ORIGINS.split(",")]
+    origins = _parse_csv(settings.API_CORS_ALLOWED_ORIGINS)
     app.add_middleware(
         CORSMiddleware,
         allow_origins=origins,
