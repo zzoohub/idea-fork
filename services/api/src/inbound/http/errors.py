@@ -12,6 +12,16 @@ class BadRequestError(Exception):
     pass
 
 
+_EXCEPTION_MAP: list[tuple[type[Exception], int, str, str]] = [
+    (PostNotFoundError, 404, "not-found", "Not Found"),
+    (BriefNotFoundError, 404, "not-found", "Not Found"),
+    (ProductNotFoundError, 404, "not-found", "Not Found"),
+    (RatingNotFoundError, 404, "not-found", "Not Found"),
+    (DuplicateRatingError, 409, "duplicate-rating", "Duplicate Rating"),
+    (BadRequestError, 400, "bad-request", "Bad Request"),
+]
+
+
 def _problem(status: int, error_type: str, title: str, detail: str) -> JSONResponse:
     return JSONResponse(
         status_code=status,
@@ -25,28 +35,11 @@ def _problem(status: int, error_type: str, title: str, detail: str) -> JSONRespo
     )
 
 
-async def _post_not_found(_req: Request, exc: PostNotFoundError) -> JSONResponse:
-    return _problem(404, "not-found", "Not Found", str(exc))
+def _make_handler(status: int, error_type: str, title: str):
+    async def _handler(_req: Request, exc: Exception) -> JSONResponse:
+        return _problem(status, error_type, title, str(exc))
 
-
-async def _brief_not_found(_req: Request, exc: BriefNotFoundError) -> JSONResponse:
-    return _problem(404, "not-found", "Not Found", str(exc))
-
-
-async def _product_not_found(_req: Request, exc: ProductNotFoundError) -> JSONResponse:
-    return _problem(404, "not-found", "Not Found", str(exc))
-
-
-async def _duplicate_rating(_req: Request, exc: DuplicateRatingError) -> JSONResponse:
-    return _problem(409, "duplicate-rating", "Duplicate Rating", str(exc))
-
-
-async def _rating_not_found(_req: Request, exc: RatingNotFoundError) -> JSONResponse:
-    return _problem(404, "not-found", "Not Found", str(exc))
-
-
-async def _bad_request(_req: Request, exc: BadRequestError) -> JSONResponse:
-    return _problem(400, "bad-request", "Bad Request", str(exc))
+    return _handler
 
 
 async def _validation_error(
@@ -75,10 +68,6 @@ async def _validation_error(
 
 
 def register_exception_handlers(app: FastAPI) -> None:
-    app.add_exception_handler(PostNotFoundError, _post_not_found)
-    app.add_exception_handler(BriefNotFoundError, _brief_not_found)
-    app.add_exception_handler(ProductNotFoundError, _product_not_found)
-    app.add_exception_handler(DuplicateRatingError, _duplicate_rating)
-    app.add_exception_handler(RatingNotFoundError, _rating_not_found)
-    app.add_exception_handler(BadRequestError, _bad_request)
+    for exc_cls, status, error_type, title in _EXCEPTION_MAP:
+        app.add_exception_handler(exc_cls, _make_handler(status, error_type, title))
     app.add_exception_handler(RequestValidationError, _validation_error)
