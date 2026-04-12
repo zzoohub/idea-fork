@@ -44,10 +44,10 @@ const SORT_MAP: Record<string, string> = {
 };
 
 /* --------------------------------------------------------------------------
-   FeedPageInner - reads search params
+   FeedPageContent - reads search params
    -------------------------------------------------------------------------- */
 
-function FeedPageInner() {
+function FeedPageContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const t = useTranslations("feed");
@@ -358,7 +358,7 @@ export function FeedPage() {
         {t("heading")}
       </h1>
       <Suspense fallback={<FeedSkeleton />}>
-        <FeedPageInner />
+        <FeedPageContent />
       </Suspense>
     </section>
   );

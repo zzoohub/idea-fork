@@ -36,9 +36,9 @@ const VALID_TYPES = new Set<string>(["briefs", "products", "posts"]);
 const PREVIEW_LIMIT = 3;
 
 /* --------------------------------------------------------------------------
-   SearchResultsInner
+   SearchResultsContent
    -------------------------------------------------------------------------- */
-function SearchResultsInner() {
+function SearchResultsContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const t = useTranslations("search");
@@ -449,7 +449,7 @@ export function SearchResultsPage() {
   return (
     <section className="w-full px-4 py-6">
       <Suspense fallback={<SearchSkeleton />}>
-        <SearchResultsInner />
+        <SearchResultsContent />
       </Suspense>
     </section>
   );

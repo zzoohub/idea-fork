@@ -22,9 +22,9 @@ const SORT_MAP: Record<string, string> = {
 };
 
 /* --------------------------------------------------------------------------
-   BriefsListingInner -- client component
+   BriefsListingContent -- client component
    -------------------------------------------------------------------------- */
-function BriefsListingInner() {
+function BriefsListingContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const t = useTranslations("briefs");
@@ -202,7 +202,7 @@ export function BriefsListingPage() {
   return (
     <section className="mx-auto w-full max-w-7xl px-6 py-8">
       <Suspense fallback={<BriefsListingSkeleton />}>
-        <BriefsListingInner />
+        <BriefsListingContent />
       </Suspense>
     </section>
   );
