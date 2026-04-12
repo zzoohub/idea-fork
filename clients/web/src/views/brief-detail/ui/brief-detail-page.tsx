@@ -22,6 +22,8 @@ import { formatRelativeTime } from "@/src/shared/lib/format-relative-time";
 import { trackBriefViewed } from "@/src/shared/analytics";
 import { SourcePostCard } from "./source-post-card";
 
+const INITIAL_SOURCE_COUNT = 3;
+
 /* --------------------------------------------------------------------------
    BriefDetailPage
    -------------------------------------------------------------------------- */
@@ -89,7 +91,6 @@ export function BriefDetailPage({ brief }: BriefDetailPageProps) {
     originalUrl: String(snap.external_url ?? snap.url ?? "#"),
   }));
 
-  const INITIAL_SOURCE_COUNT = 3;
   const visibleSources = showAllSources
     ? sourceSnapshots
     : sourceSnapshots.slice(0, INITIAL_SOURCE_COUNT);

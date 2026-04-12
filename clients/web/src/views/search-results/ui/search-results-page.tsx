@@ -74,10 +74,13 @@ function SearchResultsInner() {
     setLoading(true);
     setError(null);
 
+    const safeFetch = <T,>(p: Promise<{ data: T[] }>) =>
+      p.catch(() => ({ data: [] as T[] }));
+
     Promise.all([
-      fetchBriefs({ limit: 100 }).catch(() => ({ data: [] as BriefListItem[] })),
-      fetchProducts({ q: query, limit: 50 }).catch(() => ({ data: [] as ProductListItem[] })),
-      fetchPosts({ q: query, limit: 50 }).catch(() => ({ data: [] as Post[] })),
+      safeFetch(fetchBriefs({ limit: 100 })),
+      safeFetch(fetchProducts({ q: query, limit: 50 })),
+      safeFetch(fetchPosts({ q: query, limit: 50 })),
     ])
       .then(([briefsRes, productsRes, postsRes]) => {
         if (cancelRef.current) return;
