@@ -69,11 +69,10 @@ class Settings(BaseSettings):
 
     @model_validator(mode="after")
     def validate_subreddit_names(self) -> "Settings":
-        for name in self.PIPELINE_SUBREDDITS.split(","):
-            name = name.strip()
-            if name and not _SUBREDDIT_RE.match(name):
-                msg = f"Invalid subreddit name: {name!r}"
-                raise ValueError(msg)
+        names = [s.strip() for s in self.PIPELINE_SUBREDDITS.split(",") if s.strip()]
+        invalid = [n for n in names if not _SUBREDDIT_RE.match(n)]
+        if invalid:
+            raise ValueError(f"Invalid subreddit names: {invalid}")
         return self
 
 
