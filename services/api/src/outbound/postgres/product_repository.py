@@ -9,6 +9,7 @@ from outbound.postgres.models import (
     PostTagRow,
     ProductRow,
     ProductTagRow,
+    TagRow,
 )
 from shared.pagination import decode_cursor
 
@@ -26,66 +27,23 @@ SORT_RAW_MAP = {
 
 _NULLABLE_SORT_COLS = {"launched_at"}
 
+_PERIOD_INTERVALS = {"7d": "7 days", "30d": "30 days", "90d": "90 days"}
+
 
 class PostgresProductRepository:
     def __init__(self, db: Database) -> None:
         self._db = db
 
     async def list_products(self, params: ProductListParams) -> list[Product]:
-        sort_col_name = SORT_RAW_MAP[params.sort]
-        period_intervals = {"7d": "7 days", "30d": "30 days", "90d": "90 days"}
-
-        # Build WHERE conditions for inner query
-        where_parts: list[str] = []
+        sort_col = SORT_RAW_MAP[params.sort]
+        nullable = sort_col in _NULLABLE_SORT_COLS
+        nulls_last = " NULLS LAST" if nullable else ""
         bind_params: dict = {}
 
-        if params.q:
-            where_parts.append(
-                "(name ILIKE :q OR tagline ILIKE :q OR description ILIKE :q)"
-            )
-            bind_params["q"] = f"%{params.q}%"
+        where_clause = self._build_where_clause(params, bind_params)
+        cursor_clause = self._build_cursor_clause(params, sort_col, nullable, bind_params)
 
-        if params.category:
-            where_parts.append("category = :category")
-            bind_params["category"] = params.category
-
-        if params.period and params.period in period_intervals:
-            where_parts.append(
-                f"created_at >= now() - interval '{period_intervals[params.period]}'"
-            )
-
-        where_clause = f"WHERE {' AND '.join(where_parts)}" if where_parts else ""
-
-        nullable = sort_col_name in _NULLABLE_SORT_COLS
-        nulls_last = " NULLS LAST" if nullable else ""
-
-        # Step 1: Get grouped products (best row per normalized name)
-        grouped_sql = f"""
-            SELECT DISTINCT ON (lower(name))
-                id, name, slug, source, external_id, tagline, description,
-                url, image_url, category, launched_at,
-                signal_count, trending_score, created_at
-            FROM product
-            {where_clause}
-            ORDER BY lower(name), {sort_col_name} DESC{nulls_last}, id DESC
-        """
-
-        # Build cursor pagination clause for wrapper
-        cursor_clause = ""
-        if params.cursor:
-            cursor_values = decode_cursor(params.cursor)
-            cursor_v = cursor_values.get("v")
-            cursor_id = cursor_values.get("id")
-            if cursor_v is not None and cursor_id is not None:
-                cursor_clause = f"WHERE (g.{sort_col_name} < :cursor_v OR (g.{sort_col_name} = :cursor_v AND g.id < :cursor_id))"
-                bind_params["cursor_v"] = cursor_v
-                bind_params["cursor_id"] = cursor_id
-            elif nullable and cursor_id is not None:
-                # Cursor is on a NULL row — only return other NULL rows with smaller id
-                cursor_clause = f"WHERE (g.{sort_col_name} IS NULL AND g.id < :cursor_id)"
-                bind_params["cursor_id"] = cursor_id
-
-        wrapper_sql = f"""
+        sql = f"""
             SELECT g.id, g.name, g.slug, g.source, g.external_id,
                    g.tagline, g.description, g.url, g.image_url,
                    g.category, g.launched_at, g.signal_count,
@@ -93,52 +51,102 @@ class PostgresProductRepository:
                    (SELECT array_agg(DISTINCT p2.source)
                     FROM product p2
                     WHERE lower(p2.name) = lower(g.name)) AS sources
-            FROM ({grouped_sql}) g
+            FROM (
+                SELECT DISTINCT ON (lower(name))
+                    id, name, slug, source, external_id, tagline, description,
+                    url, image_url, category, launched_at,
+                    signal_count, trending_score, created_at
+                FROM product
+                {where_clause}
+                ORDER BY lower(name), {sort_col} DESC{nulls_last}, id DESC
+            ) g
             {cursor_clause}
-            ORDER BY g.{sort_col_name} DESC{nulls_last}, g.id DESC
+            ORDER BY g.{sort_col} DESC{nulls_last}, g.id DESC
             LIMIT :limit
         """
         bind_params["limit"] = params.limit + 1
 
         async with self._db.session() as session:
-            result = await session.execute(text(wrapper_sql), bind_params)
+            result = await session.execute(text(sql), bind_params)
             rows = result.fetchall()
+            tag_map = await self._load_tags_for_products(
+                session, [row.id for row in rows]
+            )
+            return [self._row_to_product(row, tag_map.get(row.id, [])) for row in rows]
 
-            products: list[Product] = []
-            for row in rows:
-                # Load tags for this product
-                tag_result = await session.execute(
-                    select(ProductTagRow.tag_id).where(
-                        ProductTagRow.product_id == row.id
-                    )
-                )
-                tag_ids = [r for (r,) in tag_result]
-                tags: list[PostTag] = []
-                if tag_ids:
-                    from outbound.postgres.models import TagRow
-                    tag_rows = await session.execute(
-                        select(TagRow).where(TagRow.id.in_(tag_ids))
-                    )
-                    tags = [PostTag(slug=t.slug, name=t.name) for t in tag_rows.scalars().all()]
+    def _build_where_clause(
+        self, params: ProductListParams, bind_params: dict,
+    ) -> str:
+        parts: list[str] = []
+        if params.q:
+            parts.append("(name ILIKE :q OR tagline ILIKE :q OR description ILIKE :q)")
+            bind_params["q"] = f"%{params.q}%"
+        if params.category:
+            parts.append("category = :category")
+            bind_params["category"] = params.category
+        if params.period and params.period in _PERIOD_INTERVALS:
+            parts.append(
+                f"created_at >= now() - interval '{_PERIOD_INTERVALS[params.period]}'"
+            )
+        return f"WHERE {' AND '.join(parts)}" if parts else ""
 
-                products.append(Product(
-                    id=row.id,
-                    slug=row.slug,
-                    name=row.name,
-                    source=row.source,
-                    external_id=row.external_id,
-                    tagline=row.tagline,
-                    description=row.description,
-                    url=row.url,
-                    image_url=row.image_url,
-                    category=row.category,
-                    launched_at=row.launched_at,
-                    signal_count=row.signal_count,
-                    trending_score=float(row.trending_score),
-                    tags=tags,
-                    sources=list(row.sources) if row.sources else [row.source],
-                ))
-            return products
+    def _build_cursor_clause(
+        self,
+        params: ProductListParams,
+        sort_col: str,
+        nullable: bool,
+        bind_params: dict,
+    ) -> str:
+        if not params.cursor:
+            return ""
+        cursor_values = decode_cursor(params.cursor)
+        cursor_v = cursor_values.get("v")
+        cursor_id = cursor_values.get("id")
+        if cursor_v is not None and cursor_id is not None:
+            bind_params["cursor_v"] = cursor_v
+            bind_params["cursor_id"] = cursor_id
+            return (
+                f"WHERE (g.{sort_col} < :cursor_v "
+                f"OR (g.{sort_col} = :cursor_v AND g.id < :cursor_id))"
+            )
+        if nullable and cursor_id is not None:
+            bind_params["cursor_id"] = cursor_id
+            return f"WHERE (g.{sort_col} IS NULL AND g.id < :cursor_id)"
+        return ""
+
+    @staticmethod
+    async def _load_tags_for_products(session, product_ids: list[int]) -> dict[int, list[PostTag]]:
+        if not product_ids:
+            return {}
+        rows = await session.execute(
+            select(ProductTagRow.product_id, TagRow.slug, TagRow.name)
+            .join(TagRow, TagRow.id == ProductTagRow.tag_id)
+            .where(ProductTagRow.product_id.in_(product_ids))
+        )
+        tag_map: dict[int, list[PostTag]] = {}
+        for pid, slug, name in rows:
+            tag_map.setdefault(pid, []).append(PostTag(slug=slug, name=name))
+        return tag_map
+
+    @staticmethod
+    def _row_to_product(row, tags: list[PostTag]) -> Product:
+        return Product(
+            id=row.id,
+            slug=row.slug,
+            name=row.name,
+            source=row.source,
+            external_id=row.external_id,
+            tagline=row.tagline,
+            description=row.description,
+            url=row.url,
+            image_url=row.image_url,
+            category=row.category,
+            launched_at=row.launched_at,
+            signal_count=row.signal_count,
+            trending_score=float(row.trending_score),
+            tags=tags,
+            sources=list(row.sources) if row.sources else [row.source],
+        )
 
     async def get_product_by_slug(self, slug: str) -> Product | None:
         stmt = select(ProductRow).where(ProductRow.slug == slug)
@@ -148,7 +156,6 @@ class PostgresProductRepository:
             if row is None:
                 return None
             product = product_to_domain(row)
-            # Aggregate all sources for products with the same name
             sources_result = await session.execute(
                 text(
                     "SELECT array_agg(DISTINCT source) FROM product WHERE lower(name) = lower(:name)"
@@ -262,4 +269,3 @@ class PostgresProductRepository:
                 )
                 for row in result.fetchall()
             ]
-
