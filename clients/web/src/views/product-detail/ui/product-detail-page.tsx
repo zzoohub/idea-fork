@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Link } from "@/src/shared/i18n/navigation";
 import { Icon } from "@/src/shared/ui/icon";
@@ -15,16 +14,105 @@ import { isSafeUrl } from "@/src/shared/lib/sanitize-url";
 import type { ProductDetail, ProductPost } from "@/src/shared/api";
 import { formatRelativeTime } from "@/src/shared/lib/format-relative-time";
 import { useStaggerReveal, useScrollReveal } from "@/src/shared/lib/gsap";
-import { trackProductViewed, trackProductSignalClicked } from "@/src/shared/analytics";
 import { POST_TYPE_LABEL_KEY } from "@/src/shared/lib/post-types";
 import {
-  computeThemes,
-  getSeverity,
-  getSourceConfig,
   SENTIMENT_BADGE,
+  SORT_LABEL_KEY,
+  getSourceConfig,
 } from "./product-detail-utils";
+import { useProductSignals } from "./use-product-signals";
+import type { SortOption } from "./use-product-signals";
 
-const INITIAL_VISIBLE_COUNT = 3;
+/* --------------------------------------------------------------------------
+   Signal card
+   -------------------------------------------------------------------------- */
+
+interface SignalCardProps {
+  post: ProductPost;
+  isExpanded: boolean;
+  onToggle: () => void;
+  t: ReturnType<typeof useTranslations<"productDetail">>;
+  tCommon: ReturnType<typeof useTranslations<"common">>;
+}
+
+function SignalCard({ post, isExpanded, onToggle, t, tCommon }: SignalCardProps) {
+  const badge = post.sentiment ? SENTIMENT_BADGE[post.sentiment] : undefined;
+  const srcCfg = getSourceConfig(post);
+
+  return (
+    <article
+      className={[
+        "group p-5 rounded-2xl cursor-pointer",
+        "bg-white dark:bg-[#18212F]",
+        "border border-slate-200 dark:border-border-dark",
+        "hover:border-primary/50",
+        "transition-all duration-200",
+      ].join(" ")}
+      onClick={onToggle}
+    >
+      <h3 className="text-base font-semibold text-slate-900 dark:text-slate-50 group-hover:text-primary transition-colors duration-150 mb-2">
+        {post.title}
+      </h3>
+
+      <div className="flex items-center gap-3 mb-2">
+        <div
+          className={[
+            "flex size-6 shrink-0 items-center justify-center rounded-full text-[10px] font-bold text-white",
+            srcCfg.color,
+          ].join(" ")}
+          aria-hidden="true"
+        >
+          {srcCfg.icon}
+        </div>
+        <div className="flex flex-wrap items-center gap-2 min-w-0 flex-1">
+          <span className="text-xs text-slate-400 dark:text-slate-500">
+            {t("sourceIn", { source: srcCfg.label })}
+          </span>
+          <span aria-hidden="true" className="text-slate-300 dark:text-slate-600">
+            &middot;
+          </span>
+          <time className="text-xs text-slate-400 dark:text-slate-500">
+            {formatRelativeTime(post.external_created_at)}
+          </time>
+        </div>
+        {badge && (
+          <Badge variant={badge.variant}>
+            {t(`sentiment.${badge.labelKey}`)}
+          </Badge>
+        )}
+      </div>
+
+      {post.body && (
+        <p className={[
+          "text-sm text-slate-500 dark:text-slate-400 leading-relaxed",
+          isExpanded ? "" : "line-clamp-2",
+        ].filter(Boolean).join(" ")}>
+          {post.body}
+        </p>
+      )}
+
+      <div className="flex items-center gap-5 mt-4 pt-3 border-t border-slate-100 dark:border-border-dark">
+        <span className="inline-flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
+          <Icon name="thumbs-up" size={14} />
+          <span className="tabular-nums">{post.score.toLocaleString()}</span>
+        </span>
+        <span className="flex-1" />
+        {isExpanded && isSafeUrl(post.external_url) && (
+          <a
+            href={post.external_url}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={(e) => e.stopPropagation()}
+            className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:text-[#0f6bca] transition-colors duration-150"
+          >
+            {tCommon("viewOriginal")}
+            <Icon name="external-link" size={14} />
+          </a>
+        )}
+      </div>
+    </article>
+  );
+}
 
 /* --------------------------------------------------------------------------
    ProductDetailPage
@@ -35,62 +123,16 @@ interface ProductDetailPageProps {
 }
 
 export function ProductDetailPage({ product }: ProductDetailPageProps) {
-  const [showAllSignals, setShowAllSignals] = useState(false);
-  const [sortBy, setSortBy] = useState<"recent" | "popular" | "critical">("recent");
-  const [activePostType, setActivePostType] = useState<string | null>(null);
-  const [expandedIds, setExpandedIds] = useState<Set<number>>(new Set());
   const t = useTranslations("productDetail");
   const tCommon = useTranslations("common");
   const tA11y = useTranslations("accessibility");
   const tFeed = useTranslations("feed.postTypes");
 
-  useEffect(() => {
-    trackProductViewed({
-      product_id: product.id,
-      product_name: product.name,
-    });
-  }, [product.id, product.name]);
+  const signals = useProductSignals(product, (key) => tFeed(key as never));
 
   const headerRef = useStaggerReveal({ selector: "> *", stagger: 0.1 });
   const signalsRef = useScrollReveal({ selector: "> article" });
   const relatedRef = useScrollReveal();
-
-  const computedThemes = computeThemes(product.posts, (key) => tFeed(key as never));
-
-  // Collect available post types from data (for filter chips)
-  const availablePostTypes = computedThemes.map((th) => th.type);
-
-  const filteredPosts = activePostType
-    ? product.posts.filter((p) => p.post_type === activePostType)
-    : product.posts;
-
-  const sortedPosts = [...filteredPosts].sort((a, b) => {
-    if (sortBy === "popular") return b.score - a.score;
-    if (sortBy === "critical") return getSeverity(a) - getSeverity(b);
-    return new Date(b.external_created_at).getTime() - new Date(a.external_created_at).getTime();
-  });
-
-  const visibleSignals = showAllSignals
-    ? sortedPosts
-    : sortedPosts.slice(0, INITIAL_VISIBLE_COUNT);
-
-  const remainingCount = sortedPosts.length - INITIAL_VISIBLE_COUNT;
-
-  const toggleExpanded = (id: number, post: ProductPost) => {
-    if (!expandedIds.has(id)) {
-      trackProductSignalClicked({
-        product_id: product.id,
-        post_id: id,
-        platform: post.source,
-      });
-    }
-    setExpandedIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-  };
 
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-10">
@@ -140,12 +182,12 @@ export function ProductDetailPage({ product }: ProductDetailPageProps) {
             const negative = product.metrics?.negative_count ?? product.posts.filter((p) => p.sentiment === "negative").length;
             return total > 0 ? Math.round((negative / total) * 100) : null;
           })()}
-          themes={computedThemes}
+          themes={signals.themes}
         />
       </div>
 
-      {/* Themes section */}
-      {computedThemes.length > 0 && (
+      {/* Themes */}
+      {signals.themes.length > 0 && (
         <section aria-labelledby="themes-heading" className="mb-8">
           <h2
             id="themes-heading"
@@ -154,16 +196,12 @@ export function ProductDetailPage({ product }: ProductDetailPageProps) {
             {t("signalThemes")}
           </h2>
           <div className="flex flex-wrap gap-2">
-            {computedThemes.map((theme) => (
+            {signals.themes.map((theme) => (
               <Chip
                 key={theme.type}
-                variant={activePostType === theme.type ? "active" : "inactive"}
-                aria-pressed={activePostType === theme.type}
-                onClick={() =>
-                  setActivePostType((prev) =>
-                    prev === theme.type ? null : theme.type,
-                  )
-                }
+                variant={signals.activePostType === theme.type ? "active" : "inactive"}
+                aria-pressed={signals.activePostType === theme.type}
+                onClick={() => signals.togglePostType(theme.type)}
               >
                 {theme.name} ({theme.count})
               </Chip>
@@ -172,9 +210,8 @@ export function ProductDetailPage({ product }: ProductDetailPageProps) {
         </section>
       )}
 
-      {/* Complaint feed */}
+      {/* Signals feed */}
       <section aria-labelledby="complaints-heading">
-        {/* Section header with sort controls */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
           <h2
             id="complaints-heading"
@@ -182,7 +219,7 @@ export function ProductDetailPage({ product }: ProductDetailPageProps) {
           >
             {t("userSignals")}
             <span className="ml-2 text-base font-normal text-slate-500 dark:text-slate-400">
-              ({sortedPosts.length})
+              ({signals.sortedPosts.length})
             </span>
           </h2>
 
@@ -191,40 +228,38 @@ export function ProductDetailPage({ product }: ProductDetailPageProps) {
               <button
                 key={option}
                 type="button"
-                aria-pressed={sortBy === option}
+                aria-pressed={signals.sortBy === option}
                 className={[
                   "px-3.5 py-1.5 rounded-lg text-sm font-medium transition-colors duration-150 cursor-pointer",
                   "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary",
-                  sortBy === option
+                  signals.sortBy === option
                     ? "bg-primary text-white shadow-sm"
                     : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700",
                 ].join(" ")}
-                onClick={() => setSortBy(option)}
+                onClick={() => signals.setSortBy(option)}
               >
-                {t(option === "recent" ? "sortRecent" : option === "popular" ? "sortPopular" : "sortCritical")}
+                {t(SORT_LABEL_KEY[option] as Parameters<typeof t>[0])}
               </button>
             ))}
           </div>
         </div>
 
         {/* Filter chips */}
-        {availablePostTypes.length > 1 && (
+        {signals.availablePostTypes.length > 1 && (
           <div className="flex flex-wrap gap-2 mb-4" role="group" aria-label={tA11y("filterByPostType")}>
             <Chip
-              variant={activePostType === null ? "active" : "inactive"}
-              aria-pressed={activePostType === null}
-              onClick={() => setActivePostType(null)}
+              variant={signals.activePostType === null ? "active" : "inactive"}
+              aria-pressed={signals.activePostType === null}
+              onClick={() => signals.setActivePostType(null)}
             >
               {tFeed("all")}
             </Chip>
-            {availablePostTypes.map((pt) => (
+            {signals.availablePostTypes.map((pt) => (
               <Chip
                 key={pt}
-                variant={activePostType === pt ? "active" : "inactive"}
-                aria-pressed={activePostType === pt}
-                onClick={() =>
-                  setActivePostType((prev) => (prev === pt ? null : pt))
-                }
+                variant={signals.activePostType === pt ? "active" : "inactive"}
+                aria-pressed={signals.activePostType === pt}
+                onClick={() => signals.togglePostType(pt)}
               >
                 {tFeed((POST_TYPE_LABEL_KEY[pt] ?? pt) as never)}
               </Chip>
@@ -232,14 +267,14 @@ export function ProductDetailPage({ product }: ProductDetailPageProps) {
           </div>
         )}
 
-        {/* Complaint cards */}
-        {sortedPosts.length === 0 ? (
+        {/* Signal cards */}
+        {signals.sortedPosts.length === 0 ? (
           <EmptyState
             message={t("signalsEmpty")}
             suggestion={t("signalsEmptySuggestion")}
-            action={activePostType ? {
+            action={signals.activePostType ? {
               label: tCommon("clearFilter"),
-              onClick: () => setActivePostType(null),
+              onClick: () => signals.setActivePostType(null),
             } : {
               label: t("browseProducts"),
               onClick: () => { window.location.href = "/products"; },
@@ -247,96 +282,21 @@ export function ProductDetailPage({ product }: ProductDetailPageProps) {
           />
         ) : (
           <div ref={signalsRef} className="space-y-4">
-            {visibleSignals.map((complaint) => {
-              const badge = complaint.sentiment
-                ? SENTIMENT_BADGE[complaint.sentiment]
-                : undefined;
-              const srcCfg = getSourceConfig(complaint);
-              const isExpanded = expandedIds.has(complaint.id);
-              return (
-                <article
-                  key={complaint.id}
-                  className={[
-                    "group p-5 rounded-2xl cursor-pointer",
-                    "bg-white dark:bg-[#18212F]",
-                    "border border-slate-200 dark:border-border-dark",
-                    "hover:border-primary/50",
-                    "transition-all duration-200",
-                  ].join(" ")}
-                  onClick={() => toggleExpanded(complaint.id, complaint)}
-                >
-                  {/* Title */}
-                  <h3 className="text-base font-semibold text-slate-900 dark:text-slate-50 group-hover:text-primary transition-colors duration-150 mb-2">
-                    {complaint.title}
-                  </h3>
-
-                  {/* Metadata row: source + time + sentiment */}
-                  <div className="flex items-center gap-3 mb-2">
-                    <div
-                      className={[
-                        "flex size-6 shrink-0 items-center justify-center rounded-full text-[10px] font-bold text-white",
-                        srcCfg.color,
-                      ].join(" ")}
-                      aria-hidden="true"
-                    >
-                      {srcCfg.icon}
-                    </div>
-                    <div className="flex flex-wrap items-center gap-2 min-w-0 flex-1">
-                      <span className="text-xs text-slate-400 dark:text-slate-500">
-                        {t("sourceIn", { source: srcCfg.label })}
-                      </span>
-                      <span aria-hidden="true" className="text-slate-300 dark:text-slate-600">
-                        &middot;
-                      </span>
-                      <time className="text-xs text-slate-400 dark:text-slate-500">
-                        {formatRelativeTime(complaint.external_created_at)}
-                      </time>
-                    </div>
-                    {badge && (
-                      <Badge variant={badge.variant}>
-                        {t(`sentiment.${badge.labelKey}`)}
-                      </Badge>
-                    )}
-                  </div>
-
-                  {/* Body */}
-                  {complaint.body && (
-                    <p className={[
-                      "text-sm text-slate-500 dark:text-slate-400 leading-relaxed",
-                      isExpanded ? "" : "line-clamp-2",
-                    ].filter(Boolean).join(" ")}>
-                      {complaint.body}
-                    </p>
-                  )}
-
-                  {/* Footer: actions */}
-                  <div className="flex items-center gap-5 mt-4 pt-3 border-t border-slate-100 dark:border-border-dark">
-                    <span className="inline-flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
-                      <Icon name="thumbs-up" size={14} />
-                      <span className="tabular-nums">{complaint.score.toLocaleString()}</span>
-                    </span>
-                    <span className="flex-1" />
-                    {isExpanded && isSafeUrl(complaint.external_url) && (
-                      <a
-                        href={complaint.external_url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        onClick={(e) => e.stopPropagation()}
-                        className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:text-[#0f6bca] transition-colors duration-150"
-                      >
-                        {tCommon("viewOriginal")}
-                        <Icon name="external-link" size={14} />
-                      </a>
-                    )}
-                  </div>
-                </article>
-              );
-            })}
+            {signals.visibleSignals.map((post) => (
+              <SignalCard
+                key={post.id}
+                post={post}
+                isExpanded={signals.expandedIds.has(post.id)}
+                onToggle={() => signals.toggleExpanded(post.id, post)}
+                t={t}
+                tCommon={tCommon}
+              />
+            ))}
           </div>
         )}
 
         {/* Show more / fewer */}
-        {sortedPosts.length > 0 && remainingCount > 0 && (
+        {signals.sortedPosts.length > 0 && signals.remainingCount > 0 && (
           <div className="mt-6 flex justify-center">
             <button
               type="button"
@@ -348,15 +308,15 @@ export function ProductDetailPage({ product }: ProductDetailPageProps) {
                 "transition-colors duration-150 cursor-pointer",
                 "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary",
               ].join(" ")}
-              onClick={() => setShowAllSignals((prev) => !prev)}
+              onClick={() => signals.setShowAll((prev) => !prev)}
             >
               <Icon
-                name={showAllSignals ? "chevron-up" : "chevron-down"}
+                name={signals.showAll ? "chevron-up" : "chevron-down"}
                 size={18}
               />
-              {showAllSignals
+              {signals.showAll
                 ? tCommon("showFewerSignals")
-                : tCommon("showAllSignals", { count: sortedPosts.length })}
+                : tCommon("showAllSignals", { count: signals.sortedPosts.length })}
             </button>
           </div>
         )}

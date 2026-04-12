@@ -31,6 +31,16 @@ export function computeThemes(
 }
 
 /* --------------------------------------------------------------------------
+   Sort option i18n keys
+   -------------------------------------------------------------------------- */
+
+export const SORT_LABEL_KEY: Record<string, string> = {
+  recent: "sortRecent",
+  popular: "sortPopular",
+  critical: "sortCritical",
+};
+
+/* --------------------------------------------------------------------------
    Sentiment badges + severity ordering
    -------------------------------------------------------------------------- */
 
