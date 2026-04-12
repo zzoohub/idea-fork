@@ -1,9 +1,9 @@
 "use client";
 
 import { BriefCard } from "@/src/entities/brief/ui";
+import { mapBriefToCardData } from "@/src/entities/brief/lib/mappers";
 import { ProductCard } from "@/src/entities/product/ui";
 import { PostCard } from "@/src/entities/post/ui";
-import { extractDemandSignals } from "@/src/shared/lib/extract-demand-signals";
 import { computeHeatLevel } from "@/src/shared/lib/compute-heat-level";
 import { formatRelativeTime } from "@/src/shared/lib/format-relative-time";
 import { mapSource, mapSourceName } from "@/src/shared/lib/post-source";
@@ -30,27 +30,7 @@ export function filterBriefs(
    -------------------------------------------------------------------------- */
 
 export function BriefCardItem({ brief }: { brief: BriefListItem }) {
-  const parsed = extractDemandSignals(brief.demand_signals);
-  const heatLevel = computeHeatLevel({
-    postCount: parsed.postCount,
-    newestPostAt: parsed.newestPostAt,
-  });
-  const freshness = parsed.newestPostAt
-    ? formatRelativeTime(parsed.newestPostAt)
-    : null;
-
-  return (
-    <BriefCard
-      title={brief.title}
-      heatLevel={heatLevel}
-      signalCount={parsed.postCount || brief.source_count}
-      communityCount={parsed.subredditCount || 1}
-      freshness={freshness}
-      snippet={brief.summary}
-      tags={[]}
-      slug={brief.slug}
-    />
-  );
+  return <BriefCard {...mapBriefToCardData(brief)} />;
 }
 
 export function ProductCardItem({ product }: { product: ProductListItem }) {

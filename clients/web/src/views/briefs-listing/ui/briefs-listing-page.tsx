@@ -9,10 +9,8 @@ import { Skeleton, EmptyState, ErrorState, SortDropdown } from "@/src/shared/ui"
 import { useScrollReveal } from "@/src/shared/lib/gsap";
 import { BriefCard } from "@/src/entities/brief/ui";
 import { fetchBriefs } from "@/src/entities/brief/api";
+import { mapBriefToCardData } from "@/src/entities/brief/lib/mappers";
 import type { BriefListItem } from "@/src/shared/api";
-import { extractDemandSignals } from "@/src/shared/lib/extract-demand-signals";
-import { computeHeatLevel } from "@/src/shared/lib/compute-heat-level";
-import { formatRelativeTime } from "@/src/shared/lib/format-relative-time";
 
 /* --------------------------------------------------------------------------
    Sort field mapping (UI label → API sort param)
@@ -145,30 +143,9 @@ function BriefsListingInner() {
           role="feed"
           aria-label="AI-generated briefs"
         >
-          {briefs.map((brief) => {
-            const parsed = extractDemandSignals(brief.demand_signals);
-            const heatLevel = computeHeatLevel({
-              postCount: parsed.postCount,
-              newestPostAt: parsed.newestPostAt,
-            });
-            const freshness = parsed.newestPostAt
-              ? formatRelativeTime(parsed.newestPostAt)
-              : null;
-
-            return (
-              <BriefCard
-                key={brief.id}
-                title={brief.title}
-                heatLevel={heatLevel}
-                signalCount={parsed.postCount || brief.source_count}
-                communityCount={parsed.subredditCount || 1}
-                freshness={freshness}
-                snippet={brief.summary}
-                tags={[]}
-                slug={brief.slug}
-              />
-            );
-          })}
+          {briefs.map((brief) => (
+            <BriefCard key={brief.id} {...mapBriefToCardData(brief)} />
+          ))}
         </div>
       ) : (
         <EmptyState
