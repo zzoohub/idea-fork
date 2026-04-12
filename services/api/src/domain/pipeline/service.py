@@ -18,22 +18,8 @@ logger = logging.getLogger(__name__)
 
 TAGGING_BATCH_SIZE = 20
 CLUSTERING_BATCH_SIZE = 200
-_REVIEW_CONCURRENCY = 3
-_BRIEF_CONCURRENCY = 3
-_TRENDS_STOP_WORDS = {
-    "a", "an", "the", "and", "or", "but", "in", "on",
-    "at", "to", "for", "of", "with", "by", "from", "is",
-    "are", "was", "were", "be", "been", "being", "have",
-    "has", "had", "do", "does", "did", "will", "would",
-    "could", "should", "may", "might", "shall", "can",
-    "that", "this", "these", "those", "it", "its",
-    "not", "no", "nor", "so", "if", "then", "than",
-    "too", "very", "just", "about", "above", "after",
-    "before", "between", "into", "through", "during",
-    "each", "some", "such", "only", "other", "new",
-    "now", "way", "don't", "posts", "post",
-    "miscellaneous", "fit", "clusters", "cluster",
-}
+REVIEW_CONCURRENCY = 3
+BRIEF_CONCURRENCY = 3
 
 
 class PipelineService:
@@ -194,7 +180,7 @@ class PipelineService:
                 result.products_upserted += count
                 logger.info("Upserted %d products from %s", count, store_name)
 
-            sem = asyncio.Semaphore(_REVIEW_CONCURRENCY)
+            sem = asyncio.Semaphore(REVIEW_CONCURRENCY)
 
             async def _review_task(product):
                 async with sem:
@@ -308,7 +294,7 @@ class PipelineService:
                 "Generating briefs for %d clusters", len(clusters)
             )
 
-            sem = asyncio.Semaphore(_BRIEF_CONCURRENCY)
+            sem = asyncio.Semaphore(BRIEF_CONCURRENCY)
 
             async def _gen_brief(cluster_id, label, summary, trend_keywords, posts):
                 async with sem:
